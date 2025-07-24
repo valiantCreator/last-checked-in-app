@@ -1,0 +1,196 @@
+[
+  {
+    "id": 1,
+    "firstName": "David Nana",
+    "checkinFrequency": 4,
+    "lastCheckin": "2025-07-24T17:30:04.981Z",
+    "howWeMet": "",
+    "keyFacts": "",
+    "birthday": "",
+    "is_archived": 0,
+    "snooze_until": null,
+    "notes": [
+      {
+        "id": 1,
+        "content": "Milestone #1: Got MVP done on 17th June 2025",
+        "createdAt": "2025-07-17T20:50:31.944Z",
+        "modifiedAt": null,
+        "contactId": 1
+      },
+      {
+        "id": 2,
+        "content": "Milestone #2: Also got a cleaner interface AND Dark Mode toggled on.",
+        "createdAt": "2025-07-17T20:51:14.264Z",
+        "modifiedAt": null,
+        "contactId": 1
+      },
+      {
+        "id": 3,
+        "content": "Milestone #3: He got each contact to have a section for multiple notes.",
+        "createdAt": "2025-07-17T20:51:45.558Z",
+        "modifiedAt": null,
+        "contactId": 1
+      },
+      {
+        "id": 4,
+        "content": "Milestone #4: He was able to collapse/expand the notes section for each contact and make the \"add note\" a button with the + sign.",
+        "createdAt": "2025-07-17T21:05:35.318Z",
+        "modifiedAt": null,
+        "contactId": 1
+      },
+      {
+        "id": 5,
+        "content": "Milestone #5: Tested to see if i can replicate all the changes for multiple contacts. it worked. also tested the delete contact button. it worked!\n\n",
+        "createdAt": "2025-07-17T21:07:38.461Z",
+        "modifiedAt": null,
+        "contactId": 1
+      },
+      {
+        "id": 6,
+        "content": "Milestone #6: added an edit button as well as a way to see the date/time originally created and the date/time edited. testing the edit time showing up now (WORKED @5.59PM without the time showing). and then it showed the time at the edited time of this note",
+        "createdAt": "2025-07-17T21:34:02.815Z",
+        "modifiedAt": "2025-07-17T22:05:01.779Z",
+        "contactId": 1
+      }
+    ],
+    "tags": []
+  },
+  {
+    "id": 2,
+    "firstName": "Test Field",
+    "checkinFrequency": 3,
+    "lastCheckin": "2025-07-21T15:55:09.710Z",
+    "howWeMet": "",
+    "keyFacts": "",
+    "birthday": "",
+    "is_archived": 0,
+    "snooze_until": null,
+    "notes": [
+      {
+        "id": 7,
+        "content": "Testing to see if i can replicate all the changes for multiple contacts",
+        "createdAt": "2025-07-17T21:06:16.306Z",
+        "modifiedAt": null,
+        "contactId": 2
+      }
+    ],
+    "tags": []
+  },
+  {
+    "id": 3,
+    "firstName": "Test for Edited Date/Time",
+    "checkinFrequency": 7,
+    "lastCheckin": "2025-07-21T15:55:19.596Z",
+    "howWeMet": "",
+    "keyFacts": "",
+    "birthday": "",
+    "is_archived": 0,
+    "snooze_until": null,
+    "notes": [
+      {
+        "id": 8,
+        "content": "Test note. edited note. note",
+        "createdAt": "2025-07-17T21:38:37.215Z",
+        "modifiedAt": "2025-07-17T21:58:07.911Z",
+        "contactId": 3
+      }
+    ],
+    "tags": []
+  },
+  {
+    "id": 4,
+    "firstName": "More Milestones",
+    "checkinFrequency": 3,
+    "lastCheckin": "2025-07-21T17:56:41.255Z",
+    "howWeMet": "At a coffe shop",
+    "keyFacts": "Swell",
+    "birthday": "7/21/2025",
+    "is_archived": 0,
+    "snooze_until": null,
+    "notes": [
+      {
+        "id": 9,
+        "content": "Milestone #7: Expanded Contact Details\nWe enriched the contact profiles by adding new fields: 'How We Met,' 'Key Facts,' and 'Birthday.' This included updating the database schema, modifying the backend API to save and retrieve this new information, and integrating editable fields into the frontend UI.",
+        "createdAt": "2025-07-21T18:28:12.585Z",
+        "modifiedAt": "2025-07-21T21:23:42.852Z",
+        "contactId": 4
+      },
+      {
+        "id": 10,
+        "content": "Milestone #8: Implemented a Full Tagging System\nWe built a comprehensive, many-to-many tagging system. This involved creating new database tables for tags, building a full suite of API endpoints to manage them, and developing a frontend interface with tag badges, a remove function, and an input field that suggests existing tags as you type.",
+        "createdAt": "2025-07-21T18:33:30.363Z",
+        "modifiedAt": "2025-07-21T21:23:53.750Z",
+        "contactId": 4
+      },
+      {
+        "id": 11,
+        "content": "Milestone #9: Added Advanced Filtering & Sorting\nWe implemented powerful controls to organize the contact list. This included a real-time search by name, a dropdown to filter by tag, multiple sorting options (Closest Check-in, Most Overdue, Name, Date Added), and a toggle for ascending/descending order.",
+        "createdAt": "2025-07-21T20:10:29.339Z",
+        "modifiedAt": "2025-07-21T21:24:19.286Z",
+        "contactId": 4
+      },
+      {
+        "id": 12,
+        "content": "Milestone #10: Implemented an Archive/Restore System\nWe replaced the permanent delete feature with a more robust archive/restore workflow. This required database changes, new API endpoints for archiving and restoring, and a new \"Archived Contacts\" page in the frontend to manage non-active contacts.",
+        "createdAt": "2025-07-21T21:24:47.552Z",
+        "modifiedAt": null,
+        "contactId": 4
+      },
+      {
+        "id": 13,
+        "content": "Milestone #11: Refactored UI for Dynamic Layout & Consistency\nWe overhauled key UI components by replacing hardcoded positions with a modern CSS Flexbox layout to fix overlapping buttons and fields. We also created a unified, reusable button styling system to ensure a cohesive and polished look across the entire application.",
+        "createdAt": "2025-07-21T21:24:59.850Z",
+        "modifiedAt": null,
+        "contactId": 4
+      }
+    ],
+    "tags": []
+  },
+  {
+    "id": 5,
+    "firstName": "Archive/Restore Button",
+    "checkinFrequency": 7,
+    "lastCheckin": "2025-07-21T20:50:43.351Z",
+    "howWeMet": "At a coffe shop",
+    "keyFacts": "Lowkey broke the code",
+    "birthday": "7/21/2025",
+    "is_archived": 0,
+    "snooze_until": null,
+    "notes": [],
+    "tags": []
+  },
+  {
+    "id": 6,
+    "firstName": "Snooze button test",
+    "checkinFrequency": 7,
+    "lastCheckin": "2025-07-24T17:30:26.012Z",
+    "howWeMet": "At a coffe shop",
+    "keyFacts": "State dependant on overdue check in",
+    "birthday": "2000-03-02",
+    "is_archived": 0,
+    "snooze_until": null,
+    "notes": [],
+    "tags": []
+  },
+  {
+    "id": 7,
+    "firstName": "Olivia Coleman",
+    "checkinFrequency": 3,
+    "lastCheckin": "2025-06-23T18:57:00.349Z",
+    "howWeMet": "At a coffe shop",
+    "keyFacts": "She was a gymnast. Loves segregation.",
+    "birthday": "2025-07-14",
+    "is_archived": 0,
+    "snooze_until": "2025-07-26T18:57:13.622Z",
+    "notes": [
+      {
+        "id": 14,
+        "content": "She loves segregation.",
+        "createdAt": "2025-07-23T18:56:04.401Z",
+        "modifiedAt": null,
+        "contactId": 7
+      }
+    ],
+    "tags": []
+  }
+]
