@@ -129,7 +129,6 @@ function ContactCard({
           </button>
           <p>
             Last checked in: <strong>{daysSince(contact.lastCheckin)} day(s) ago</strong>.
-            <button className="dev-button" onClick={() => handleMakeOverdue(contact.id)}>(Test: Make Overdue)</button>
           </p>
           <p>Next check-in: <strong>{calculateNextCheckinDate(contact.lastCheckin, contact.checkinFrequency)}</strong></p>
           {contact.snooze_until && new Date(contact.snooze_until) > new Date() && (

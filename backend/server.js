@@ -122,15 +122,7 @@ app.put('/api/contacts/:id/snooze', (req, res) => {
         res.json({ message: 'Contact snoozed successfully', snooze_until: snoozeUntil.toISOString() });
     });
 });
-app.put('/api/contacts/:id/make-overdue', (req, res) => {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const newLastCheckin = thirtyDaysAgo.toISOString();
-    db.run("UPDATE contacts SET lastCheckin = ? WHERE id = ?", [newLastCheckin, req.params.id], function(err) {
-        if (err) return res.status(400).json({ error: err.message });
-        res.json({ message: 'Contact made overdue', lastCheckin: newLastCheckin });
-    });
-});
+
 // =================================================================
 // --- TAGS API ---
 // =================================================================
