@@ -3,12 +3,12 @@ import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 // --- Local File Imports ---
 import { requestForToken } from './firebase'; // Handles push notification permissions
-import Header from './components/Header';
-import AddContactForm from './components/AddContactForm';
-import FilterControls from './components/FilterControls';
-import ContactCard from './components/ContactCard';
-import ArchivedView from './components/ArchivedView';
-import { daysSince, isOverdue } from './utils'; // Helper functions
+import Header from './components/Header.jsx';
+import AddContactForm from './components/AddContactForm.jsx';
+import FilterControls from './components/FilterControls.jsx';
+import ContactCard from './components/ContactCard.jsx';
+import ArchivedView from './components/ArchivedView.jsx';
+import { daysSince, isOverdue } from './utils.js'; // also add .js here
 
 // --- Global Constants ---
 const API_URL = 'http://localhost:3001/api';
