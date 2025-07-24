@@ -1,7 +1,7 @@
 // --- React and Library Imports ---
 import React, { useState } from 'react';
-import { isOverdue, formatBirthday, calculateNextCheckinDate, daysSince } from '../utils';
-import TagInput from './TagInput'; // This component is used within the ContactCard
+import { isOverdue, formatBirthday, calculateNextCheckinDate, daysSince } from '../utils.js';
+import TagInput from './TagInput.jsx'; // Corrected import path
 
 // --- ContactCard Component ---
 // This component displays a single contact card and manages all interactions within that card,
