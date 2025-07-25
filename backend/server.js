@@ -23,7 +23,7 @@ const dbAll = (query, params = []) => new Promise((resolve, reject) => {
 });
 
 // =================================================================
-// --- NEW SEARCH API ---
+// --- SEARCH API ---
 // =================================================================
 app.get('/api/search', async (req, res) => {
     const { q } = req.query;
@@ -122,6 +122,15 @@ app.put('/api/contacts/:id/snooze', (req, res) => {
         res.json({ message: 'Contact snoozed successfully', snooze_until: snoozeUntil.toISOString() });
     });
 });
+app.put('/api/contacts/:id/make-overdue', (req, res) => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const newLastCheckin = thirtyDaysAgo.toISOString();
+    db.run("UPDATE contacts SET lastCheckin = ? WHERE id = ?", [newLastCheckin, req.params.id], function(err) {
+        if (err) return res.status(400).json({ error: err.message });
+        res.json({ message: 'Contact made overdue', lastCheckin: newLastCheckin });
+    });
+});
 
 // =================================================================
 // --- TAGS API ---
@@ -187,14 +196,6 @@ app.put('/api/notes/:noteId', (req, res) => {
     db.run(sql, [content, modifiedAt, req.params.noteId], function(err) {
         if (err) return res.status(400).json({ error: err.message });
         res.json({ message: 'Note updated successfully', modifiedAt: modifiedAt });
-    });
-});
-
-// DELETE a contact permanently
-app.delete('/api/contacts/:id', (req, res) => {
-    db.run("DELETE FROM contacts WHERE id = ?", [req.params.id], function(err) {
-        if (err) return res.status(400).json({ error: err.message });
-        res.json({ message: 'Deleted successfully' });
     });
 });
 
