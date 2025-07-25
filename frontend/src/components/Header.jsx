@@ -2,14 +2,16 @@
 import React from 'react';
 
 // --- Header Component ---
-// This is a "presentational" component. It receives data and functions as props
-// and is only responsible for displaying the UI. It doesn't manage its own state.
+// This is a "presentational" or "dumb" component. It receives all the data and functions it needs as props
+// from its parent (App.jsx). Its only job is to display the UI based on those props. It doesn't
+// manage its own complex state, which makes it highly reusable and easy to understand.
 function Header({ 
-  view,               // Prop: The current view ('active' or 'archived')
-  archivedContacts,   // Prop: The list of archived contacts to get the count
-  onToggleTheme,      // Prop: Function to call when the theme button is clicked
-  onViewArchived,     // Prop: Function to call to switch to the archived view
-  onViewActive        // Prop: Function to call to switch to the active view
+  // --- Props ---
+  view,               // Prop (string): The current view of the app ('active' or 'archived').
+  archivedContacts,   // Prop (array): The list of archived contacts, used here to display the count.
+  onToggleTheme,      // Prop (function): A function from App.jsx to call when the theme button is clicked.
+  onViewArchived,     // Prop (function): A function from App.jsx to call to switch to the archived view.
+  onViewActive        // Prop (function): A function from App.jsx to call to switch back to the active view.
 }) {
   return (
     <div className="app-header">
@@ -18,7 +20,10 @@ function Header({
       {/* This container holds the buttons on the right side of the header */}
       <div className="header-actions">
         
-        {/* Conditionally render the "View Archived" or "View Active" button based on the current view */}
+        {/* This is a conditional render. 
+          - If the current `view` is 'active', it renders the "View Archived" button.
+          - Otherwise (if the view is 'archived'), it renders the "View Active Contacts" button.
+        */}
         {view === 'active' ? (
           <button className="button-secondary" onClick={onViewArchived}>
             View Archived ({archivedContacts.length})
@@ -37,4 +42,5 @@ function Header({
   );
 }
 
+// Export the component so it can be imported and used in App.jsx
 export default Header;

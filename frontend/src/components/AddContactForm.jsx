@@ -1,9 +1,7 @@
 // --- React and Library Imports ---
 import React, { useState } from 'react';
 import axios from 'axios';
-
-// --- Global Constants ---
-const API_URL = 'http://localhost:3001/api';
+import { API_URL } from '../apiConfig.js'; // Import the centralized URL
 
 // --- AddContactForm Component ---
 // This component is responsible for the "Add New Person" form.

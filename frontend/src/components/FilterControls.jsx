@@ -2,10 +2,11 @@
 import React from 'react';
 
 // --- FilterControls Component ---
-// This component displays the search, sort, and tag filter inputs.
-// It is a "dumb" component that receives all its values and functions as props from the parent (App.jsx).
+// This component displays all the controls for filtering and sorting the main contact list.
 function FilterControls({
-  // Props for the search functionality
+  // --- Props ---
+
+  // Props for the global search functionality
   globalSearchTerm,
   onGlobalSearchChange,
   onSearchSubmit,
@@ -50,7 +51,7 @@ function FilterControls({
               <div className="results-section">
                 <h4>Contacts</h4>
                 <ul>
-                  {searchResults.contacts.map(c => <li key={`c-${c.id}`} onMouseDown={() => onGlobalSearchChange(c.firstName)}>{c.firstName}</li>)}
+                  {searchResults.contacts.map(c => <li key={`c-${c.id}`} onMouseDown={() => onGlobalSearchChange(c.firstName, true)}>{c.firstName}</li>)}
                 </ul>
               </div>
             )}
@@ -59,7 +60,7 @@ function FilterControls({
                 <h4>Notes</h4>
                 <ul>
                   {searchResults.notes.map(n => (
-                    <li key={`n-${n.id}`} onMouseDown={() => onGlobalSearchChange(n.content)}>
+                    <li key={`n-${n.id}`} onMouseDown={() => onGlobalSearchChange(n.content, true)}>
                       "{n.content.substring(0, 30)}..."
                       <span className="note-contact-name">({n.contactFirstName})</span>
                     </li>
@@ -87,10 +88,10 @@ function FilterControls({
         </button>
       </div>
       <select className="tag-filter-dropdown" value={selectedTagId} onChange={(e) => onSelectedTagChange(e.target.value)}>
-        <option value="">Filter by Tag: All</option>
-        {allTags.map(tag => (
-          <option key={tag.id} value={tag.id}>{tag.name}</option>
-        ))}
+          <option value="">Filter by Tag: All</option>
+          {allTags.map(tag => (
+              <option key={tag.id} value={tag.id}>{tag.name}</option>
+          ))}
       </select>
     </div>
   );
