@@ -11,7 +11,8 @@ import ArchivedView from './components/ArchivedView.jsx';
 import { daysSince, isOverdue } from './utils.js'; // also add .js here
 
 // --- Global Constants ---
-const API_URL = 'http://localhost:3001/api';
+//OLD Const for local hosting: const API_URL = 'http://localhost:3001/api';
+const API_URL = 'https://last-checked-in-api.onrender.com/api';
 
 // --- Main Application Component ---
 function App() {
