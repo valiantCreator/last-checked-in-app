@@ -1,256 +1,313 @@
+// This line loads the secret database URL from the .env file
+require('dotenv').config();
+
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const admin = require('firebase-admin');
 const cron = require('node-cron');
+const { Pool } = require('pg'); // Import the PostgreSQL client
+
+// --- Database Connection ---
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false 
+  }
+});
 
 // --- Firebase Admin Setup ---
-// Make sure you have the serviceAccountKey.json file in your backend folder
 const serviceAccount = require('./serviceAccountKey.json');
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
 
-const db = new sqlite3.Database('./app.db');
-const dbAll = (query, params = []) => new Promise((resolve, reject) => {
-    db.all(query, params, (err, rows) => err ? reject(err) : resolve(rows));
-});
+// --- Function to Create Tables on Server Startup ---
+const createTables = async () => {
+    const client = await pool.connect();
+    try {
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS contacts (
+                id SERIAL PRIMARY KEY,
+                "firstName" VARCHAR(255) NOT NULL,
+                "checkinFrequency" INTEGER NOT NULL,
+                "lastCheckin" TIMESTAMPTZ NOT NULL,
+                "howWeMet" TEXT,
+                "keyFacts" TEXT,
+                birthday TEXT,
+                is_archived BOOLEAN DEFAULT FALSE,
+                snooze_until TIMESTAMPTZ
+            );
+        `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS notes (
+                id SERIAL PRIMARY KEY,
+                content TEXT NOT NULL,
+                "createdAt" TIMESTAMPTZ NOT NULL,
+                "modifiedAt" TIMESTAMPTZ,
+                "contactId" INTEGER NOT NULL REFERENCES contacts(id) ON DELETE CASCADE
+            );
+        `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS tags (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE
+            );
+        `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS contact_tags (
+                contact_id INTEGER NOT NULL REFERENCES contacts(id) ON DELETE CASCADE,
+                tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+                PRIMARY KEY (contact_id, tag_id)
+            );
+        `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS devices (
+                id SERIAL PRIMARY KEY,
+                fcm_token TEXT NOT NULL UNIQUE
+            );
+        `);
+        console.log("Tables are successfully created or already exist.");
+    } catch (err) {
+        console.error("Error creating tables:", err);
+    } finally {
+        client.release();
+    }
+};
 
 // =================================================================
-// --- SEARCH API ---
+// --- API Endpoints (PostgreSQL Version) ---
 // =================================================================
+
 app.get('/api/search', async (req, res) => {
     const { q } = req.query;
-    if (!q) {
-        return res.json({ results: { contacts: [], notes: [] } });
-    }
+    if (!q) return res.json({ results: { contacts: [], notes: [] } });
     const searchTerm = `%${q}%`;
     try {
-        const contacts = await dbAll("SELECT * FROM contacts WHERE firstName LIKE ? AND is_archived = 0", [searchTerm]);
-        const notes = await dbAll(`
-            SELECT n.*, c.firstName as contactFirstName 
+        const contactsResult = await pool.query('SELECT * FROM contacts WHERE "firstName" ILIKE $1 AND is_archived = FALSE', [searchTerm]);
+        const notesResult = await pool.query(`
+            SELECT n.*, c."firstName" as "contactFirstName" 
             FROM notes n 
-            JOIN contacts c ON n.contactId = c.id 
-            WHERE n.content LIKE ? AND c.is_archived = 0
+            JOIN contacts c ON n."contactId" = c.id 
+            WHERE n.content ILIKE $1 AND c.is_archived = FALSE
         `, [searchTerm]);
-
-        res.json({ results: { contacts, notes } });
+        res.json({ results: { contacts: contactsResult.rows, notes: notesResult.rows } });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: err.message });
     }
 });
 
-
-// =================================================================
-// --- CONTACTS API ---
-// =================================================================
 app.get('/api/contacts', async (req, res) => {
     try {
-        const contacts = await dbAll("SELECT * FROM contacts WHERE is_archived = 0");
+        const contactsResult = await pool.query('SELECT * FROM contacts WHERE is_archived = FALSE ORDER BY "lastCheckin"');
+        const contacts = contactsResult.rows;
         for (const contact of contacts) {
-            const tags = await dbAll(`SELECT t.id, t.name FROM tags t JOIN contact_tags ct ON t.id = ct.tag_id WHERE ct.contact_id = ?`, [contact.id]);
-            contact.tags = tags || [];
+            const tagsResult = await pool.query(
+                `SELECT t.id, t.name FROM tags t JOIN contact_tags ct ON t.id = ct.tag_id WHERE ct.contact_id = $1`,
+                [contact.id]
+            );
+            contact.tags = tagsResult.rows || [];
         }
         res.json({ contacts });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: err.message });
     }
 });
+
 app.get('/api/contacts/archived', async (req, res) => {
     try {
-        const contacts = await dbAll("SELECT * FROM contacts WHERE is_archived = 1 ORDER BY firstName");
-        res.json({ contacts });
+        const result = await pool.query('SELECT * FROM contacts WHERE is_archived = TRUE ORDER BY "firstName"');
+        res.json({ contacts: result.rows });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: err.message });
     }
 });
-app.post('/api/contacts', (req, res) => {
+
+app.post('/api/contacts', async (req, res) => {
     const { firstName, checkinFrequency, howWeMet, keyFacts, birthday } = req.body;
-    const lastCheckin = new Date().toISOString();
-    const sql = `INSERT INTO contacts (firstName, checkinFrequency, lastCheckin, howWeMet, keyFacts, birthday) VALUES (?, ?, ?, ?, ?, ?)`;
-    db.run(sql, [firstName, checkinFrequency, lastCheckin, howWeMet, keyFacts, birthday], function(err) {
-        if (err) return res.status(400).json({ error: err.message });
-        res.status(201).json({ id: this.lastID, firstName, checkinFrequency, lastCheckin, howWeMet, keyFacts, birthday, tags: [] });
-    });
+    const lastCheckin = new Date();
+    try {
+        const result = await pool.query(
+            `INSERT INTO contacts ("firstName", "checkinFrequency", "lastCheckin", "howWeMet", "keyFacts", birthday) 
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+            [firstName, checkinFrequency, lastCheckin, howWeMet, keyFacts, birthday]
+        );
+        res.status(201).json({ ...result.rows[0], tags: [] });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
 });
-app.put('/api/contacts/:id', (req, res) => {
+
+app.put('/api/contacts/:id', async (req, res) => {
     const { firstName, checkinFrequency, howWeMet, keyFacts, birthday } = req.body;
-    const sql = `UPDATE contacts SET firstName = ?, checkinFrequency = ?, howWeMet = ?, keyFacts = ?, birthday = ? WHERE id = ?`;
-    db.run(sql, [firstName, checkinFrequency, howWeMet, keyFacts, birthday, req.params.id], function(err) {
-        if (err) return res.status(400).json({ error: err.message });
+    try {
+        await pool.query(
+            `UPDATE contacts SET "firstName" = $1, "checkinFrequency" = $2, "howWeMet" = $3, "keyFacts" = $4, birthday = $5 WHERE id = $6`,
+            [firstName, checkinFrequency, howWeMet, keyFacts, birthday, req.params.id]
+        );
         res.json({ message: 'Contact updated successfully' });
-    });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
 });
-app.put('/api/contacts/:id/archive', (req, res) => {
-    db.run("UPDATE contacts SET is_archived = 1 WHERE id = ?", [req.params.id], function(err) {
-        if (err) return res.status(400).json({ error: err.message });
+
+app.put('/api/contacts/:id/archive', async (req, res) => {
+    try {
+        await pool.query('UPDATE contacts SET is_archived = TRUE WHERE id = $1', [req.params.id]);
         res.json({ message: 'Contact archived successfully' });
-    });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
 });
-app.put('/api/contacts/:id/restore', (req, res) => {
-    db.run("UPDATE contacts SET is_archived = 0 WHERE id = ?", [req.params.id], function(err) {
-        if (err) return res.status(400).json({ error: err.message });
+
+app.put('/api/contacts/:id/restore', async (req, res) => {
+    try {
+        await pool.query('UPDATE contacts SET is_archived = FALSE WHERE id = $1', [req.params.id]);
         res.json({ message: 'Contact restored successfully' });
-    });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
 });
-app.post('/api/contacts/:id/checkin', (req, res) => {
-    const lastCheckin = new Date().toISOString();
-    db.run("UPDATE contacts SET lastCheckin = ?, snooze_until = NULL WHERE id = ?", [lastCheckin, req.params.id], function(err) {
-        if (err) return res.status(400).json({ error: err.message });
-        res.json({ message: 'Checked in successfully', lastCheckin });
-    });
+
+app.post('/api/contacts/:id/checkin', async (req, res) => {
+    const lastCheckin = new Date();
+    try {
+        await pool.query('UPDATE contacts SET "lastCheckin" = $1, snooze_until = NULL WHERE id = $2', [lastCheckin, req.params.id]);
+        res.json({ message: 'Checked in successfully', lastCheckin: lastCheckin.toISOString() });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
 });
-app.delete('/api/contacts/:id', (req, res) => {
-    db.run("DELETE FROM contacts WHERE id = ?", [req.params.id], function(err) {
-        if (err) return res.status(400).json({ error: err.message });
+
+app.delete('/api/contacts/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM contacts WHERE id = $1', [req.params.id]);
         res.json({ message: 'Deleted successfully' });
-    });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
 });
-app.put('/api/contacts/:id/snooze', (req, res) => {
+
+app.put('/api/contacts/:id/snooze', async (req, res) => {
     const { snooze_days } = req.body;
     if (!snooze_days) return res.status(400).json({ error: 'snooze_days is required' });
     const snoozeUntil = new Date();
     snoozeUntil.setDate(snoozeUntil.getDate() + parseInt(snooze_days, 10));
-    db.run("UPDATE contacts SET snooze_until = ? WHERE id = ?", [snoozeUntil.toISOString(), req.params.id], function(err) {
-        if (err) return res.status(400).json({ error: err.message });
-        res.json({ message: 'Contact snoozed successfully', snooze_until: snoozeUntil.toISOString() });
-    });
-});
-app.put('/api/contacts/:id/make-overdue', (req, res) => {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const newLastCheckin = thirtyDaysAgo.toISOString();
-    db.run("UPDATE contacts SET lastCheckin = ? WHERE id = ?", [newLastCheckin, req.params.id], function(err) {
-        if (err) return res.status(400).json({ error: err.message });
-        res.json({ message: 'Contact made overdue', lastCheckin: newLastCheckin });
-    });
-});
-
-// =================================================================
-// --- TAGS API ---
-// =================================================================
-app.get('/api/tags', async (req, res) => {
     try {
-        const tags = await dbAll("SELECT * FROM tags ORDER BY name");
-        res.json({ tags });
+        await pool.query('UPDATE contacts SET snooze_until = $1 WHERE id = $2', [snoozeUntil, req.params.id]);
+        res.json({ message: 'Contact snoozed successfully', snooze_until: snoozeUntil.toISOString() });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: err.message });
     }
 });
-app.post('/api/contacts/:id/tags', (req, res) => {
-    const { tagName } = req.body;
-    const contactId = req.params.id;
-    if (!tagName) return res.status(400).json({ error: 'tagName is required' });
-    const findOrCreateTagSql = "INSERT INTO tags (name) VALUES (?) ON CONFLICT(name) DO UPDATE SET name=excluded.name RETURNING id";
-    db.get(findOrCreateTagSql, [tagName.trim()], function(err, row) {
-        if (err) return res.status(500).json({ error: err.message });
-        const tagId = row.id;
-        const associateSql = "INSERT INTO contact_tags (contact_id, tag_id) VALUES (?, ?) ON CONFLICT DO NOTHING";
-        db.run(associateSql, [contactId, tagId], function(err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.status(201).json({ id: tagId, name: tagName.trim() });
-        });
-    });
-});
-app.delete('/api/contacts/:contactId/tags/:tagId', (req, res) => {
-    const { contactId, tagId } = req.params;
-    const sql = "DELETE FROM contact_tags WHERE contact_id = ? AND tag_id = ?";
-    db.run(sql, [contactId, tagId], function(err) {
-        if (err) return res.status(400).json({ error: err.message });
-        res.json({ message: 'Tag removed successfully' });
-    });
-});
 
-// =================================================================
-// --- NOTES API ---
-// =================================================================
-app.get('/api/contacts/:id/notes', (req, res) => {
-    const sql = "SELECT * FROM notes WHERE contactId = ? ORDER BY createdAt DESC";
-    db.all(sql, [req.params.id], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ notes: rows });
-    });
-});
-app.post('/api/contacts/:id/notes', (req, res) => {
-    const { content } = req.body;
-    if (!content) return res.status(400).json({ error: 'Note content cannot be empty' });
-    const createdAt = new Date().toISOString();
-    const contactId = req.params.id;
-    const sql = "INSERT INTO notes (content, createdAt, contactId) VALUES (?, ?, ?)";
-    db.run(sql, [content, createdAt, contactId], function(err) {
-        if (err) return res.status(400).json({ error: err.message });
-        res.status(201).json({ id: this.lastID, content, createdAt, contactId });
-    });
-});
-app.put('/api/notes/:noteId', (req, res) => {
-    const { content } = req.body;
-    if (!content) return res.status(400).json({ error: 'Note content cannot be empty' });
-    const modifiedAt = new Date().toISOString();
-    const sql = "UPDATE notes SET content = ?, modifiedAt = ? WHERE id = ?";
-    db.run(sql, [content, modifiedAt, req.params.noteId], function(err) {
-        if (err) return res.status(400).json({ error: err.message });
-        res.json({ message: 'Note updated successfully', modifiedAt: modifiedAt });
-    });
-});
-
-// =================================================================
-// --- DEVICES API ---
-// =================================================================
-app.post('/api/devices/token', (req, res) => {
-    const { token } = req.body;
-    if (!token) return res.status(400).json({ error: 'FCM token is required' });
-    const sql = "INSERT INTO devices (fcm_token) VALUES (?) ON CONFLICT(fcm_token) DO NOTHING";
-    db.run(sql, [token], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.status(201).json({ message: 'Token saved successfully' });
-    });
-});
-
-// =================================================================
-// --- SCHEDULED JOB ---
-// =================================================================
-cron.schedule('0 9 * * *', async () => {
-    console.log('Running daily check for overdue contacts...');
+app.get('/api/tags', async (req, res) => {
     try {
-        const allContacts = await dbAll("SELECT * FROM contacts WHERE is_archived = 0");
-        const allDeviceTokens = (await dbAll("SELECT fcm_token FROM devices")).map(row => row.fcm_token);
-
-        if (allDeviceTokens.length === 0) {
-            console.log('No devices registered for notifications.');
-            return;
-        }
-
-        const overdueContacts = allContacts.filter(contact => {
-            const now = new Date();
-            if (contact.snooze_until && new Date(contact.snooze_until) > now) return false;
-            const lastCheckin = new Date(contact.lastCheckin);
-            const dueDate = new Date(lastCheckin.setDate(lastCheckin.getDate() + contact.checkinFrequency));
-            return dueDate < now;
-        });
-
-        if (overdueContacts.length > 0) {
-            console.log(`Found ${overdueContacts.length} overdue contacts. Sending notifications.`);
-            const message = {
-                notification: {
-                    title: 'Check-in Reminder!',
-                    body: `You have ${overdueContacts.length} people to check in with today.`
-                },
-                tokens: allDeviceTokens,
-            };
-
-            await admin.messaging().sendEachForMulticast(message);
-        } else {
-            console.log('No overdue contacts found today.');
-        }
-    } catch (error) {
-        console.error('Error sending notifications:', error);
+        const result = await pool.query('SELECT * FROM tags ORDER BY name');
+        res.json({ tags: result.rows });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
     }
 });
 
-app.listen(PORT, () => console.log(`Backend server is running on http://localhost:${PORT}`));
+app.post('/api/contacts/:id/tags', async (req, res) => {
+    const { tagName } = req.body;
+    const contactId = req.params.id;
+    if (!tagName) return res.status(400).json({ error: 'tagName is required' });
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const tagRes = await client.query('INSERT INTO tags (name) VALUES ($1) ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id', [tagName.trim()]);
+        const tagId = tagRes.rows[0].id;
+        await client.query('INSERT INTO contact_tags (contact_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [contactId, tagId]);
+        await client.query('COMMIT');
+        res.status(201).json({ id: tagId, name: tagName.trim() });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    } finally {
+        client.release();
+    }
+});
+
+app.delete('/api/contacts/:contactId/tags/:tagId', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM contact_tags WHERE contact_id = $1 AND tag_id = $2', [req.params.contactId, req.params.tagId]);
+        res.json({ message: 'Tag removed successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/contacts/:id/notes', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM notes WHERE "contactId" = $1 ORDER BY "createdAt" DESC', [req.params.id]);
+        res.json({ notes: result.rows });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/contacts/:id/notes', async (req, res) => {
+    const { content } = req.body;
+    if (!content) return res.status(400).json({ error: 'Note content cannot be empty' });
+    const createdAt = new Date();
+    try {
+        const result = await pool.query('INSERT INTO notes (content, "createdAt", "contactId") VALUES ($1, $2, $3) RETURNING *', [content, createdAt, req.params.id]);
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/notes/:noteId', async (req, res) => {
+    const { content } = req.body;
+    if (!content) return res.status(400).json({ error: 'Note content cannot be empty' });
+    const modifiedAt = new Date();
+    try {
+        await pool.query('UPDATE notes SET content = $1, "modifiedAt" = $2 WHERE id = $3', [content, modifiedAt, req.params.noteId]);
+        res.json({ message: 'Note updated successfully', modifiedAt: modifiedAt.toISOString() });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/devices/token', async (req, res) => {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ error: 'FCM token is required' });
+    try {
+        await pool.query('INSERT INTO devices (fcm_token) VALUES ($1) ON CONFLICT (fcm_token) DO NOTHING', [token]);
+        res.status(201).json({ message: 'Token saved successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+// --- Start Server ---
+app.listen(PORT, () => {
+    console.log(`Backend server is running on port ${PORT}`);
+    createTables(); // Create tables when the server starts
+});
