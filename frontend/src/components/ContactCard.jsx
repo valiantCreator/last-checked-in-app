@@ -1,15 +1,13 @@
-// --- React and Library Imports ---
 import React, { useState } from 'react';
 import { isOverdue, formatBirthday, calculateNextCheckinDate, daysSince } from '../utils.js';
 import TagInput from './TagInput.jsx';
 
-// --- ContactCard Component ---
 function ContactCard({ 
   contact,
   handlers,
-  uiState
+  uiState,
+  displayMode // New prop to determine the layout
 }) {
-  // Destructure props for easier access
   const { editingContact, expandedContactId, addingNoteToContactId, editingNote, snoozingContactId } = uiState;
   const {
     handleCheckIn,
@@ -30,18 +28,15 @@ function ContactCard({
     handleCancelEditContact
   } = handlers;
 
-  // --- Internal State Management ---
   const [newNoteContent, setNewNoteContent] = useState('');
   const [editingNoteContent, setEditingNoteContent] = useState('');
   const [editingContactState, setEditingContactState] = useState(null);
 
-  // --- UI Logic Variables ---
   const overdue = isOverdue(contact);
   const isEditingThisContact = editingContact && editingContact.id === contact.id;
   const isExpanded = expandedContactId === contact.id;
   const isAddingNote = addingNoteToContactId === contact.id;
 
-  // --- Local Handlers ---
   const startEditingContact = () => {
     setEditingContactState({ ...contact });
     handleEditContactClick(contact);
@@ -70,6 +65,19 @@ function ContactCard({
     handleUpdateNote(contact.id, noteId, editingNoteContent);
   };
 
+  // --- GRID VIEW RENDER ---
+  if (displayMode === 'grid') {
+    return (
+        <div className={`card contact-item-grid ${overdue ? 'overdue' : ''}`}>
+            <h3>{contact.firstName}</h3>
+            <p>Next check-in:</p>
+            <strong>{calculateNextCheckinDate(contact.lastCheckin, contact.checkinFrequency)}</strong>
+            {contact.birthday && <p className="grid-birthday">🎂 {formatBirthday(contact.birthday)}</p>}
+        </div>
+    );
+  }
+
+  // --- LIST VIEW RENDER (DEFAULT) ---
   return (
     <div className={`card contact-item ${overdue ? 'overdue' : ''}`}>
       {isEditingThisContact ? (
@@ -140,7 +148,6 @@ function ContactCard({
             {isAddingNote && (
               <div className="add-note-form">
                 <textarea placeholder="Add a new note..." value={newNoteContent} onChange={(e) => setNewNoteContent(e.target.value)} />
-                {/* --- UPDATED: Added a container and a Cancel button --- */}
                 <div className="add-note-actions">
                     <button className="button-primary" onClick={onSaveNote}>Save Note</button>
                     <button className="button-secondary" onClick={() => handleToggleAddNoteForm(null)}>Cancel</button>

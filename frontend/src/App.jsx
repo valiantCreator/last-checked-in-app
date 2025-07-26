@@ -4,7 +4,6 @@ import { useDebounce } from 'use-debounce';
 import { requestForToken } from './firebase';
 import Header from './components/Header.jsx';
 import AddContactForm from './components/AddContactForm.jsx';
-import FilterControls from './components/FilterControls.jsx';
 import ContactCard from './components/ContactCard.jsx';
 import ArchivedView from './components/ArchivedView.jsx';
 import { daysSince, isOverdue } from './utils.js';
@@ -31,6 +30,9 @@ function App() {
   const [searchResults, setSearchResults] = useState(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [activeSearchFilter, setActiveSearchFilter] = useState('');
+
+  // --- New State for Display Mode ---
+  const [displayMode, setDisplayMode] = useState('list'); // 'list' or 'grid'
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -88,16 +90,32 @@ function App() {
     return displayedContacts;
   }, [contacts, activeSearchFilter, searchResults, selectedTagId, sortBy, sortDirection]);
 
-  // --- Handlers ---
-  const handleAddContact = (newContact) => {
-    setContacts(c => [...c, newContact]);
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setActiveSearchFilter(globalSearchTerm);
+    setIsSearchFocused(false);
   };
 
+  const handleClearSearch = () => {
+    setGlobalSearchTerm('');
+    setActiveSearchFilter('');
+    setSearchResults(null);
+  };
+
+  const handleGlobalSearchChange = (value, lockIn = false) => {
+      setGlobalSearchTerm(value);
+      if (lockIn) {
+          setActiveSearchFilter(value);
+      }
+  };
+
+  const handleAddContact = (newContactData) => {
+    setContacts(c => [...c, newContactData]);
+  };
   const handleCheckIn = (id) => {
     axios.post(`${API_URL}/contacts/${id}/checkin`)
       .then(res => setContacts(contacts.map(c => c.id === id ? { ...c, lastCheckin: res.data.lastCheckin, snooze_until: null } : c)));
   };
-
   const handleUpdateContact = (updatedContact) => {
     axios.put(`${API_URL}/contacts/${updatedContact.id}`, updatedContact)
       .then(() => {
@@ -105,7 +123,6 @@ function App() {
         setEditingContact(null);
       });
   };
-  
   const handleToggleNotesList = (contactId) => {
     const newId = expandedContactId === contactId ? null : contactId;
     setExpandedContactId(newId);
@@ -118,7 +135,6 @@ function App() {
       }
     }
   };
-
   const handleSaveNote = (contactId, newNoteContent) => {
     if (!newNoteContent.trim()) return;
     axios.post(`${API_URL}/contacts/${contactId}/notes`, { content: newNoteContent })
@@ -128,7 +144,6 @@ function App() {
         setAddingNoteToContactId(null);
       });
   };
-
   const handleUpdateNote = (contactId, noteId, newContent) => {
     axios.put(`${API_URL}/notes/${noteId}`, { content: newContent })
       .then(res => {
@@ -142,79 +157,58 @@ function App() {
         setEditingNote(null);
       });
   };
-
   const handleTagAdded = (contactId, newTag) => {
     setContacts(cs => cs.map(c => c.id === contactId ? { ...c, tags: [...c.tags, newTag] } : c));
   };
-
   const handleRemoveTag = (contactId, tagId) => {
     axios.delete(`${API_URL}/contacts/${contactId}/tags/${tagId}`)
       .then(() => {
-        // Update the specific contact's tags
         setContacts(cs => cs.map(c => {
-          if (c.id === contactId) {
-            return { ...c, tags: c.tags.filter(t => t.id !== tagId) };
-          }
+          if (c.id === contactId) return { ...c, tags: c.tags.filter(t => t.id !== tagId) };
           return c;
         }));
-        // After successfully removing, refresh the master list of tags
         axios.get(`${API_URL}/tags`).then(res => setAllTags(res.data.tags || []));
       });
   };
-  
   const handleViewArchived = () => {
     axios.get(`${API_URL}/contacts/archived`).then(res => {
         setArchivedContacts(res.data.contacts || []);
         setView('archived');
     });
   };
-
   const handleArchiveContact = (contactId) => {
-    axios.put(`${API_URL}/contacts/${contactId}/archive`)
-        .then(() => {
-            const contactToArchive = contacts.find(c => c.id === contactId);
-            if (contactToArchive) {
-                setArchivedContacts([...archivedContacts, contactToArchive]);
-            }
-            setContacts(contacts.filter(c => c.id !== contactId));
-        });
+    axios.put(`${API_URL}/contacts/${contactId}/archive`).then(() => {
+        const contactToArchive = contacts.find(c => c.id === contactId);
+        if (contactToArchive) {
+            setArchivedContacts([...archivedContacts, contactToArchive]);
+        }
+        setContacts(contacts.filter(c => c.id !== contactId));
+    });
   };
-
   const handleRestoreContact = (contactId) => {
-    axios.put(`${API_URL}/contacts/${contactId}/restore`)
-        .then(() => {
-            const contactToRestore = archivedContacts.find(c => c.id === contactId);
-            setArchivedContacts(archivedContacts.filter(c => c.id !== contactId));
-            if (contactToRestore) {
-                setContacts([...contacts, { ...contactToRestore, notes: [], tags: contactToRestore.tags || [] }]);
-            }
-        });
+    axios.put(`${API_URL}/contacts/${contactId}/restore`).then(() => {
+        const contactToRestore = archivedContacts.find(c => c.id === contactId);
+        setArchivedContacts(archivedContacts.filter(c => c.id !== contactId));
+        if (contactToRestore) {
+            setContacts([...contacts, { ...contactToRestore, notes: [], tags: contactToRestore.tags || [] }]);
+        }
+    });
   };
-
   const handleDeletePermanently = (contactId) => {
-    axios.delete(`${API_URL}/contacts/${contactId}`)
-        .then(() => {
-            setArchivedContacts(archivedContacts.filter(c => c.id !== contactId));
-        });
+    axios.delete(`${API_URL}/contacts/${contactId}`).then(() => {
+        setArchivedContacts(archivedContacts.filter(c => c.id !== contactId));
+    });
   };
-
   const handleSnooze = (contactId, days) => {
-    axios.put(`${API_URL}/contacts/${contactId}/snooze`, { snooze_days: days })
-        .then(res => {
-            setContacts(contacts.map(c => 
-                c.id === contactId ? { ...c, snooze_until: res.data.snooze_until } : c
-            ));
-            setSnoozingContactId(null);
-        });
+    axios.put(`${API_URL}/contacts/${contactId}/snooze`, { snooze_days: days }).then(res => {
+        setContacts(contacts.map(c => c.id === contactId ? { ...c, snooze_until: res.data.snooze_until } : c));
+        setSnoozingContactId(null);
+    });
   };
-
   const handleMakeOverdue = (contactId) => {
-    axios.put(`${API_URL}/contacts/${contactId}/make-overdue`)
-        .then(res => {
-            setContacts(contacts.map(c =>
-                c.id === contactId ? { ...c, lastCheckin: res.data.lastCheckin } : c
-            ));
-        });
+    axios.put(`${API_URL}/contacts/${contactId}/make-overdue`).then(res => {
+        setContacts(contacts.map(c => c.id === contactId ? { ...c, lastCheckin: res.data.lastCheckin } : c));
+    });
   };
 
   const handlers = {
@@ -223,7 +217,6 @@ function App() {
     handleSaveNote, handleUpdateNote, handleEditNoteClick: setEditingNote, handleCancelEditNote: () => setEditingNote(null),
     setSnoozingContactId, handleSnooze, handleUpdateContact, handleCancelEditContact: () => setEditingContact(null)
   };
-
   const uiState = {
     editingContact, expandedContactId, addingNoteToContactId, editingNote, snoozingContactId
   };
@@ -241,24 +234,68 @@ function App() {
       {view === 'active' ? (
         <>
           <AddContactForm onContactAdded={handleAddContact} />
-          <FilterControls 
-            allTags={allTags}
-            sortBy={sortBy}
-            onSortByChange={setSortBy}
-            sortDirection={sortDirection}
-            onToggleSortDirection={() => setSortDirection(sd => sd === 'asc' ? 'desc' : 'asc')}
-            selectedTagId={selectedTagId}
-            onSelectedTagChange={setSelectedTagId}
-            // ... (pass search props)
-          />
-          <div>
+          
+          <div className="card filter-controls">
+            <form className="search-container" onSubmit={handleSearchSubmit}>
+                <input
+                    type="text"
+                    placeholder="Search contacts and notes..."
+                    value={globalSearchTerm}
+                    onChange={(e) => setGlobalSearchTerm(e.target.value)}
+                    onFocus={() => setIsSearchFocused(true)}
+                    onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+                    className="search-input"
+                />
+                {activeSearchFilter && <button type="button" className="clear-search-button" onClick={handleClearSearch}>X</button>}
+                {isSearchFocused && searchResults && (
+                    <div className="search-results">
+                        {searchResults.contacts.length > 0 && (
+                            <div className="results-section"><h4>Contacts</h4><ul>{searchResults.contacts.map(c => <li key={`c-${c.id}`} onMouseDown={() => { setGlobalSearchTerm(c.firstName); setActiveSearchFilter(c.firstName); }}>{c.firstName}</li>)}</ul></div>
+                        )}
+                        {searchResults.notes.length > 0 && (
+                            <div className="results-section"><h4>Notes</h4><ul>{searchResults.notes.map(n => <li key={`n-${n.id}`} onMouseDown={() => { setGlobalSearchTerm(n.content); setActiveSearchFilter(n.content); }}>"{n.content.substring(0, 30)}..."<span className="note-contact-name">({n.contactFirstName})</span></li>)}</ul></div>
+                        )}
+                        {searchResults.contacts.length === 0 && searchResults.notes.length === 0 && debouncedGlobalSearch && (
+                            <p className="no-results">No results found.</p>
+                        )}
+                    </div>
+                )}
+            </form>
+            <div className="sort-controls">
+              <select className="sort-dropdown" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                <option value="newestFirst">Sort by: Date Added</option>
+                <option value="closestCheckin">Sort by: Closest Check-in</option>
+                <option value="mostOverdue">Sort by: Most Overdue</option>
+                <option value="nameAZ">Sort by: Name (A-Z)</option>
+              </select>
+              <button className="sort-direction-button" onClick={() => setSortDirection(sd => sd === 'asc' ? 'desc' : 'asc')} title={`Sort ${sortDirection === 'asc' ? 'Descending' : 'Ascending'}`}>
+                {sortDirection === 'asc' ? '↑' : '↓'}
+              </button>
+            </div>
+            <select className="tag-filter-dropdown" value={selectedTagId} onChange={(e) => setSelectedTagId(e.target.value)}>
+                <option value="">Filter by Tag: All</option>
+                {allTags.map(tag => (
+                    <option key={tag.id} value={tag.id}>{tag.name}</option>
+                ))}
+            </select>
+          </div>
+
+          <div className="view-controls">
             <h2>My People</h2>
+            <div className="view-toggle-buttons">
+                <button className={displayMode === 'list' ? 'active' : ''} onClick={() => setDisplayMode('list')}>List</button>
+                <button className={displayMode === 'grid' ? 'active' : ''} onClick={() => setDisplayMode('grid')}>Grid</button>
+            </div>
+          </div>
+          
+          <div className={`contacts-container ${displayMode}`}>
             {filteredAndSortedContacts.map(contact => (
               <ContactCard 
                 key={contact.id} 
                 contact={contact} 
                 handlers={handlers} 
                 uiState={uiState}
+                displayMode={displayMode}
               />
             ))}
           </div>

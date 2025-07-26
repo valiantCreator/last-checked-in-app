@@ -38,7 +38,7 @@ body {
 
 /* Main app container */
 .app-container {
-  max-width: 700px;
+  max-width: 1200px; /* Wider container for grid view */
   margin: auto;
 }
 
@@ -51,18 +51,15 @@ body {
   gap: 1rem;
   flex-wrap: wrap;
 }
-
 .app-header h1 {
     font-size: 1.5rem;
     margin: 0;
 }
-
 .header-actions {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
-
 .theme-toggle-button {
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
@@ -85,6 +82,11 @@ body {
 }
 
 /* Form-specific styles */
+.form-card {
+    max-width: 700px; /* Keep forms centered and readable */
+    margin-left: auto;
+    margin-right: auto;
+}
 .form-card input,
 .form-card textarea {
   padding: 0.75rem;
@@ -106,7 +108,71 @@ body {
     opacity: 0.6;
 }
 
-/* Contact item styles */
+/* --- NEW VIEW CONTROLS --- */
+.view-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 700px;
+    margin: 1rem auto;
+}
+.view-toggle-buttons button {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+}
+.view-toggle-buttons button:first-child {
+    border-radius: 8px 0 0 8px;
+    border-right: none;
+}
+.view-toggle-buttons button:last-child {
+    border-radius: 0 8px 8px 0;
+}
+.view-toggle-buttons button.active {
+    background-color: var(--primary-color);
+    color: var(--primary-text);
+    border-color: var(--primary-color);
+}
+
+
+/* --- NEW CONTACTS CONTAINER STYLES --- */
+.contacts-container.list {
+    max-width: 700px;
+    margin: auto;
+}
+.contacts-container.grid {
+    display: grid;
+    /* This creates a responsive grid. It will fit as many 280px columns as it can. */
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+/* --- NEW GRID ITEM STYLES --- */
+.contact-item-grid {
+    text-align: center;
+    padding: 1.5rem 1rem;
+}
+.contact-item-grid h3 {
+    margin: 0 0 1rem 0;
+}
+.contact-item-grid p {
+    margin: 0.25rem 0;
+    opacity: 0.8;
+}
+.contact-item-grid strong {
+    font-size: 1.1rem;
+    font-weight: 500;
+    opacity: 1;
+}
+.contact-item-grid .grid-birthday {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+
+/* Contact item styles (for list view) */
 .contact-item {
   border-left: 6px solid var(--primary-color);
 }
@@ -149,7 +215,6 @@ body {
   box-sizing: border-box;
   min-height: 80px;
 }
-/* --- NEW: Style for Add Note buttons --- */
 .add-note-actions {
     display: flex;
     gap: 0.5rem;
@@ -289,6 +354,9 @@ body {
 
 /* Filter and Sort Controls Styles */
 .filter-controls {
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
   display: flex;
   flex-direction: column;
   padding: 1rem 1.5rem;
@@ -335,7 +403,7 @@ body {
 }
 
 /* View Toggle and Archive Styles */
-.archived-list { margin-top: 2rem; }
+.archived-list { margin-top: 2rem; max-width: 700px; margin-left: auto; margin-right: auto; }
 .archived-item {
   display: flex;
   justify-content: space-between;
