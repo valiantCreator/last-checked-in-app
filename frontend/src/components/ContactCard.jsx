@@ -1,15 +1,13 @@
 // --- React and Library Imports ---
 import React, { useState } from 'react';
 import { isOverdue, formatBirthday, calculateNextCheckinDate, daysSince } from '../utils.js';
-import TagInput from './TagInput.jsx'; // Corrected import path
+import TagInput from './TagInput.jsx';
 
 // --- ContactCard Component ---
-// This component displays a single contact card and manages all interactions within that card,
-// such as editing the contact, showing/hiding notes, adding/editing notes, and snoozing.
 function ContactCard({ 
-  contact,    // Prop: The full contact object to display
-  handlers,   // Prop: An object containing all handler functions from App.jsx
-  uiState     // Prop: An object containing UI state from App.jsx (e.g., which card is expanded)
+  contact,
+  handlers,
+  uiState
 }) {
   // Destructure props for easier access
   const { editingContact, expandedContactId, addingNoteToContactId, editingNote, snoozingContactId } = uiState;
@@ -33,10 +31,9 @@ function ContactCard({
   } = handlers;
 
   // --- Internal State Management ---
-  // These states are managed locally within each card.
-  const [newNoteContent, setNewNoteContent] = useState(''); // For the 'add new note' textarea
-  const [editingNoteContent, setEditingNoteContent] = useState(''); // For the 'edit note' textarea
-  const [editingContactState, setEditingContactState] = useState(null); // A local copy of the contact being edited
+  const [newNoteContent, setNewNoteContent] = useState('');
+  const [editingNoteContent, setEditingNoteContent] = useState('');
+  const [editingContactState, setEditingContactState] = useState(null);
 
   // --- UI Logic Variables ---
   const overdue = isOverdue(contact);
@@ -45,48 +42,36 @@ function ContactCard({
   const isAddingNote = addingNoteToContactId === contact.id;
 
   // --- Local Handlers ---
-  // These functions manage the state that is local to this component.
-
-  // When the "Edit Contact" button is clicked, create a local copy of the contact's data
-  // and tell the parent App component that we are in edit mode.
   const startEditingContact = () => {
     setEditingContactState({ ...contact });
     handleEditContactClick(contact);
   };
 
-  // As the user types in the edit form, update the local copy of the contact data.
   const onEditingContactChange = (e) => {
     setEditingContactState(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
   
-  // When the edit form is submitted, pass the updated local data up to the parent App component.
   const onUpdateContactSubmit = (e) => {
       e.preventDefault();
       handleUpdateContact(editingContactState);
   };
 
-  // When the "Edit" button on a note is clicked, store the note's content locally
-  // and tell the parent App component that this specific note is being edited.
   const startEditingNote = (note) => {
     setEditingNoteContent(note.content);
     handleEditNoteClick(note);
   };
 
-  // When saving a new note, call the parent handler with the local state's content.
   const onSaveNote = () => {
     handleSaveNote(contact.id, newNoteContent);
-    setNewNoteContent(''); // Clear the textarea
+    setNewNoteContent('');
   };
 
-  // When saving an edited note, call the parent handler with the local state's content.
   const onUpdateNote = (noteId) => {
     handleUpdateNote(contact.id, noteId, editingNoteContent);
   };
 
-  // --- JSX Rendering ---
   return (
     <div className={`card contact-item ${overdue ? 'overdue' : ''}`}>
-      {/* Conditionally render either the edit form or the display view */}
       {isEditingThisContact ? (
         <form onSubmit={onUpdateContactSubmit} className="contact-edit-form">
           <input name="firstName" value={editingContactState.firstName} onChange={onEditingContactChange} />
@@ -107,28 +92,33 @@ function ContactCard({
         <>
           <div className="contact-header">
             <h3>{contact.firstName}</h3>
-            <div className="header-buttons">
-              {overdue && (
-                <div className="snooze-container">
-                    <button className="button-secondary" onClick={() => setSnoozingContactId(snoozingContactId === contact.id ? null : contact.id)}>Snooze</button>
-                    {snoozingContactId === contact.id && (
-                        <div className="snooze-options">
-                            <button onClick={() => handleSnooze(contact.id, 1)}>Tomorrow</button>
-                            <button onClick={() => handleSnooze(contact.id, 3)}>In 3 days</button>
-                            <button onClick={() => handleSnooze(contact.id, 7)}>In 1 week</button>
-                        </div>
-                    )}
-                </div>
-              )}
-              <button className="button-primary" onClick={() => handleCheckIn(contact.id)}>Just Checked In!</button>
+            {/* --- UPDATED STRUCTURE: All header buttons are now grouped --- */}
+            <div className="contact-header-actions">
+              <div className="header-buttons">
+                {overdue && (
+                  <div className="snooze-container">
+                      <button className="button-secondary" onClick={() => setSnoozingContactId(snoozingContactId === contact.id ? null : contact.id)}>Snooze</button>
+                      {snoozingContactId === contact.id && (
+                          <div className="snooze-options">
+                              <button onClick={() => handleSnooze(contact.id, 1)}>Tomorrow</button>
+                              <button onClick={() => handleSnooze(contact.id, 3)}>In 3 days</button>
+                              <button onClick={() => handleSnooze(contact.id, 7)}>In 1 week</button>
+                          </div>
+                      )}
+                  </div>
+                )}
+                <button className="button-primary" onClick={() => handleCheckIn(contact.id)}>Just Checked In!</button>
+              </div>
+              <button className="expand-collapse-button" onClick={() => handleToggleNotesList(contact.id)} aria-expanded={isExpanded}>
+                {isExpanded ? 'Hide Notes' : 'Show Notes'}
+                <span className={`arrow ${isExpanded ? 'expanded' : ''}`}>▼</span>
+              </button>
             </div>
           </div>
-          <button className="expand-collapse-button" onClick={() => handleToggleNotesList(contact.id)} aria-expanded={isExpanded}>
-            {isExpanded ? 'Hide Notes' : 'Show Notes'}
-            <span className={`arrow ${isExpanded ? 'expanded' : ''}`}>▼</span>
-          </button>
+          
           <p>
             Last checked in: <strong>{daysSince(contact.lastCheckin)} day(s) ago</strong>.
+            <button className="dev-button" onClick={() => handleMakeOverdue(contact.id)}>(Test: Make Overdue)</button>
           </p>
           <p>Next check-in: <strong>{calculateNextCheckinDate(contact.lastCheckin, contact.checkinFrequency)}</strong></p>
           {contact.snooze_until && new Date(contact.snooze_until) > new Date() && (
