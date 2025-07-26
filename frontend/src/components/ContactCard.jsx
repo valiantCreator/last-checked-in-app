@@ -92,7 +92,6 @@ function ContactCard({
         <>
           <div className="contact-header">
             <h3>{contact.firstName}</h3>
-            {/* --- UPDATED STRUCTURE: All header buttons are now grouped --- */}
             <div className="contact-header-actions">
               <div className="header-buttons">
                 {overdue && (
@@ -141,7 +140,11 @@ function ContactCard({
             {isAddingNote && (
               <div className="add-note-form">
                 <textarea placeholder="Add a new note..." value={newNoteContent} onChange={(e) => setNewNoteContent(e.target.value)} />
-                <button className="button-primary" onClick={onSaveNote}>Save Note</button>
+                {/* --- UPDATED: Added a container and a Cancel button --- */}
+                <div className="add-note-actions">
+                    <button className="button-primary" onClick={onSaveNote}>Save Note</button>
+                    <button className="button-secondary" onClick={() => handleToggleAddNoteForm(null)}>Cancel</button>
+                </div>
               </div>
             )}
             {isExpanded && (

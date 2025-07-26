@@ -1,19 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_URL } from '../apiConfig.js';
 
-const API_URL = 'http://localhost:3001/api';
-
+// --- TagInput Component ---
+// This component provides an input field for adding tags to a contact.
+// It fetches all existing tags to provide suggestions as the user types.
 function TagInput({ contact, onTagAdded }) {
-  const [inputValue, setInputValue] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
-  const [allTags, setAllTags] = useState([]);
+  // --- State ---
+  const [inputValue, setInputValue] = useState(''); // The current text in the input field
+  const [suggestions, setSuggestions] = useState([]); // The list of suggested tags
+  const [allTags, setAllTags] = useState([]); // All unique tags in the system
 
+  // --- Effect ---
+  // Fetch all existing tags from the system once when the component first loads.
   useEffect(() => {
     axios.get(`${API_URL}/tags`).then(res => {
       if (res.data.tags) setAllTags(res.data.tags);
     });
   }, []);
 
+  // --- Handlers ---
+
+  // Update the input value and filter suggestions as the user types.
   const handleInputChange = (e) => {
     const value = e.target.value;
     setInputValue(value);
@@ -29,23 +37,27 @@ function TagInput({ contact, onTagAdded }) {
     }
   };
 
+  // Add a tag to the contact, either from a suggestion click or form submission.
   const handleAddTag = (tagName) => {
     if (!tagName) return;
     axios.post(`${API_URL}/contacts/${contact.id}/tags`, { tagName })
       .then(res => {
-        onTagAdded(res.data);
-        setInputValue('');
-        setSuggestions([]);
+        onTagAdded(res.data); // Callback to parent to update the contact's tags
+        setInputValue('');    // Clear the input
+        setSuggestions([]); // Clear suggestions
       });
   };
 
+  // This function is called when the form is submitted (i.e., user presses Enter).
   const handleFormSubmit = (e) => {
     e.preventDefault();
     handleAddTag(inputValue.trim());
   };
 
+  // --- JSX Rendering ---
   return (
     <div className="tag-input-container">
+      {/* The onSubmit handler is added here */}
       <form onSubmit={handleFormSubmit}>
         <input 
           type="text" 

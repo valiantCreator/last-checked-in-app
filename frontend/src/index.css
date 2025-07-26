@@ -32,7 +32,7 @@ body {
   background-color: var(--background-color);
   color: var(--text-color);
   margin: 0;
-  padding: 1rem; /* Reduced padding for mobile */
+  padding: 1rem;
   transition: background-color 0.3s, color 0.3s;
 }
 
@@ -42,25 +42,25 @@ body {
   margin: auto;
 }
 
-/* --- UPDATED HEADER STYLES --- */
+/* Header styles */
 .app-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
   gap: 1rem;
-  flex-wrap: wrap; /* Allow wrapping on small screens */
+  flex-wrap: wrap;
 }
 
 .app-header h1 {
-    font-size: 1.5rem; /* Slightly smaller title on mobile */
+    font-size: 1.5rem;
     margin: 0;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem; /* Reduced gap for mobile */
+  gap: 1rem;
 }
 
 .theme-toggle-button {
@@ -74,7 +74,7 @@ body {
   transition: background-color 0.3s, color 0.3s;
 }
 
-/* Base styles for cards (form and contact items) */
+/* Base styles for cards */
 .card {
   background: var(--card-bg);
   padding: 1rem;
@@ -109,14 +109,11 @@ body {
 /* Contact item styles */
 .contact-item {
   border-left: 6px solid var(--primary-color);
-  position: relative; /* Keep for absolutely positioned children if any */
 }
-
-/* --- UPDATED CONTACT HEADER STYLES --- */
 .contact-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start; /* Align to top to handle wrapping */
+  align-items: flex-start;
   gap: 1rem;
 }
 .contact-header h3 { 
@@ -125,12 +122,11 @@ body {
 }
 .contact-header-actions {
     display: flex;
-    flex-direction: column; /* Stack buttons vertically */
-    align-items: flex-end; /* Align to the right */
+    flex-direction: column;
+    align-items: flex-end;
     gap: 0.5rem;
-    flex-shrink: 0; /* Prevent buttons from shrinking */
+    flex-shrink: 0;
 }
-
 .overdue {
   border-left-color: var(--overdue-border);
   background-color: var(--overdue-bg);
@@ -149,12 +145,14 @@ body {
   margin-bottom: 1.5rem;
 }
 .add-note-form textarea {
-  width: calc(100% - 1rem);
+  width: 100%;
+  box-sizing: border-box;
   min-height: 80px;
 }
-.add-note-form button {
-  align-self: flex-start;
-  padding: 0.5rem 1.5rem;
+/* --- NEW: Style for Add Note buttons --- */
+.add-note-actions {
+    display: flex;
+    gap: 0.5rem;
 }
 .note {
   background-color: var(--background-color);
@@ -169,7 +167,8 @@ body {
 }
 .note small { opacity: 0.7; }
 .note-edit-view textarea {
-  width: calc(100% - 1rem);
+  width: 100%;
+  box-sizing: border-box;
   min-height: 80px;
   margin-bottom: 0.5rem;
 }
@@ -197,7 +196,7 @@ body {
 /* Styles for new contact details */
 .form-grid {
   display: grid;
-  grid-template-columns: 1fr; /* Single column on mobile */
+  grid-template-columns: 1fr;
   gap: 1rem;
   margin-bottom: 1rem;
 }
@@ -264,7 +263,8 @@ body {
 .remove-tag-btn:hover { opacity: 1; }
 .tag-input-container { position: relative; }
 .tag-input {
-  width: calc(100% - 1.5rem);
+  width: 100%;
+  box-sizing: border-box;
   padding: 0.75rem;
   border: 1px solid var(--border-color);
   border-radius: 8px;
@@ -346,7 +346,7 @@ body {
   gap: 1rem;
 }
 
-/* --- UPDATED DYNAMIC FOOTER LAYOUT --- */
+/* Dynamic Footer Layout */
 .contact-footer {
   display: flex;
   justify-content: space-between;
@@ -355,14 +355,14 @@ body {
   margin-top: 1.5rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border-color);
-  flex-wrap: wrap; /* Allow wrapping */
+  flex-wrap: wrap;
 }
 .contact-footer .tag-input-container {
   flex-grow: 1;
   margin-top: 0;
   padding-top: 0;
   border-top: none;
-  min-width: 150px; /* Prevent it from getting too small */
+  min-width: 150px;
 }
 .footer-right-actions {
     display: flex;
@@ -387,7 +387,7 @@ body {
     border-color: var(--overdue-border);
 }
 
-/* Expand/Collapse Button (No longer absolute) */
+/* Expand/Collapse Button */
 .expand-collapse-button {
   padding: 0.5rem 1rem;
   border-radius: 8px;
@@ -565,14 +565,14 @@ input[type="date"]:valid { color: var(--text-color); }
     opacity: 0.7;
 }
 
-/* --- MEDIA QUERY FOR DESKTOP --- */
+/* Media Query for Desktop */
 @media (min-width: 768px) {
     .form-grid {
-        grid-template-columns: 1fr 1fr; /* Two columns on desktop */
+        grid-template-columns: 1fr 1fr;
     }
     .form-grid .full-width-field,
     .form-grid textarea,
     .form-grid .remind-me-container {
-        grid-column: 1 / -1; /* Span full width */
+        grid-column: 1 / -1;
     }
 }
