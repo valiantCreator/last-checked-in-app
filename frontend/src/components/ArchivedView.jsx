@@ -20,7 +20,7 @@ function ArchivedView({
               <div className="archived-actions">
                   {/* Each button calls the appropriate handler function passed down from App.jsx */}
                   <button className="button-secondary" onClick={() => onRestore(contact.id)}>Restore</button>
-                  <button className="delete-button" onClick={() => onDeletePermanently(contact.id)}>Delete Permanently</button>
+                  <button className="button-danger" onClick={() => onDeletePermanently(contact.id)}>Delete Permanently</button>
               </div>
           </div>
       ))}

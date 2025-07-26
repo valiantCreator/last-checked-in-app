@@ -83,7 +83,7 @@ body {
 
 /* Form-specific styles */
 .form-card {
-    max-width: 700px; /* Keep forms centered and readable */
+    max-width: 700px;
     margin-left: auto;
     margin-right: auto;
 }
@@ -108,7 +108,7 @@ body {
     opacity: 0.6;
 }
 
-/* --- NEW VIEW CONTROLS --- */
+/* View Controls */
 .view-controls {
     display: flex;
     justify-content: space-between;
@@ -137,19 +137,22 @@ body {
 }
 
 
-/* --- NEW CONTACTS CONTAINER STYLES --- */
+/* Contacts Container Styles */
 .contacts-container.list {
     max-width: 700px;
     margin: auto;
 }
 .contacts-container.grid {
     display: grid;
-    /* This creates a responsive grid. It will fit as many 280px columns as it can. */
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1rem;
 }
+/* --- THIS IS THE FIX --- */
+.contacts-container.grid .card {
+    margin: 0; /* Remove vertical margin for grid items */
+}
 
-/* --- NEW GRID ITEM STYLES --- */
+/* Grid Item Styles */
 .contact-item-grid {
     text-align: center;
     padding: 1.5rem 1rem;
@@ -172,7 +175,7 @@ body {
 }
 
 
-/* Contact item styles (for list view) */
+/* List Item Styles */
 .contact-item {
   border-left: 6px solid var(--primary-color);
 }
@@ -185,6 +188,7 @@ body {
 .contact-header h3 { 
     margin: 0; 
     line-height: 1.2;
+    word-break: break-word;
 }
 .contact-header-actions {
     display: flex;
@@ -258,7 +262,7 @@ body {
   opacity: 0.8;
 }
 
-/* Styles for new contact details */
+/* Form Grid Styles (Mobile First) */
 .form-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -402,7 +406,7 @@ body {
   line-height: 1;
 }
 
-/* View Toggle and Archive Styles */
+/* Archive Styles */
 .archived-list { margin-top: 2rem; max-width: 700px; margin-left: auto; margin-right: auto; }
 .archived-item {
   display: flex;
