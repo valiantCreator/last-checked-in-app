@@ -83,7 +83,6 @@ const createTables = async () => {
 // =================================================================
 // --- API Endpoints (PostgreSQL Version) ---
 // =================================================================
-
 app.get('/api/search', async (req, res) => {
     const { q } = req.query;
     if (!q) return res.json({ results: { contacts: [], notes: [] } });
@@ -247,13 +246,32 @@ app.post('/api/contacts/:id/tags', async (req, res) => {
     }
 });
 
+// --- UPDATED DELETE TAG ENDPOINT ---
 app.delete('/api/contacts/:contactId/tags/:tagId', async (req, res) => {
+    const { contactId, tagId } = req.params;
+    const client = await pool.connect();
     try {
-        await pool.query('DELETE FROM contact_tags WHERE contact_id = $1 AND tag_id = $2', [req.params.contactId, req.params.tagId]);
+        await client.query('BEGIN');
+        // Step 1: Remove the association
+        await client.query('DELETE FROM contact_tags WHERE contact_id = $1 AND tag_id = $2', [contactId, tagId]);
+        
+        // Step 2: Check if the tag is now orphaned
+        const usageResult = await client.query('SELECT COUNT(*) FROM contact_tags WHERE tag_id = $1', [tagId]);
+        const usageCount = parseInt(usageResult.rows[0].count, 10);
+
+        // Step 3: If orphaned, delete the tag from the main tags table
+        if (usageCount === 0) {
+            await client.query('DELETE FROM tags WHERE id = $1', [tagId]);
+        }
+        
+        await client.query('COMMIT');
         res.json({ message: 'Tag removed successfully' });
     } catch (err) {
+        await client.query('ROLLBACK');
         console.error(err);
         res.status(500).json({ error: err.message });
+    } finally {
+        client.release();
     }
 });
 
@@ -305,9 +323,51 @@ app.post('/api/devices/token', async (req, res) => {
     }
 });
 
+// --- SCHEDULED JOB ---
+cron.schedule('0 9 * * *', async () => {
+    console.log('Running daily check for overdue contacts...');
+    try {
+        const contactsResult = await pool.query("SELECT * FROM contacts WHERE is_archived = 0");
+        const allContacts = contactsResult.rows;
+
+        const devicesResult = await pool.query("SELECT fcm_token FROM devices");
+        const allDeviceTokens = devicesResult.rows.map(row => row.fcm_token);
+
+        if (allDeviceTokens.length === 0) {
+            console.log('No devices registered for notifications.');
+            return;
+        }
+
+        const overdueContacts = allContacts.filter(contact => {
+            const now = new Date();
+            if (contact.snooze_until && new Date(contact.snooze_until) > now) return false;
+            const lastCheckin = new Date(contact.lastCheckin);
+            const dueDate = new Date(lastCheckin.setDate(lastCheckin.getDate() + contact.checkinFrequency));
+            return dueDate < now;
+        });
+
+        if (overdueContacts.length > 0) {
+            console.log(`Found ${overdueContacts.length} overdue contacts. Sending notifications.`);
+            const message = {
+                notification: {
+                    title: 'Check-in Reminder!',
+                    body: `You have ${overdueContacts.length} people to check in with today.`
+                },
+                tokens: allDeviceTokens,
+            };
+
+            await admin.messaging().sendEachForMulticast(message);
+        } else {
+            console.log('No overdue contacts found today.');
+        }
+    } catch (error) {
+        console.error('Error sending notifications:', error);
+    }
+});
+
 
 // --- Start Server ---
 app.listen(PORT, () => {
     console.log(`Backend server is running on port ${PORT}`);
-    createTables(); // Create tables when the server starts
+    createTables();
 });
