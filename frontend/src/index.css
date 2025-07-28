@@ -648,3 +648,27 @@ input[type="date"]:valid { color: var(--text-color); }
         grid-column: 1 / -1;
     }
 }
+
+
+/* --- START: GRID VIEW IMPLEMENTATION --- */
+
+/* This container changes based on the displayMode state in App.jsx */
+.contacts-container.list {
+    max-width: 700px; /* Constrain width for single-column list view */
+    margin: auto;
+}
+
+.contacts-container.grid {
+    display: grid;
+    /* This creates a responsive multi-column layout */
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem; /* This creates the space between the cards */
+}
+
+/* When in grid mode, remove the default vertical margin from the cards
+   because the `gap` property on the container is handling the spacing. */
+.contacts-container.grid .card {
+    margin: 0;
+}
+
+/* --- END: GRID VIEW IMPLEMENTATION --- */
