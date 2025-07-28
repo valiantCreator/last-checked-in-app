@@ -136,52 +136,30 @@ body {
     border-color: var(--primary-color);
 }
 
-/* --- START: Final Grid Styles using Media Queries --- */
+/* --- START: Final, Corrected Grid & List View Styles --- */
 
-/* Default state (mobile-first): A single-column list for both modes.
-   This ensures the list view is never broken. */
+/* For LIST VIEW, we keep the container narrow and centered. */
 .contacts-container.list {
     max-width: 700px;
-    margin: auto;
+    margin: 0 auto;
 }
+
+/* For GRID VIEW, we let the container be full-width and apply the grid. */
 .contacts-container.grid {
-    max-width: 700px;
-    margin: auto;
+    display: grid;
+    /* This flexible rule creates as many columns as will fit.
+       240px is the minimum width for a card before it wraps to the next line. */
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+    /* We remove max-width and margin so it can fill the screen space */
+    max-width: none;
+    margin: 0;
 }
 
-/* --- Media Query for Small-ish Screens (like your phone) --- */
-/* When the screen is at least 500px wide... */
-@media (min-width: 500px) {
-    /* ...and we are in grid mode... */
-    .contacts-container.grid {
-        /* ...switch to a 2-column layout. */
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-        max-width: 1200px; /* Allow the container to be wider */
-    }
-    /* And remove the vertical margin on the cards ONLY in the grid */
-    .contacts-container.grid .card {
-        margin: 0;
-    }
-}
-
-/* --- Media Query for Medium Screens (tablets) --- */
-/* When the screen is at least 768px wide... */
-@media (min-width: 768px) {
-    .contacts-container.grid {
-        /* Switch to a 3-column layout */
-        grid-template-columns: 1fr 1fr 1fr;
-    }
-}
-
-/* --- Media Query for Large Screens (desktops) --- */
-/* When the screen is at least 1024px wide... */
-@media (min-width: 1024px) {
-    .contacts-container.grid {
-        /* Switch to a 4-column layout */
-        grid-template-columns: 1fr 1fr 1fr 1fr;
-    }
+/* This rule is essential: it removes the default top/bottom margin 
+   from .card elements ONLY when they are inside our new grid. */
+.contacts-container.grid .card {
+    margin: 0;
 }
 
 /* Styles for the compact card variant used in Grid View (these remain the same) */
@@ -216,14 +194,8 @@ body {
     font-size: 0.9rem;
 }
 
-/* This is the original rule for the detailed list item. It is NOT part of the new block.
-   Ensure it remains untouched elsewhere in your file. */
-.contact-item {
-  border-left: 6px solid var(--primary-color);
-}
+/* --- END: Final, Corrected Grid & List View Styles --- */
 
-
-/* --- END: Final Grid Styles using Media Queries --- */
 
 
 
