@@ -136,26 +136,28 @@ body {
     border-color: var(--primary-color);
 }
 
-/* --- START: Final Production Grid View Styles --- */
+/* --- START: List and Grid View Styles --- */
 
-/* 1. Styles for the container that holds all the cards */
+/* This rule styles the container when in LIST mode */
+.contacts-container.list {
+    max-width: 700px;
+    margin: auto;
+}
+
+/* This rule styles the container when in GRID mode */
 .contacts-container.grid {
     display: grid;
-    
-    /* This is the final, responsive rule. It creates as many columns as
-       will fit, with a smaller minimum width of 240px that works well
-       on mobile screens, while allowing for more columns on larger screens. */
+    /* This is the final, responsive rule that works on mobile and desktop */
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    
     gap: 1rem;
 }
 
-/* 2. When in grid mode, remove the default vertical margin from the cards */
+/* This resets the margin on cards ONLY when they are in a grid container */
 .contacts-container.grid .card {
     margin: 0;
 }
 
-/* 3. Styles for the individual cards when they are in grid mode */
+/* Styles for the compact card variant used in Grid View */
 .contact-item-grid {
     display: flex;
     flex-direction: column;
@@ -187,7 +189,7 @@ body {
     font-size: 0.9rem;
 }
 
-/* --- END: Final Production Grid View Styles --- */
+/* --- END: List and Grid View Styles --- */
 
 
 /* List Item Styles */
