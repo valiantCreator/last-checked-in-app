@@ -136,28 +136,55 @@ body {
     border-color: var(--primary-color);
 }
 
-/* --- START: List and Grid View Styles --- */
+/* --- START: Final Grid Styles using Media Queries --- */
 
-/* This rule styles the container when in LIST mode */
+/* Default state (mobile-first): A single-column list for both modes.
+   This ensures the list view is never broken. */
 .contacts-container.list {
     max-width: 700px;
     margin: auto;
 }
-
-/* This rule styles the container when in GRID mode */
 .contacts-container.grid {
-    display: grid;
-    /* This is the final, responsive rule that works on mobile and desktop */
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 1rem;
+    max-width: 700px;
+    margin: auto;
 }
 
-/* This resets the margin on cards ONLY when they are in a grid container */
-.contacts-container.grid .card {
-    margin: 0;
+/* --- Media Query for Small-ish Screens (like your phone) --- */
+/* When the screen is at least 500px wide... */
+@media (min-width: 500px) {
+    /* ...and we are in grid mode... */
+    .contacts-container.grid {
+        /* ...switch to a 2-column layout. */
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        max-width: 1200px; /* Allow the container to be wider */
+    }
+    /* And remove the vertical margin on the cards ONLY in the grid */
+    .contacts-container.grid .card {
+        margin: 0;
+    }
 }
 
-/* Styles for the compact card variant used in Grid View */
+/* --- Media Query for Medium Screens (tablets) --- */
+/* When the screen is at least 768px wide... */
+@media (min-width: 768px) {
+    .contacts-container.grid {
+        /* Switch to a 3-column layout */
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+}
+
+/* --- Media Query for Large Screens (desktops) --- */
+/* When the screen is at least 1024px wide... */
+@media (min-width: 1024px) {
+    .contacts-container.grid {
+        /* Switch to a 4-column layout */
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+    }
+}
+
+/* Styles for the compact card variant used in Grid View (these remain the same) */
 .contact-item-grid {
     display: flex;
     flex-direction: column;
@@ -189,7 +216,15 @@ body {
     font-size: 0.9rem;
 }
 
-/* --- END: List and Grid View Styles --- */
+/* This is the original rule for the detailed list item. It is NOT part of the new block.
+   Ensure it remains untouched elsewhere in your file. */
+.contact-item {
+  border-left: 6px solid var(--primary-color);
+}
+
+
+/* --- END: Final Grid Styles using Media Queries --- */
+
 
 
 /* List Item Styles */
