@@ -673,14 +673,20 @@ input[type="date"]:valid { color: var(--text-color); }
 
 /* --- END: GRID VIEW IMPLEMENTATION --- */
 
-/* --- START: Grid View Styles --- */
+/* --- START: Grid View Debugging Styles (REPLACE PREVIOUS GRID CSS) --- */
 
 /* 1. Styles for the container that holds all the cards */
 .contacts-container.grid {
     display: grid;
-    /* This creates the responsive multi-column layout */
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    
+    /* FORCING a 2-column layout to test if grid works at all.
+       This ignores the item widths and just divides the space in half. */
+    grid-template-columns: 1fr 1fr;
+    
     gap: 1rem;
+    
+    /* DEBUGGING: Add a red border to see the container's actual bounds on your phone */
+    border: 3px solid red; 
 }
 
 /* 2. When in grid mode, remove the default vertical margin from the cards */
@@ -689,9 +695,7 @@ input[type="date"]:valid { color: var(--text-color); }
 }
 
 /* 3. Styles for the individual cards when they are in grid mode */
-/* This class is already being applied by your ContactCard.jsx */
 .contact-item-grid {
-    /* This ensures the card can be a grid item */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -722,4 +726,4 @@ input[type="date"]:valid { color: var(--text-color); }
     font-size: 0.9rem;
 }
 
-/* --- END: Grid View Styles --- */
+/* --- END: Grid View Debugging Styles --- */
