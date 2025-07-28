@@ -38,8 +38,14 @@ body {
 
 /* Main app container */
 .app-container {
-  max-width: 1200px; /* Wider container for grid view */
+  max-width: 1200px;
   margin: auto;
+}
+
+/* This new wrapper constrains the width of the form and filters */
+.content-wrapper {
+  max-width: 700px;
+  margin: 0 auto;
 }
 
 /* Header styles */
@@ -83,9 +89,7 @@ body {
 
 /* Form-specific styles */
 .form-card {
-    max-width: 700px;
-    margin-left: auto;
-    margin-right: auto;
+    /* max-width and margin are now handled by the content-wrapper */
 }
 .form-card input,
 .form-card textarea {
@@ -113,8 +117,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    max-width: 700px;
-    margin: 1rem auto;
+    margin: 1rem 0; /* Adjusted margin since it's inside the wrapper */
 }
 .view-toggle-buttons button {
     background: none;
@@ -147,13 +150,9 @@ body {
 /* For GRID VIEW, we let the container be full-width and apply the grid. */
 .contacts-container.grid {
     display: grid;
-    /* This flexible rule creates as many columns as will fit.
-       240px is the minimum width for a card before it wraps to the next line. */
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 1rem;
-    /* We remove max-width and margin so it can fill the screen space */
-    max-width: none;
-    margin: 0;
+    margin-top: 1rem; /* Add some space above the grid */
 }
 
 /* This rule is essential: it removes the default top/bottom margin 
@@ -162,7 +161,7 @@ body {
     margin: 0;
 }
 
-/* Styles for the compact card variant used in Grid View (these remain the same) */
+/* Styles for the compact card variant used in Grid View */
 .contact-item-grid {
     display: flex;
     flex-direction: column;
@@ -195,9 +194,6 @@ body {
 }
 
 /* --- END: Final, Corrected Grid & List View Styles --- */
-
-
-
 
 /* List Item Styles */
 .contact-item {
@@ -382,9 +378,7 @@ body {
 
 /* Filter and Sort Controls Styles */
 .filter-controls {
-  max-width: 700px;
-  margin-left: auto;
-  margin-right: auto;
+  /* max-width and margin are now handled by the content-wrapper */
   display: flex;
   flex-direction: column;
   padding: 1rem 1.5rem;

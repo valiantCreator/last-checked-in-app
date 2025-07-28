@@ -31,8 +31,7 @@ function App() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [activeSearchFilter, setActiveSearchFilter] = useState('');
 
-  // --- New State for Display Mode ---
-  const [displayMode, setDisplayMode] = useState('list'); // 'list' or 'grid'
+  const [displayMode, setDisplayMode] = useState('list');
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -100,13 +99,6 @@ function App() {
     setGlobalSearchTerm('');
     setActiveSearchFilter('');
     setSearchResults(null);
-  };
-
-  const handleGlobalSearchChange = (value, lockIn = false) => {
-      setGlobalSearchTerm(value);
-      if (lockIn) {
-          setActiveSearchFilter(value);
-      }
   };
 
   const handleAddContact = (newContactData) => {
@@ -233,61 +225,65 @@ function App() {
 
       {view === 'active' ? (
         <>
-          <AddContactForm onContactAdded={handleAddContact} />
-          
-          <div className="card filter-controls">
-            <form className="search-container" onSubmit={handleSearchSubmit}>
-                <input
-                    type="text"
-                    placeholder="Search contacts and notes..."
-                    value={globalSearchTerm}
-                    onChange={(e) => setGlobalSearchTerm(e.target.value)}
-                    onFocus={() => setIsSearchFocused(true)}
-                    onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-                    className="search-input"
-                />
-                {activeSearchFilter && <button type="button" className="clear-search-button" onClick={handleClearSearch}>X</button>}
-                {isSearchFocused && searchResults && (
-                    <div className="search-results">
-                        {searchResults.contacts.length > 0 && (
-                            <div className="results-section"><h4>Contacts</h4><ul>{searchResults.contacts.map(c => <li key={`c-${c.id}`} onMouseDown={() => { setGlobalSearchTerm(c.firstName); setActiveSearchFilter(c.firstName); }}>{c.firstName}</li>)}</ul></div>
-                        )}
-                        {searchResults.notes.length > 0 && (
-                            <div className="results-section"><h4>Notes</h4><ul>{searchResults.notes.map(n => <li key={`n-${n.id}`} onMouseDown={() => { setGlobalSearchTerm(n.content); setActiveSearchFilter(n.content); }}>"{n.content.substring(0, 30)}..."<span className="note-contact-name">({n.contactFirstName})</span></li>)}</ul></div>
-                        )}
-                        {searchResults.contacts.length === 0 && searchResults.notes.length === 0 && debouncedGlobalSearch && (
-                            <p className="no-results">No results found.</p>
-                        )}
-                    </div>
-                )}
-            </form>
-            <div className="sort-controls">
-              <select className="sort-dropdown" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                <option value="newestFirst">Sort by: Date Added</option>
-                <option value="closestCheckin">Sort by: Closest Check-in</option>
-                <option value="mostOverdue">Sort by: Most Overdue</option>
-                <option value="nameAZ">Sort by: Name (A-Z)</option>
+          {/* This wrapper keeps the top content narrow and centered */}
+          <div className="content-wrapper">
+            <AddContactForm onContactAdded={handleAddContact} />
+            
+            <div className="card filter-controls">
+              <form className="search-container" onSubmit={handleSearchSubmit}>
+                  <input
+                      type="text"
+                      placeholder="Search contacts and notes..."
+                      value={globalSearchTerm}
+                      onChange={(e) => setGlobalSearchTerm(e.target.value)}
+                      onFocus={() => setIsSearchFocused(true)}
+                      onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+                      className="search-input"
+                  />
+                  {activeSearchFilter && <button type="button" className="clear-search-button" onClick={handleClearSearch}>X</button>}
+                  {isSearchFocused && searchResults && (
+                      <div className="search-results">
+                          {searchResults.contacts.length > 0 && (
+                              <div className="results-section"><h4>Contacts</h4><ul>{searchResults.contacts.map(c => <li key={`c-${c.id}`} onMouseDown={() => { setGlobalSearchTerm(c.firstName); setActiveSearchFilter(c.firstName); }}>{c.firstName}</li>)}</ul></div>
+                          )}
+                          {searchResults.notes.length > 0 && (
+                              <div className="results-section"><h4>Notes</h4><ul>{searchResults.notes.map(n => <li key={`n-${n.id}`} onMouseDown={() => { setGlobalSearchTerm(n.content); setActiveSearchFilter(n.content); }}>"{n.content.substring(0, 30)}..."<span className="note-contact-name">({n.contactFirstName})</span></li>)}</ul></div>
+                          )}
+                          {searchResults.contacts.length === 0 && searchResults.notes.length === 0 && debouncedGlobalSearch && (
+                              <p className="no-results">No results found.</p>
+                          )}
+                      </div>
+                  )}
+              </form>
+              <div className="sort-controls">
+                <select className="sort-dropdown" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                  <option value="newestFirst">Sort by: Date Added</option>
+                  <option value="closestCheckin">Sort by: Closest Check-in</option>
+                  <option value="mostOverdue">Sort by: Most Overdue</option>
+                  <option value="nameAZ">Sort by: Name (A-Z)</option>
+                </select>
+                <button className="sort-direction-button" onClick={() => setSortDirection(sd => sd === 'asc' ? 'desc' : 'asc')} title={`Sort ${sortDirection === 'asc' ? 'Descending' : 'Ascending'}`}>
+                  {sortDirection === 'asc' ? '↑' : '↓'}
+                </button>
+              </div>
+              <select className="tag-filter-dropdown" value={selectedTagId} onChange={(e) => setSelectedTagId(e.target.value)}>
+                  <option value="">Filter by Tag: All</option>
+                  {allTags.map(tag => (
+                      <option key={tag.id} value={tag.id}>{tag.name}</option>
+                  ))}
               </select>
-              <button className="sort-direction-button" onClick={() => setSortDirection(sd => sd === 'asc' ? 'desc' : 'asc')} title={`Sort ${sortDirection === 'asc' ? 'Descending' : 'Ascending'}`}>
-                {sortDirection === 'asc' ? '↑' : '↓'}
-              </button>
             </div>
-            <select className="tag-filter-dropdown" value={selectedTagId} onChange={(e) => setSelectedTagId(e.target.value)}>
-                <option value="">Filter by Tag: All</option>
-                {allTags.map(tag => (
-                    <option key={tag.id} value={tag.id}>{tag.name}</option>
-                ))}
-            </select>
-          </div>
 
-          <div className="view-controls">
-            <h2>My People</h2>
-            <div className="view-toggle-buttons">
-                <button className={displayMode === 'list' ? 'active' : ''} onClick={() => setDisplayMode('list')}>List</button>
-                <button className={displayMode === 'grid' ? 'active' : ''} onClick={() => setDisplayMode('grid')}>Grid</button>
+            <div className="view-controls">
+              <h2>My People</h2>
+              <div className="view-toggle-buttons">
+                  <button className={displayMode === 'list' ? 'active' : ''} onClick={() => setDisplayMode('list')}>List</button>
+                  <button className={displayMode === 'grid' ? 'active' : ''} onClick={() => setDisplayMode('grid')}>Grid</button>
+              </div>
             </div>
           </div>
           
+          {/* The contacts container is now outside the wrapper, so it can be full-width */}
           <div className={`contacts-container ${displayMode}`}>
             {filteredAndSortedContacts.map(contact => (
               <ContactCard 
