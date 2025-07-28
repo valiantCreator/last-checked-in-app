@@ -136,43 +136,58 @@ body {
     border-color: var(--primary-color);
 }
 
+/* --- START: Final Production Grid View Styles --- */
 
-/* Contacts Container Styles */
-.contacts-container.list {
-    max-width: 700px;
-    margin: auto;
-}
+/* 1. Styles for the container that holds all the cards */
 .contacts-container.grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    
+    /* This is the final, responsive rule. It creates as many columns as
+       will fit, with a smaller minimum width of 240px that works well
+       on mobile screens, while allowing for more columns on larger screens. */
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    
     gap: 1rem;
 }
-/* --- THIS IS THE FIX --- */
+
+/* 2. When in grid mode, remove the default vertical margin from the cards */
 .contacts-container.grid .card {
-    margin: 0; /* Remove vertical margin for grid items */
+    margin: 0;
 }
 
-/* Grid Item Styles */
+/* 3. Styles for the individual cards when they are in grid mode */
 .contact-item-grid {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     text-align: center;
     padding: 1.5rem 1rem;
+    height: 100%;
 }
+
 .contact-item-grid h3 {
     margin: 0 0 1rem 0;
+    font-size: 1.2rem;
 }
+
 .contact-item-grid p {
     margin: 0.25rem 0;
     opacity: 0.8;
 }
+
 .contact-item-grid strong {
     font-size: 1.1rem;
     font-weight: 500;
     opacity: 1;
 }
+
 .contact-item-grid .grid-birthday {
     margin-top: 1rem;
     font-size: 0.9rem;
 }
+
+/* --- END: Final Production Grid View Styles --- */
 
 
 /* List Item Styles */
@@ -648,81 +663,3 @@ input[type="date"]:valid { color: var(--text-color); }
         grid-column: 1 / -1;
     }
 }
-
-
-/* --- START: GRID VIEW IMPLEMENTATION --- */
-
-/* This container changes based on the displayMode state in App.jsx */
-.contacts-container.list {
-    max-width: 700px; /* Constrain width for single-column list view */
-    margin: auto;
-}
-
-.contacts-container.grid {
-    display: grid;
-    /* This creates a responsive multi-column layout */
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem; /* This creates the space between the cards */
-}
-
-/* When in grid mode, remove the default vertical margin from the cards
-   because the `gap` property on the container is handling the spacing. */
-.contacts-container.grid .card {
-    margin: 0;
-}
-
-/* --- END: GRID VIEW IMPLEMENTATION --- */
-
-
-/* --- START: Final Production Grid side-by-side View Styles --- */
-
-/* 1. Styles for the container that holds all the cards */
-.contacts-container.grid {
-    display: grid;
-    
-    /* This is the final, responsive rule. It creates as many columns as
-       will fit, with a smaller minimum width of 240px that works well
-       on mobile screens, while allowing for more columns on larger screens. */
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    
-    gap: 1rem;
-}
-
-/* 2. When in grid mode, remove the default vertical margin from the cards */
-.contacts-container.grid .card {
-    margin: 0;
-}
-
-/* 3. Styles for the individual cards when they are in grid mode */
-.contact-item-grid {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 1.5rem 1rem;
-    height: 100%;
-}
-
-.contact-item-grid h3 {
-    margin: 0 0 1rem 0;
-    font-size: 1.2rem;
-}
-
-.contact-item-grid p {
-    margin: 0.25rem 0;
-    opacity: 0.8;
-}
-
-.contact-item-grid strong {
-    font-size: 1.1rem;
-    font-weight: 500;
-    opacity: 1;
-}
-
-.contact-item-grid .grid-birthday {
-    margin-top: 1rem;
-    font-size: 0.9rem;
-}
-
-/* --- END: Final Production Grid View Styles --- */
