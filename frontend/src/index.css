@@ -672,3 +672,54 @@ input[type="date"]:valid { color: var(--text-color); }
 }
 
 /* --- END: GRID VIEW IMPLEMENTATION --- */
+
+/* --- START: Grid View Styles --- */
+
+/* 1. Styles for the container that holds all the cards */
+.contacts-container.grid {
+    display: grid;
+    /* This creates the responsive multi-column layout */
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+/* 2. When in grid mode, remove the default vertical margin from the cards */
+.contacts-container.grid .card {
+    margin: 0;
+}
+
+/* 3. Styles for the individual cards when they are in grid mode */
+/* This class is already being applied by your ContactCard.jsx */
+.contact-item-grid {
+    /* This ensures the card can be a grid item */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 1.5rem 1rem;
+    height: 100%; /* Makes cards in the same row equal height */
+}
+
+.contact-item-grid h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.2rem;
+}
+
+.contact-item-grid p {
+    margin: 0.25rem 0;
+    opacity: 0.8;
+}
+
+.contact-item-grid strong {
+    font-size: 1.1rem;
+    font-weight: 500;
+    opacity: 1;
+}
+
+.contact-item-grid .grid-birthday {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+/* --- END: Grid View Styles --- */
