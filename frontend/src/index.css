@@ -139,25 +139,29 @@ body {
 }
 
 
-/* --- START: Clean Grid & List View Styles --- */
+/* --- START: Flexbox Fallback for Grid View --- */
 
-/* For LIST VIEW, keep the container narrow and centered. */
+/* For LIST VIEW, this remains the same. */
 .contacts-container.list {
     max-width: 700px;
     margin: 0 auto;
 }
 
-/* For GRID VIEW, use a simple 2-column layout with gap for spacing. */
+/* For GRID VIEW, we now use Flexbox to create the layout. */
 .contacts-container.grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* Force 2 equal columns */
-    gap: 1rem; /* This handles BOTH vertical and horizontal spacing */
+    display: flex;
+    flex-wrap: wrap;
+    /* We use a negative margin to counteract the item margins for perfect alignment */
+    margin: -0.5rem; 
     margin-top: 1rem;
 }
 
-/* This rule removes the default margin from .card elements ONLY when they are in a grid. */
+/* This is the key change. We apply margin to the items themselves. */
 .contacts-container.grid .card {
-    margin: 0;
+    margin: 0.5rem; /* This creates 1rem of space between all items */
+    /* Each card will take up half the space, minus its own margin */
+    width: calc(50% - 1rem); 
+    flex-grow: 1;
 }
 
 /* Styles for the compact card variant used in Grid View */
@@ -192,7 +196,7 @@ body {
     font-size: 0.9rem;
 }
 
-/* --- END: Clean Grid & List View Styles --- */
+/* --- END: Flexbox Fallback for Grid View --- */
 
 
 /* List Item Styles */
