@@ -225,7 +225,6 @@ function App() {
 
       {view === 'active' ? (
         <>
-          {/* This wrapper keeps the top content narrow and centered */}
           <div className="content-wrapper">
             <AddContactForm onContactAdded={handleAddContact} />
             
@@ -283,7 +282,6 @@ function App() {
             </div>
           </div>
           
-          {/* The contacts container is now outside the wrapper, so it can be full-width */}
           <div className={`contacts-container ${displayMode}`}>
             {filteredAndSortedContacts.map(contact => (
               <ContactCard 

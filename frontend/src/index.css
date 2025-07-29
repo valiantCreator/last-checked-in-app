@@ -139,29 +139,28 @@ body {
 }
 
 
-/* --- START: Final Diagnostic Grid Fix (with !important) --- */
+/* --- START: Clean Grid & List View Styles --- */
 
-/* For LIST VIEW, this remains the same. */
+/* For LIST VIEW, keep the container narrow and centered. */
 .contacts-container.list {
     max-width: 700px;
     margin: 0 auto;
 }
 
-/* For GRID VIEW, we use grid for columns and margin for rows. */
+/* For GRID VIEW, use a simple 2-column layout with gap for spacing. */
 .contacts-container.grid {
     display: grid;
     grid-template-columns: 1fr 1fr; /* Force 2 equal columns */
-    column-gap: 1rem;             /* Horizontal spacing */
+    gap: 1rem; /* This handles BOTH vertical and horizontal spacing */
     margin-top: 1rem;
 }
 
-/* This is the key change for vertical spacing, now with !important */
+/* This rule removes the default margin from .card elements ONLY when they are in a grid. */
 .contacts-container.grid .card {
-    margin: 0 !important; /* Reset all margins first */
-    margin-bottom: 1rem !important; /* Add 1rem of space ONLY below each card */
+    margin: 0;
 }
 
-/* Styles for the compact card variant used in Grid View (these remain the same) */
+/* Styles for the compact card variant used in Grid View */
 .contact-item-grid {
     display: flex;
     flex-direction: column;
@@ -193,7 +192,7 @@ body {
     font-size: 0.9rem;
 }
 
-/* --- END: Final Diagnostic Grid Fix (with !important) --- */
+/* --- END: Clean Grid & List View Styles --- */
 
 
 /* List Item Styles */
