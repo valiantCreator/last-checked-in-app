@@ -153,10 +153,10 @@ body {
     margin: 0 auto;
 }
 
-/* For GRID VIEW, use the simple 2-column layout that we know works. */
+/* For GRID VIEW, use the simple 3-column layout. */
 .contacts-container.grid {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* Force 2 equal columns */
+    grid-template-columns: 1fr 1fr 1fr; /* Force 3 equal columns */
     gap: 1rem; /* This handles BOTH vertical and horizontal spacing */
     margin-top: 1rem;
 }
