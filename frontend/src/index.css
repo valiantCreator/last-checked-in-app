@@ -141,18 +141,18 @@ body {
     border-color: var(--primary-color);
 }
 
-/* --- START: Final, Corrected Grid & List View Styles --- */
+/* --- START: Simplified Grid Fix --- */
 
-/* For LIST VIEW, we keep the container narrow and centered. */
+/* For LIST VIEW, this remains the same. */
 .contacts-container.list {
     max-width: 700px;
     margin: 0 auto;
 }
 
-/* For GRID VIEW, we let the container be full-width and apply the grid. */
+/* For GRID VIEW, we are forcing the simple 2-column layout that worked during our debug test. */
 .contacts-container.grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: 1fr 1fr; /* Force 2 equal columns */
     gap: 1rem;
     margin-top: 1rem;
 }
@@ -163,7 +163,7 @@ body {
     margin: 0;
 }
 
-/* Styles for the compact card variant used in Grid View */
+/* Styles for the compact card variant used in Grid View (these remain the same) */
 .contact-item-grid {
     display: flex;
     flex-direction: column;
@@ -195,7 +195,8 @@ body {
     font-size: 0.9rem;
 }
 
-/* --- END: Final, Corrected Grid & List View Styles --- */
+/* --- END: Simplified Grid Fix --- */
+
 
 /* List Item Styles */
 .contact-item {
