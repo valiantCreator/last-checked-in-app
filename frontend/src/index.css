@@ -139,7 +139,7 @@ body {
 }
 
 
-/* --- START: Final Grid Fix with Margin-Based Row Spacing --- */
+/* --- START: Final Diagnostic Grid Fix (with !important) --- */
 
 /* For LIST VIEW, this remains the same. */
 .contacts-container.list {
@@ -153,13 +153,12 @@ body {
     grid-template-columns: 1fr 1fr; /* Force 2 equal columns */
     column-gap: 1rem;             /* Horizontal spacing */
     margin-top: 1rem;
-    /* We remove the `gap` or `row-gap` property entirely */
 }
 
-/* This is the key change for vertical spacing. */
+/* This is the key change for vertical spacing, now with !important */
 .contacts-container.grid .card {
-    margin: 0; /* Reset all margins first */
-    margin-bottom: 1rem; /* Add 1rem of space ONLY below each card */
+    margin: 0 !important; /* Reset all margins first */
+    margin-bottom: 1rem !important; /* Add 1rem of space ONLY below each card */
 }
 
 /* Styles for the compact card variant used in Grid View (these remain the same) */
@@ -194,7 +193,7 @@ body {
     font-size: 0.9rem;
 }
 
-/* --- END: Final Grid Fix with Margin-Based Row Spacing --- */
+/* --- END: Final Diagnostic Grid Fix (with !important) --- */
 
 
 /* List Item Styles */
