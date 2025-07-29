@@ -1,3 +1,10 @@
+/* --- Global Reset and Box Sizing --- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 /* Define color variables for the default (light) theme */
 :root {
   --background-color: #f4f4f9;
@@ -99,7 +106,6 @@ body {
   border-radius: 8px;
   background-color: var(--background-color);
   color: var(--text-color);
-  box-sizing: border-box;
   width: 100%;
 }
 .form-card textarea {
@@ -139,29 +145,25 @@ body {
 }
 
 
-/* --- START: Flexbox Fallback for Grid View --- */
+/* --- START: Final Grid & List View Styles --- */
 
-/* For LIST VIEW, this remains the same. */
+/* For LIST VIEW, keep the container narrow and centered. */
 .contacts-container.list {
     max-width: 700px;
     margin: 0 auto;
 }
 
-/* For GRID VIEW, we now use Flexbox to create the layout. */
+/* For GRID VIEW, use the simple 2-column layout that we know works. */
 .contacts-container.grid {
-    display: flex;
-    flex-wrap: wrap;
-    /* We use a negative margin to counteract the item margins for perfect alignment */
-    margin: -0.5rem; 
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Force 2 equal columns */
+    gap: 1rem; /* This handles BOTH vertical and horizontal spacing */
     margin-top: 1rem;
 }
 
-/* This is the key change. We apply margin to the items themselves. */
+/* This rule removes the default margin from .card elements ONLY when they are in a grid. */
 .contacts-container.grid .card {
-    margin: 0.5rem; /* This creates 1rem of space between all items */
-    /* Each card will take up half the space, minus its own margin */
-    width: calc(50% - 1rem); 
-    flex-grow: 1;
+    margin: 0;
 }
 
 /* Styles for the compact card variant used in Grid View */
@@ -196,7 +198,7 @@ body {
     font-size: 0.9rem;
 }
 
-/* --- END: Flexbox Fallback for Grid View --- */
+/* --- END: Final Grid & List View Styles --- */
 
 
 /* List Item Styles */
@@ -240,7 +242,6 @@ body {
 }
 .add-note-form textarea {
   width: 100%;
-  box-sizing: border-box;
   min-height: 80px;
 }
 .add-note-actions {
@@ -261,7 +262,6 @@ body {
 .note small { opacity: 0.7; }
 .note-edit-view textarea {
   width: 100%;
-  box-sizing: border-box;
   min-height: 80px;
   margin-bottom: 0.5rem;
 }
@@ -357,7 +357,6 @@ body {
 .tag-input-container { position: relative; }
 .tag-input {
   width: 100%;
-  box-sizing: border-box;
   padding: 0.75rem;
   border: 1px solid var(--border-color);
   border-radius: 8px;
