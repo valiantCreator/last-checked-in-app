@@ -36,7 +36,6 @@ body {
   transition: background-color 0.3s, color 0.3s;
 }
 
-/* --- STRUCTURAL FIX --- */
 /* Main app container is now FULL-WIDTH */
 .app-container {
   width: 100%;
@@ -47,8 +46,6 @@ body {
   max-width: 700px;
   margin: 0 auto;
 }
-/* --- END STRUCTURAL FIX --- */
-
 
 /* Header styles */
 .app-header {
@@ -141,6 +138,7 @@ body {
     border-color: var(--primary-color);
 }
 
+
 /* --- START: Simplified Grid Fix --- */
 
 /* For LIST VIEW, this remains the same. */
@@ -153,7 +151,8 @@ body {
 .contacts-container.grid {
     display: grid;
     grid-template-columns: 1fr 1fr; /* Force 2 equal columns */
-    gap: 1rem;
+    column-gap: 1rem; /* Explicitly set horizontal spacing */
+    row-gap: 1rem;    /* Explicitly set vertical spacing */
     margin-top: 1rem;
 }
 
