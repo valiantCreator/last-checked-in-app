@@ -139,7 +139,7 @@ body {
 }
 
 
-/* --- START: Simplified Grid Fix --- */
+/* --- START: Simplified Grid Fix with Margin --- */
 
 /* For LIST VIEW, this remains the same. */
 .contacts-container.list {
@@ -147,19 +147,19 @@ body {
     margin: 0 auto;
 }
 
-/* For GRID VIEW, we are forcing the simple 2-column layout that worked during our debug test. */
+/* For GRID VIEW, we use grid for columns and margin for rows. */
 .contacts-container.grid {
     display: grid;
     grid-template-columns: 1fr 1fr; /* Force 2 equal columns */
-    column-gap: 1rem; /* Explicitly set horizontal spacing */
-    row-gap: 1rem;    /* Explicitly set vertical spacing */
+    column-gap: 1rem; /* Horizontal spacing */
     margin-top: 1rem;
+    /* row-gap is removed as it was not working reliably */
 }
 
-/* This rule is essential: it removes the default top/bottom margin 
-   from .card elements ONLY when they are inside our new grid. */
+/* This is the key change for vertical spacing. */
 .contacts-container.grid .card {
-    margin: 0;
+    margin: 0; /* Reset all margins first */
+    margin-bottom: 1rem; /* Add 1rem of space ONLY below each card */
 }
 
 /* Styles for the compact card variant used in Grid View (these remain the same) */
@@ -194,7 +194,7 @@ body {
     font-size: 0.9rem;
 }
 
-/* --- END: Simplified Grid Fix --- */
+/* --- END: Simplified Grid Fix with Margin --- */
 
 
 /* List Item Styles */
