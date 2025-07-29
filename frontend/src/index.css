@@ -139,29 +139,31 @@ body {
     border-color: var(--primary-color);
 }
 
-/* --- START: Final, Corrected Grid & List View Styles --- */
+/* --- START: Final Debugging Grid Styles (with !important) --- */
 
-/* For LIST VIEW, we keep the container narrow and centered. */
+/* For LIST VIEW, we force the container to be narrow and centered. */
 .contacts-container.list {
-    max-width: 700px;
-    margin: 0 auto;
+    max-width: 700px !important;
+    margin: 0 auto !important;
+    display: block !important; 
 }
 
-/* For GRID VIEW, we let the container be full-width and apply the grid. */
+/* For GRID VIEW, we force the grid layout. */
 .contacts-container.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 1rem;
-    margin-top: 1rem; /* Add some space above the grid */
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important;
+    gap: 1rem !important;
+    max-width: none !important;
+    margin: 0 !important;
+    margin-top: 1rem !important;
 }
 
-/* This rule is essential: it removes the default top/bottom margin 
-   from .card elements ONLY when they are inside our new grid. */
+/* This forces the margin reset on grid cards. */
 .contacts-container.grid .card {
-    margin: 0;
+    margin: 0 !important;
 }
 
-/* Styles for the compact card variant used in Grid View */
+/* Styles for the compact card variant used in Grid View (these remain the same) */
 .contact-item-grid {
     display: flex;
     flex-direction: column;
@@ -193,7 +195,7 @@ body {
     font-size: 0.9rem;
 }
 
-/* --- END: Final, Corrected Grid & List View Styles --- */
+/* --- END: Final Debugging Grid Styles (with !important) --- */
 
 /* List Item Styles */
 .contact-item {
