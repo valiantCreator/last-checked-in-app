@@ -145,7 +145,7 @@ body {
 }
 
 
-/* --- START: Final Grid & List View Styles --- */
+/* --- START: Final Responsive Grid & List View Styles --- */
 
 /* For LIST VIEW, keep the container narrow and centered. */
 .contacts-container.list {
@@ -153,10 +153,11 @@ body {
     margin: 0 auto;
 }
 
-/* For GRID VIEW, use the simple 3-column layout. */
+/* For GRID VIEW, use the responsive auto-fill layout. */
 .contacts-container.grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr; /* Force 3 equal columns */
+    /* This is the key change: it creates a responsive grid. */
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 1rem; /* This handles BOTH vertical and horizontal spacing */
     margin-top: 1rem;
 }
@@ -198,7 +199,7 @@ body {
     font-size: 0.9rem;
 }
 
-/* --- END: Final Grid & List View Styles --- */
+/* --- END: Final Responsive Grid & List View Styles --- */
 
 
 /* List Item Styles */
