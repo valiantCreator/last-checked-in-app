@@ -5,6 +5,18 @@
   box-sizing: border-box;
 }
 
+/* Logo styling */
+.logo-title-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem; /* Adjusts space between logo and title */
+}
+
+.app-logo {
+  height: 40px; /* Or any size you prefer */
+  width: auto;
+}
+
 /* Define color variables for the default (light) theme */
 :root {
   --background-color: #f4f4f9;

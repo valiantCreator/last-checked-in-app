@@ -3,12 +3,12 @@
   "name": "Last Checked In",
   "icons": [
     {
-      "src": "/logo192.png",
+      "src": "/LogoV1.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "/logo512.png",
+      "src": "/LogoV1.png",
       "type": "image/png",
       "sizes": "512x512"
     }
