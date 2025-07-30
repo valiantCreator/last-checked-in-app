@@ -1,5 +1,12 @@
-// This file centralizes the API URL for the entire application.
-// If you ever change your backend hosting, you only need to update it here.
+// This file centralizes the API URL and makes it dynamic.
 
-// IMPORTANT: Replace this with the public URL of your deployed backend on Render.
-export const API_URL = 'https://last-checked-in-api.onrender.com/api'; 
+// Vite sets this environment variable automatically.
+// It will be 'development' when you run `npm run dev`.
+// It will be 'production' when you build the app for deployment.
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+const productionURL = 'https://last-checked-in-api.onrender.com/api';
+const developmentURL = 'http://localhost:3001/api';
+
+// Export the correct URL based on the current environment.
+export const API_URL = isDevelopment ? developmentURL : productionURL;
