@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useDebounce } from 'use-debounce';
+import { Toaster, toast } from 'react-hot-toast'; // Import toast components
 import { requestForToken } from './firebase';
 import Header from './components/Header.jsx';
 import AddContactForm from './components/AddContactForm.jsx';
@@ -37,9 +38,19 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
   
+  const fetchContacts = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/contacts`);
+      setContacts(res.data.contacts.map(c => ({ ...c, notes: [], tags: c.tags || [] })));
+    } catch (error) {
+      console.error("Failed to fetch contacts", error);
+      toast.error("Could not load contacts.");
+    }
+  };
+
   useEffect(() => {
     requestForToken();
-    axios.get(`${API_URL}/contacts`).then(res => setContacts(res.data.contacts.map(c => ({ ...c, notes: [], tags: c.tags || [] }))));
+    fetchContacts(); // Use the new fetch function on initial load
     axios.get(`${API_URL}/tags`).then(res => setAllTags(res.data.tags || []));
   }, []);
 
@@ -51,16 +62,6 @@ function App() {
         setSearchResults(null);
     }
   }, [debouncedGlobalSearch]);
-
-  const fetchContacts = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/contacts`);
-      // Update the state with the fresh data from the server
-      setContacts(res.data.contacts.map(c => ({ ...c, notes: [], tags: c.tags || [] })));
-    } catch (error) {
-      console.error("Failed to fetch contacts", error);
-    }
-  };
 
   const filteredAndSortedContacts = useMemo(() => {
     let displayedContacts = [...contacts];
@@ -113,18 +114,19 @@ function App() {
 
   const handleAddContact = (newContactData) => {
     setContacts(c => [...c, newContactData]);
+    toast.success(`${newContactData.firstName} added!`);
   };
-  // (Also, update handleCheckIn and handleSnooze to use the new pattern)
   const handleCheckIn = (id) => {
     axios.post(`${API_URL}/contacts/${id}/checkin`)
-      .then(() => fetchContacts()); // Re-fetch on success
+      .then(() => fetchContacts())
+      .then(() => toast.success("Checked in!"));
   };
-
   const handleUpdateContact = (updatedContact) => {
     axios.put(`${API_URL}/contacts/${updatedContact.id}`, updatedContact)
       .then(() => {
-        setContacts(contacts.map(c => c.id === updatedContact.id ? updatedContact : c));
         setEditingContact(null);
+        fetchContacts();
+        toast.success("Contact updated!");
       });
   };
   const handleToggleNotesList = (contactId) => {
@@ -146,6 +148,7 @@ function App() {
         const newNote = res.data;
         setContacts(cs => cs.map(c => c.id === contactId ? { ...c, notes: [newNote, ...c.notes] } : c));
         setAddingNoteToContactId(null);
+        toast.success("Note saved!");
       });
   };
   const handleUpdateNote = (contactId, noteId, newContent) => {
@@ -159,6 +162,7 @@ function App() {
           return c;
         }));
         setEditingNote(null);
+        toast.success("Note updated!");
       });
   };
   const handleTagAdded = (contactId, newTag) => {
@@ -182,11 +186,8 @@ function App() {
   };
   const handleArchiveContact = (contactId) => {
     axios.put(`${API_URL}/contacts/${contactId}/archive`).then(() => {
-        const contactToArchive = contacts.find(c => c.id === contactId);
-        if (contactToArchive) {
-            setArchivedContacts([...archivedContacts, contactToArchive]);
-        }
-        setContacts(contacts.filter(c => c.id !== contactId));
+        fetchContacts();
+        toast.success("Contact archived.");
     });
   };
   const handleRestoreContact = (contactId) => {
@@ -196,42 +197,36 @@ function App() {
         if (contactToRestore) {
             setContacts([...contacts, { ...contactToRestore, notes: [], tags: contactToRestore.tags || [] }]);
         }
+        toast.success("Contact restored!");
     });
   };
   const handleDeletePermanently = (contactId) => {
     axios.delete(`${API_URL}/contacts/${contactId}`).then(() => {
         setArchivedContacts(archivedContacts.filter(c => c.id !== contactId));
+        toast.success("Contact permanently deleted.");
     });
   };
- const handleSnooze = (contactId, days) => {
-    axios.put(`${API_URL}/contacts/${contactId}/snooze`, { snooze_days: days })
-      .then(() => {
+  const handleSnooze = (contactId, days) => {
+    axios.put(`${API_URL}/contacts/${contactId}/snooze`, { snooze_days: days }).then(() => {
         setSnoozingContactId(null);
-        fetchContacts(); // Re-fetch on success
-      });
+        fetchContacts();
+        toast.success("Snoozed!");
+    });
   };
-
-  // (Replace your existing handleMakeOverdue with this one)
   const handleMakeOverdue = async (contactId) => {
     try {
-      // Get the unique FCM token for this device
-      const currentToken = await requestForToken(); // Assumes this function is exported from firebase.js
-      
+      const currentToken = await requestForToken();
       if (currentToken) {
         console.log("Sending test notification to token:", currentToken);
-        // Call our new backend endpoint
         await axios.post(`${API_URL}/contacts/${contactId}/test-overdue`, { fcmToken: currentToken });
-        
-        // On success, re-fetch all contacts to refresh the UI. This fixes the state issue.
         await fetchContacts();
-        
-        alert('Test notification sent!'); // Simple feedback for the user
+        toast.success('Test notification sent!'); // Use toast instead of alert
       } else {
-        alert('Could not get notification token. Please grant permission.');
+        toast.error('Could not get notification token. Please grant permission.'); // Use toast instead of alert
       }
     } catch (err) {
       console.error('Error sending test notification:', err);
-      alert('Failed to send test notification.');
+      toast.error('Failed to send test notification.'); // Use toast instead of alert
     }
   };
 
@@ -247,6 +242,18 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* Add the Toaster component here */}
+      <Toaster 
+        position="top-center"
+        toastOptions={{
+          // Define default options
+          duration: 3000,
+          style: {
+            background: 'var(--card-bg)',
+            color: 'var(--text-color)',
+          },
+        }}
+      />
       <Header 
         view={view} 
         archivedContacts={archivedContacts} 
@@ -328,9 +335,9 @@ function App() {
         </>
       ) : (
         <ArchivedView 
-            archivedContacts={archivedContacts} 
-            onRestore={handleRestoreContact}
-            onDeletePermanently={handleDeletePermanently}
+          archivedContacts={archivedContacts} 
+          onRestore={handleRestoreContact}
+          onDeletePermanently={handleDeletePermanently}
         />
       )}
     </div>
