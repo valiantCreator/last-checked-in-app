@@ -52,6 +52,16 @@ function App() {
     }
   }, [debouncedGlobalSearch]);
 
+  const fetchContacts = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/contacts`);
+      // Update the state with the fresh data from the server
+      setContacts(res.data.contacts.map(c => ({ ...c, notes: [], tags: c.tags || [] })));
+    } catch (error) {
+      console.error("Failed to fetch contacts", error);
+    }
+  };
+
   const filteredAndSortedContacts = useMemo(() => {
     let displayedContacts = [...contacts];
 
@@ -104,10 +114,12 @@ function App() {
   const handleAddContact = (newContactData) => {
     setContacts(c => [...c, newContactData]);
   };
+  // (Also, update handleCheckIn and handleSnooze to use the new pattern)
   const handleCheckIn = (id) => {
     axios.post(`${API_URL}/contacts/${id}/checkin`)
-      .then(res => setContacts(contacts.map(c => c.id === id ? { ...c, lastCheckin: res.data.lastCheckin, snooze_until: null } : c)));
+      .then(() => fetchContacts()); // Re-fetch on success
   };
+
   const handleUpdateContact = (updatedContact) => {
     axios.put(`${API_URL}/contacts/${updatedContact.id}`, updatedContact)
       .then(() => {
@@ -191,16 +203,36 @@ function App() {
         setArchivedContacts(archivedContacts.filter(c => c.id !== contactId));
     });
   };
-  const handleSnooze = (contactId, days) => {
-    axios.put(`${API_URL}/contacts/${contactId}/snooze`, { snooze_days: days }).then(res => {
-        setContacts(contacts.map(c => c.id === contactId ? { ...c, snooze_until: res.data.snooze_until } : c));
+ const handleSnooze = (contactId, days) => {
+    axios.put(`${API_URL}/contacts/${contactId}/snooze`, { snooze_days: days })
+      .then(() => {
         setSnoozingContactId(null);
-    });
+        fetchContacts(); // Re-fetch on success
+      });
   };
-  const handleMakeOverdue = (contactId) => {
-    axios.put(`${API_URL}/contacts/${contactId}/make-overdue`).then(res => {
-        setContacts(contacts.map(c => c.id === contactId ? { ...c, lastCheckin: res.data.lastCheckin } : c));
-    });
+
+  // (Replace your existing handleMakeOverdue with this one)
+  const handleMakeOverdue = async (contactId) => {
+    try {
+      // Get the unique FCM token for this device
+      const currentToken = await requestForToken(); // Assumes this function is exported from firebase.js
+      
+      if (currentToken) {
+        console.log("Sending test notification to token:", currentToken);
+        // Call our new backend endpoint
+        await axios.post(`${API_URL}/contacts/${contactId}/test-overdue`, { fcmToken: currentToken });
+        
+        // On success, re-fetch all contacts to refresh the UI. This fixes the state issue.
+        await fetchContacts();
+        
+        alert('Test notification sent!'); // Simple feedback for the user
+      } else {
+        alert('Could not get notification token. Please grant permission.');
+      }
+    } catch (err) {
+      console.error('Error sending test notification:', err);
+      alert('Failed to send test notification.');
+    }
   };
 
   const handlers = {

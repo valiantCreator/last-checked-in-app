@@ -1,7 +1,7 @@
 // This file must be in the public folder
-
-importScripts("https://www.gstatic.com/firebasejs/9.2.0/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/9.2.0/firebase-messaging-compat.js");
+// Import the Firebase scripts
+importScripts("https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js");
 
 // --- IMPORTANT ---
 // Paste your own firebaseConfig object here
@@ -18,22 +18,21 @@ const firebaseConfig = {
   measurementId: "G-6PW5VDQPJQ"
 };
 
-// Initialize Firebase within the service worker
+// Initialize the Firebase app in the service worker
 firebase.initializeApp(firebaseConfig);
 
 const messaging = firebase.messaging();
 
-// This function handles messages that are received while the app is in the background (i.e., tab is not active, or browser is minimized).
-messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  
-  // Extract the title and body from the incoming notification payload.
-  const notificationTitle = payload.notification.title;
+// Handle background messages
+messaging.onBackgroundMessage(function(payload) {
+  console.log('Received background message ', payload);
+
+  // Customize the notification here
+  const notificationTitle = payload.data.title;
   const notificationOptions = {
-    body: payload.notification.body,
-    icon: '/logo192.png' // Optional: You can place an icon in your 'public' folder to be displayed with the notification.
+    body: payload.data.body,
+    icon: '/LogoV1.png' // Or another icon in your public folder
   };
 
-  // Use the browser's Service Worker API to show the notification to the user.
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  return self.registration.showNotification(notificationTitle, notificationOptions);
 });

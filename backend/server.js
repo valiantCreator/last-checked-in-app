@@ -323,6 +323,48 @@ app.post('/api/devices/token', async (req, res) => {
     }
 });
 
+// --- Test Overdue Button Functionality ---
+app.post('/api/contacts/:id/test-overdue', async (req, res) => {
+  const { id } = req.params;
+  const { fcmToken } = req.body;
+
+  if (!fcmToken) {
+    return res.status(400).json({ error: 'FCM token is required.' });
+  }
+
+  try {
+    const client = await pool.connect();
+
+    // Step 1: Get the contact's current check-in frequency
+    const freqResult = await client.query('SELECT "firstName", "checkinFrequency" FROM contacts WHERE id = $1', [id]);
+    const { firstName, checkinFrequency } = freqResult.rows[0];
+    const contactName = firstName || 'A contact';
+
+    // Step 2: Calculate a new date that is exactly one day overdue
+    const overdueDate = new Date();
+    overdueDate.setDate(overdueDate.getDate() - (checkinFrequency + 1));
+    await client.query('UPDATE contacts SET "lastCheckin" = $1 WHERE id = $2', [overdueDate, id]);
+    
+    client.release();
+
+    // Step 3: Send the notification using only the 'data' payload
+    const message = {
+      data: {
+        title: 'Overdue Test Successful!',
+        body: `You have a new overdue notification for ${contactName}.`,
+      },
+      token: fcmToken
+    };
+    await admin.messaging().send(message);
+
+    res.json({ message: 'Contact made overdue and test notification sent successfully.' });
+  } catch (error) {
+    console.error('Error in test-overdue endpoint:', error);
+    res.status(500).json({ error: 'Failed to process request.' });
+  }
+});
+
+
 // --- SCHEDULED JOB ---
 cron.schedule('0 9 * * *', async () => {
     console.log('Running daily check for overdue contacts...');
