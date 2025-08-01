@@ -6,7 +6,7 @@ function ContactCard({
   contact,
   handlers,
   uiState,
-  displayMode // New prop to determine the layout
+  displayMode
 }) {
   const { editingContact, expandedContactId, addingNoteToContactId, editingNote, snoozingContactId } = uiState;
   const {
@@ -36,6 +36,29 @@ function ContactCard({
   const isEditingThisContact = editingContact && editingContact.id === contact.id;
   const isExpanded = expandedContactId === contact.id;
   const isAddingNote = addingNoteToContactId === contact.id;
+
+  // --- NEW: Logic to determine what to display for the next check-in date ---
+  const getNextCheckinDisplay = () => {
+    const isSnoozed = contact.snooze_until && new Date(contact.snooze_until) > new Date();
+    if (isSnoozed) {
+      return new Date(contact.snooze_until).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+
+    const nextCheckinDate = new Date(contact.lastCheckin);
+    nextCheckinDate.setDate(nextCheckinDate.getDate() + contact.checkinFrequency);
+    
+    const today = new Date();
+    // Compare year, month, and day, ignoring the time
+    if (nextCheckinDate.getFullYear() === today.getFullYear() &&
+        nextCheckinDate.getMonth() === today.getMonth() &&
+        nextCheckinDate.getDate() === today.getDate()) {
+      return 'Today';
+    }
+
+    return calculateNextCheckinDate(contact.lastCheckin, contact.checkinFrequency);
+  };
+  const nextCheckinDisplay = getNextCheckinDisplay();
+  // --- END NEW LOGIC ---
 
   const startEditingContact = () => {
     setEditingContactState({ ...contact });
@@ -71,13 +94,8 @@ function ContactCard({
         <div className={`card contact-item-grid ${overdue ? 'overdue' : ''}`}>
             <h3>{contact.firstName}</h3>
             <p>Next check-in:</p>
-            <strong>
-              {contact.snooze_until && new Date(contact.snooze_until) > new Date()
-                ? new Date(contact.snooze_until).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-                : calculateNextCheckinDate(contact.lastCheckin, contact.checkinFrequency)
-              }
-            </strong>
-            {contact.birthday && <p className="grid-birthday">🎂 {formatBirthday(contact.birthday)}</p>}
+            <strong>{nextCheckinDisplay}</strong>
+            {contact.birthday && <p className="grid-birthday">� {formatBirthday(contact.birthday)}</p>}
         </div>
     );
   }
@@ -109,14 +127,14 @@ function ContactCard({
               <div className="header-buttons">
                 {overdue && (
                   <div className="snooze-container">
-                      <button className="button-secondary" onClick={() => setSnoozingContactId(snoozingContactId === contact.id ? null : contact.id)}>Snooze</button>
-                      {snoozingContactId === contact.id && (
-                          <div className="snooze-options">
-                              <button onClick={() => handleSnooze(contact.id, 1)}>Tomorrow</button>
-                              <button onClick={() => handleSnooze(contact.id, 3)}>In 3 days</button>
-                              <button onClick={() => handleSnooze(contact.id, 7)}>In 1 week</button>
-                          </div>
-                      )}
+                    <button className="button-secondary" onClick={() => setSnoozingContactId(snoozingContactId === contact.id ? null : contact.id)}>Snooze</button>
+                    {snoozingContactId === contact.id && (
+                        <div className="snooze-options">
+                            <button onClick={() => handleSnooze(contact.id, 1)}>Tomorrow</button>
+                            <button onClick={() => handleSnooze(contact.id, 3)}>In 3 days</button>
+                            <button onClick={() => handleSnooze(contact.id, 7)}>In 1 week</button>
+                        </div>
+                    )}
                   </div>
                 )}
                 <button className="button-primary" onClick={() => handleCheckIn(contact.id)}>Just Checked In!</button>
@@ -132,16 +150,8 @@ function ContactCard({
             Last checked in: <strong>{daysSince(contact.lastCheckin)} day(s) ago</strong>.
             <button className="dev-button" onClick={() => handleMakeOverdue(contact.id)}>(Test: Make Overdue)</button>
           </p>
-          <p>Next check-in: <strong>
-            {contact.snooze_until && new Date(contact.snooze_until) > new Date()
-            ? new Date(contact.snooze_until).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-            : calculateNextCheckinDate(contact.lastCheckin, contact.checkinFrequency)
-            }
-  </strong>
-</p>
-          {contact.snooze_until && new Date(contact.snooze_until) > new Date() && (
-            <p className="snooze-info">Snoozed until: <strong>{new Date(contact.snooze_until).toLocaleString()}</strong></p>
-          )}
+          <p>Next check-in: <strong>{nextCheckinDisplay}</strong></p>
+
           <div className="tags-container">
             {contact.tags && contact.tags.map(tag => (
               <span key={tag.id} className="tag-badge">
