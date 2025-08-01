@@ -95,7 +95,7 @@ function ContactCard({
             <h3>{contact.firstName}</h3>
             <p>Next check-in:</p>
             <strong>{nextCheckinDisplay}</strong>
-            {contact.birthday && <p className="grid-birthday">� {formatBirthday(contact.birthday)}</p>}
+            {contact.birthday && <p className="grid-birthday">🎂 {formatBirthday(contact.birthday)}</p>}
         </div>
     );
   }
