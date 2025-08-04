@@ -31,13 +31,14 @@ function ContactCard({
   const [newNoteContent, setNewNoteContent] = useState('');
   const [editingNoteContent, setEditingNoteContent] = useState('');
   const [editingContactState, setEditingContactState] = useState(null);
+  const [customSnoozeDays, setCustomSnoozeDays] = useState(7);
+
 
   const overdue = isOverdue(contact);
   const isEditingThisContact = editingContact && editingContact.id === contact.id;
   const isExpanded = expandedContactId === contact.id;
   const isAddingNote = addingNoteToContactId === contact.id;
 
-  // --- NEW: Logic to determine what to display for the next check-in date ---
   const getNextCheckinDisplay = () => {
     const isSnoozed = contact.snooze_until && new Date(contact.snooze_until) > new Date();
     if (isSnoozed) {
@@ -48,7 +49,6 @@ function ContactCard({
     nextCheckinDate.setDate(nextCheckinDate.getDate() + contact.checkinFrequency);
     
     const today = new Date();
-    // Compare year, month, and day, ignoring the time
     if (nextCheckinDate.getFullYear() === today.getFullYear() &&
         nextCheckinDate.getMonth() === today.getMonth() &&
         nextCheckinDate.getDate() === today.getDate()) {
@@ -58,7 +58,6 @@ function ContactCard({
     return calculateNextCheckinDate(contact.lastCheckin, contact.checkinFrequency);
   };
   const nextCheckinDisplay = getNextCheckinDisplay();
-  // --- END NEW LOGIC ---
 
   const startEditingContact = () => {
     setEditingContactState({ ...contact });
@@ -88,7 +87,13 @@ function ContactCard({
     handleUpdateNote(contact.id, noteId, editingNoteContent);
   };
 
-  // --- GRID VIEW RENDER ---
+  const onCustomSnooze = (e) => {
+    e.preventDefault();
+    if (customSnoozeDays > 0) {
+      handleSnooze(contact.id, customSnoozeDays);
+    }
+  };
+
   if (displayMode === 'grid') {
     return (
         <div className={`card contact-item-grid ${overdue ? 'overdue' : ''}`}>
@@ -100,7 +105,6 @@ function ContactCard({
     );
   }
 
-  // --- LIST VIEW RENDER (DEFAULT) ---
   return (
     <div className={`card contact-item ${overdue ? 'overdue' : ''}`}>
       {isEditingThisContact ? (
@@ -129,11 +133,18 @@ function ContactCard({
                   <div className="snooze-container">
                     <button className="button-secondary" onClick={() => setSnoozingContactId(snoozingContactId === contact.id ? null : contact.id)}>Snooze</button>
                     {snoozingContactId === contact.id && (
-                        <div className="snooze-options">
-                            <button onClick={() => handleSnooze(contact.id, 1)}>Tomorrow</button>
-                            <button onClick={() => handleSnooze(contact.id, 3)}>In 3 days</button>
-                            <button onClick={() => handleSnooze(contact.id, 7)}>In 1 week</button>
-                        </div>
+                        <form className="snooze-options snooze-form" onSubmit={onCustomSnooze}>
+                            <input 
+                              type="number"
+                              value={customSnoozeDays}
+                              onChange={(e) => setCustomSnoozeDays(e.target.value)}
+                              min="1"
+                              className="snooze-input"
+                            />
+                            <label>days</label>
+                            {/* --- UPDATED: Using a new, specific class name --- */}
+                            <button type="submit" className="snooze-submit-button">Snooze</button>
+                        </form>
                     )}
                   </div>
                 )}

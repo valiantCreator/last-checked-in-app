@@ -585,21 +585,48 @@ input[type="date"]:valid { color: var(--text-color); }
     box-shadow: 0 4px 8px var(--card-shadow);
     z-index: 20;
     display: flex;
-    flex-direction: column;
-    overflow: hidden;
     width: max-content;
 }
-.snooze-options button {
-    padding: 0.75rem 1.5rem;
-    background: none;
-    border: none;
-    border-bottom: 1px solid var(--border-color);
-    color: var(--text-color);
-    cursor: pointer;
-    text-align: left;
+
+/* --- UPDATED Snooze Form Styles --- */
+.snooze-form {
+  display: flex; /* This ensures it's a flex container */
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
 }
-.snooze-options button:last-child { border-bottom: none; }
-.snooze-options button:hover { background-color: var(--background-color); }
+
+.snooze-input {
+  width: 60px;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  text-align: center;
+}
+
+.snooze-submit-button {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--overdue-border);
+  background-color: transparent;
+  color: var(--overdue-border);
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.snooze-submit-button:hover {
+  background-color: var(--border-color);
+}
+/* --- END UPDATED Snooze Form Styles --- */
+
+
 .dev-button {
     font-size: 0.75rem;
     opacity: 0.5;
