@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useDebounce } from 'use-debounce';
-import { Toaster, toast } from 'react-hot-toast'; // Import toast components
+import { Toaster, toast } from 'react-hot-toast';
 import { requestForToken } from './firebase';
 import Header from './components/Header.jsx';
 import AddContactForm from './components/AddContactForm.jsx';
@@ -20,7 +20,8 @@ function App() {
   const [view, setView] = useState('active');
   const [archivedContacts, setArchivedContacts] = useState([]);
   
-  const [expandedContactId, setExpandedContactId] = useState(null);
+  // --- UPDATED: Renamed state for clarity ---
+  const [detailedContactId, setDetailedContactId] = useState(null);
   const [editingContact, setEditingContact] = useState(null);
   const [addingNoteToContactId, setAddingNoteToContactId] = useState(null);
   const [editingNote, setEditingNote] = useState(null);
@@ -50,7 +51,7 @@ function App() {
 
   useEffect(() => {
     requestForToken();
-    fetchContacts(); // Use the new fetch function on initial load
+    fetchContacts();
     axios.get(`${API_URL}/tags`).then(res => setAllTags(res.data.tags || []));
   }, []);
 
@@ -129,9 +130,11 @@ function App() {
         toast.success("Contact updated!");
       });
   };
-  const handleToggleNotesList = (contactId) => {
-    const newId = expandedContactId === contactId ? null : contactId;
-    setExpandedContactId(newId);
+
+  // --- UPDATED: Renamed handler function ---
+  const handleToggleDetails = (contactId) => {
+    const newId = detailedContactId === contactId ? null : contactId;
+    setDetailedContactId(newId);
     if (newId === null) setAddingNoteToContactId(null);
     if (newId !== null) {
       const contact = contacts.find(c => c.id === contactId);
@@ -141,6 +144,7 @@ function App() {
       }
     }
   };
+
   const handleSaveNote = (contactId, newNoteContent) => {
     if (!newNoteContent.trim()) return;
     axios.post(`${API_URL}/contacts/${contactId}/notes`, { content: newNoteContent })
@@ -220,33 +224,47 @@ function App() {
         console.log("Sending test notification to token:", currentToken);
         await axios.post(`${API_URL}/contacts/${contactId}/test-overdue`, { fcmToken: currentToken });
         await fetchContacts();
-        toast.success('Test notification sent!'); // Use toast instead of alert
+        toast.success('Test notification sent!');
       } else {
-        toast.error('Could not get notification token. Please grant permission.'); // Use toast instead of alert
+        toast.error('Could not get notification token. Please grant permission.');
       }
     } catch (err) {
       console.error('Error sending test notification:', err);
-      toast.error('Failed to send test notification.'); // Use toast instead of alert
+      toast.error('Failed to send test notification.');
     }
   };
 
   const handlers = {
-    handleCheckIn, handleToggleNotesList, handleMakeOverdue, handleTagAdded, handleRemoveTag,
-    handleEditContactClick: setEditingContact, handleArchiveContact, handleToggleAddNoteForm: setAddingNoteToContactId,
-    handleSaveNote, handleUpdateNote, handleEditNoteClick: setEditingNote, handleCancelEditNote: () => setEditingNote(null),
-    setSnoozingContactId, handleSnooze, handleUpdateContact, handleCancelEditContact: () => setEditingContact(null)
+    handleCheckIn, 
+    handleToggleDetails, // UPDATED: Pass the renamed handler
+    handleMakeOverdue, 
+    handleTagAdded, 
+    handleRemoveTag,
+    handleEditContactClick: setEditingContact, 
+    handleArchiveContact, 
+    handleToggleAddNoteForm: setAddingNoteToContactId,
+    handleSaveNote, 
+    handleUpdateNote, 
+    handleEditNoteClick: setEditingNote, 
+    handleCancelEditNote: () => setEditingNote(null),
+    setSnoozingContactId, 
+    handleSnooze, 
+    handleUpdateContact, 
+    handleCancelEditContact: () => setEditingContact(null)
   };
   const uiState = {
-    editingContact, expandedContactId, addingNoteToContactId, editingNote, snoozingContactId
+    editingContact, 
+    detailedContactId, // UPDATED: Pass the renamed state
+    addingNoteToContactId, 
+    editingNote, 
+    snoozingContactId
   };
 
   return (
     <div className="app-container">
-      {/* Add the Toaster component here */}
       <Toaster 
         position="top-center"
         toastOptions={{
-          // Define default options
           duration: 3000,
           style: {
             background: 'var(--card-bg)',

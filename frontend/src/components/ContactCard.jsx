@@ -8,10 +8,10 @@ function ContactCard({
   uiState,
   displayMode
 }) {
-  const { editingContact, expandedContactId, addingNoteToContactId, editingNote, snoozingContactId } = uiState;
+  const { editingContact, detailedContactId, addingNoteToContactId, editingNote, snoozingContactId } = uiState;
   const {
     handleCheckIn,
-    handleToggleNotesList,
+    handleToggleDetails,
     handleMakeOverdue,
     handleTagAdded,
     handleRemoveTag,
@@ -36,7 +36,7 @@ function ContactCard({
 
   const overdue = isOverdue(contact);
   const isEditingThisContact = editingContact && editingContact.id === contact.id;
-  const isExpanded = expandedContactId === contact.id;
+  const isExpanded = detailedContactId === contact.id;
   const isAddingNote = addingNoteToContactId === contact.id;
 
   const getNextCheckinDisplay = () => {
@@ -111,7 +111,7 @@ function ContactCard({
         <form onSubmit={onUpdateContactSubmit} className="contact-edit-form">
           <input name="firstName" value={editingContactState.firstName} onChange={onEditingContactChange} />
           <input name="howWeMet" value={editingContactState.howWeMet} onChange={onEditingContactChange} placeholder="How we met" />
-          <input type="date" name="birthday" value={editingContactState.birthday} onChange={onEditingContactChange} />
+          <input type="date" name="birthday" value={editingContactState.birthday ? editingContactState.birthday.split('T')[0] : ''} onChange={onEditingContactChange} />
           <textarea name="keyFacts" value={editingContactState.keyFacts} onChange={onEditingContactChange} placeholder="Key facts" />
           <div>
             <label>Remind every</label>
@@ -142,83 +142,88 @@ function ContactCard({
                               className="snooze-input"
                             />
                             <label>days</label>
-                            {/* --- UPDATED: Using a new, specific class name --- */}
                             <button type="submit" className="snooze-submit-button">Snooze</button>
                         </form>
                     )}
                   </div>
                 )}
                 <button className="button-primary" onClick={() => handleCheckIn(contact.id)}>Just Checked In!</button>
+                <button className="expand-collapse-button" onClick={() => handleToggleDetails(contact.id)} aria-expanded={isExpanded}>
+                  {isExpanded ? 'Hide Details' : 'Show Details'}
+                  <span className={`arrow ${isExpanded ? 'expanded' : ''}`}>▼</span>
+                </button>
               </div>
-              <button className="expand-collapse-button" onClick={() => handleToggleNotesList(contact.id)} aria-expanded={isExpanded}>
-                {isExpanded ? 'Hide Notes' : 'Show Notes'}
-                <span className={`arrow ${isExpanded ? 'expanded' : ''}`}>▼</span>
-              </button>
             </div>
           </div>
           
-          <p>
-            Last checked in: <strong>{daysSince(contact.lastCheckin)} day(s) ago</strong>.
+          <div className="checkin-status-line">
+            <p>
+              Last checked in: <strong>{daysSince(contact.lastCheckin)} day(s) ago</strong> · Next: <strong>{nextCheckinDisplay}</strong>
+            </p>
             <button className="dev-button" onClick={() => handleMakeOverdue(contact.id)}>(Test: Make Overdue)</button>
-          </p>
-          <p>Next check-in: <strong>{nextCheckinDisplay}</strong></p>
+          </div>
 
-          <div className="tags-container">
-            {contact.tags && contact.tags.map(tag => (
-              <span key={tag.id} className="tag-badge">
-                {tag.name}
-                <button onClick={() => handleRemoveTag(contact.id, tag.id)} className="remove-tag-btn">x</button>
-              </span>
-            ))}
-          </div>
-          <div className="contact-details">
-            {contact.birthday && <p><strong>Birthday:</strong> {formatBirthday(contact.birthday)}</p>}
-            {contact.howWeMet && <p><strong>How we met:</strong> {contact.howWeMet}</p>}
-            {contact.keyFacts && <p><strong>Key facts:</strong> {contact.keyFacts}</p>}
-          </div>
-          <div className="notes-section">
-            {isAddingNote && (
-              <div className="add-note-form">
-                <textarea placeholder="Add a new note..." value={newNoteContent} onChange={(e) => setNewNoteContent(e.target.value)} />
-                <div className="add-note-actions">
-                    <button className="button-primary" onClick={onSaveNote}>Save Note</button>
-                    <button className="button-secondary" onClick={() => handleToggleAddNoteForm(null)}>Cancel</button>
+          {isExpanded && (
+            <div className="contact-details-expanded">
+              <div className="contact-details">
+                {contact.birthday && <p><strong>Birthday:</strong> {formatBirthday(contact.birthday)}</p>}
+                {contact.howWeMet && <p><strong>How we met:</strong> {contact.howWeMet}</p>}
+                {contact.keyFacts && <p><strong>Key facts:</strong> {contact.keyFacts}</p>}
+                {/* --- UPDATED: Moved to the last line in this section --- */}
+                <p className="frequency-detail"><strong>Check-in frequency:</strong> Every {contact.checkinFrequency} days</p>
+              </div>
+              <div className="tags-container">
+                {contact.tags && contact.tags.map(tag => (
+                  <span key={tag.id} className="tag-badge">
+                    {tag.name}
+                    <button onClick={() => handleRemoveTag(contact.id, tag.id)} className="remove-tag-btn">x</button>
+                  </span>
+                ))}
+                 <TagInput contact={contact} onTagAdded={(newTag) => handleTagAdded(contact.id, newTag)} />
+              </div>
+              <div className="notes-section">
+                {isAddingNote && (
+                  <div className="add-note-form">
+                    <textarea placeholder="Add a new note..." value={newNoteContent} onChange={(e) => setNewNoteContent(e.target.value)} />
+                    <div className="add-note-actions">
+                        <button className="button-primary" onClick={onSaveNote}>Save Note</button>
+                        <button className="button-secondary" onClick={() => handleToggleAddNoteForm(null)}>Cancel</button>
+                    </div>
+                  </div>
+                )}
+                <div className="notes-content">
+                  {contact.notes.map(note => (
+                    <div key={note.id} className="note">
+                      {editingNote && editingNote.id === note.id ? (
+                        <div className="note-edit-view">
+                          <textarea value={editingNoteContent} onChange={(e) => setEditingNoteContent(e.target.value)} />
+                          <div className="note-actions">
+                            <button className="button-primary" onClick={() => onUpdateNote(note.id)}>Save</button>
+                            <button className="button-secondary" onClick={handleCancelEditNote}>Cancel</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="note-display-view">
+                          <p>{note.content}</p>
+                          <div className="note-footer">
+                            <small>
+                              Created: {new Date(note.createdAt).toLocaleString()}
+                              {note.modifiedAt && <span className="modified-date">&nbsp;· Edited: {new Date(note.modifiedAt).toLocaleString()}</span>}
+                            </small>
+                            <button className="edit-button" onClick={() => startEditingNote(note)}>Edit</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {contact.notes.length === 0 && !isAddingNote && <p>No notes yet.</p>}
                 </div>
               </div>
-            )}
-            {isExpanded && (
-              <div className="notes-content">
-                {contact.notes.map(note => (
-                  <div key={note.id} className="note">
-                    {editingNote && editingNote.id === note.id ? (
-                      <div className="note-edit-view">
-                        <textarea value={editingNoteContent} onChange={(e) => setEditingNoteContent(e.target.value)} />
-                        <div className="note-actions">
-                          <button className="button-primary" onClick={() => onUpdateNote(note.id)}>Save</button>
-                          <button className="button-secondary" onClick={handleCancelEditNote}>Cancel</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="note-display-view">
-                        <p>{note.content}</p>
-                        <div className="note-footer">
-                          <small>
-                            Created: {new Date(note.createdAt).toLocaleString()}
-                            {note.modifiedAt && <span className="modified-date">&nbsp;· Edited: {new Date(note.modifiedAt).toLocaleString()}</span>}
-                          </small>
-                          <button className="edit-button" onClick={() => startEditingNote(note)}>Edit</button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {contact.notes.length === 0 && !isAddingNote && <p>No notes yet.</p>}
-              </div>
-            )}
-          </div>
+            </div>
+          )}
+
           <div className="contact-footer">
             <button className="archive-button" onClick={() => handleArchiveContact(contact.id)}>Archive</button>
-            {isExpanded && <TagInput contact={contact} onTagAdded={(newTag) => handleTagAdded(contact.id, newTag)} />}
             <div className="footer-right-actions">
                 <button className="edit-contact-button" onClick={startEditingContact}>Edit Contact</button>
                 <button className="add-note-button" onClick={() => handleToggleAddNoteForm(contact.id === addingNoteToContactId ? null : contact.id)}>Add Note</button>

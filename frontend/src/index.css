@@ -244,8 +244,8 @@ body {
 }
 .contact-header-actions {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+    flex-direction: row;
+    align-items: center;
     gap: 0.5rem;
     flex-shrink: 0;
 }
@@ -326,6 +326,7 @@ body {
 }
 .remind-me-container input[type="number"] { width: 80px; }
 .form-card button { margin-top: 1rem; }
+
 .contact-details {
   padding: 1rem 0;
   border-top: 1px solid var(--border-color);
@@ -333,6 +334,12 @@ body {
 }
 .contact-details p { margin: 0.5rem 0; }
 .contact-details strong { color: var(--primary-color); }
+
+/* --- NEW: Style for the frequency detail --- */
+.frequency-detail strong {
+  color: var(--overdue-border);
+}
+
 .contact-edit-form {
   display: flex;
   flex-direction: column;
@@ -354,6 +361,7 @@ body {
 .tags-container {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.5rem;
   margin-top: 1rem;
   padding-bottom: 1rem;
@@ -585,12 +593,10 @@ input[type="date"]:valid { color: var(--text-color); }
     box-shadow: 0 4px 8px var(--card-shadow);
     z-index: 20;
     display: flex;
-    width: max-content;
 }
 
-/* --- UPDATED Snooze Form Styles --- */
 .snooze-form {
-  display: flex; /* This ensures it's a flex container */
+  display: flex;
   flex-direction: row;
   align-items: center;
   gap: 0.5rem;
@@ -624,7 +630,6 @@ input[type="date"]:valid { color: var(--text-color); }
 .snooze-submit-button:hover {
   background-color: var(--border-color);
 }
-/* --- END UPDATED Snooze Form Styles --- */
 
 
 .dev-button {
@@ -720,4 +725,23 @@ input[type="date"]:valid { color: var(--text-color); }
     .form-grid .remind-me-container {
         grid-column: 1 / -1;
     }
+}
+
+.checkin-status-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.checkin-status-line p {
+  margin: 0;
+  opacity: 0.9;
+}
+
+.contact-details-expanded {
+  padding-top: 1rem;
 }
