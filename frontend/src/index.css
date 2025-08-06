@@ -205,7 +205,7 @@ body {
 
 .contact-item-grid h3 {
     margin: 0 0 1rem 0;
-    font-size: 1.2rem;
+    /* --- UPDATED: Removed the smaller font-size to match the list view --- */
 }
 
 .contact-item-grid p {
@@ -227,15 +227,14 @@ body {
 /* --- END: Final Adaptive Grid & List View Styles --- */
 
 
-/* List Item Styles */
+/* --- UPDATED: Responsive Contact Header Styles --- */
 .contact-item {
   border-left: 6px solid var(--primary-color);
 }
 .contact-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
+  flex-direction: column; /* Mobile-first: Stacked layout */
+  gap: 0.5rem;
 }
 .contact-header h3 { 
     margin: 0; 
@@ -244,15 +243,29 @@ body {
 }
 .contact-header-actions {
     display: flex;
-    flex-direction: row;
+    flex-wrap: wrap; /* Allow buttons to wrap if needed */
     align-items: center;
     gap: 0.5rem;
-    flex-shrink: 0;
 }
 .overdue {
   border-left-color: var(--overdue-border);
   background-color: var(--overdue-bg);
 }
+
+/* Media query for wider screens */
+@media (min-width: 600px) {
+  .contact-header {
+    flex-direction: row; /* Switch to side-by-side layout */
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .contact-header-actions {
+    flex-shrink: 0; /* Prevent buttons from shrinking */
+  }
+}
+/* --- END UPDATED Styles --- */
+
 
 /* Note Section Styles */
 .notes-section {
@@ -320,7 +333,7 @@ body {
   margin-bottom: 1rem;
 }
 .remind-me-container,
-.start-date-container { /* NEW: Grouped selector */
+.start-date-container {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -722,7 +735,7 @@ input[type="date"]:valid { color: var(--text-color); }
     .form-grid .full-width-field,
     .form-grid textarea,
     .form-grid .remind-me-container,
-    .form-grid .start-date-container { /* NEW: Ensure it spans full width on desktop */
+    .form-grid .start-date-container {
         grid-column: 1 / -1;
     }
 }
