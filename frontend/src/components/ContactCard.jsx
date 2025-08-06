@@ -45,8 +45,13 @@ function ContactCard({
       return new Date(contact.snooze_until).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     }
 
-    const nextCheckinDate = new Date(contact.lastCheckin);
-    nextCheckinDate.setDate(nextCheckinDate.getDate() + contact.checkinFrequency);
+    // --- UPDATED: This logic is now corrected for timezones ---
+    const lastCheckinDate = new Date(contact.lastCheckin);
+    // The date from the DB might be UTC, so we adjust it to the user's local timezone for calculation
+    const localLastCheckin = new Date(lastCheckinDate.valueOf() + lastCheckinDate.getTimezoneOffset() * 60 * 1000);
+    
+    const nextCheckinDate = new Date(localLastCheckin);
+    nextCheckinDate.setDate(localLastCheckin.getDate() + contact.checkinFrequency);
     
     const today = new Date();
     if (nextCheckinDate.getFullYear() === today.getFullYear() &&
@@ -55,7 +60,7 @@ function ContactCard({
       return 'Today';
     }
 
-    return calculateNextCheckinDate(contact.lastCheckin, contact.checkinFrequency);
+    return nextCheckinDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   };
   const nextCheckinDisplay = getNextCheckinDisplay();
 
@@ -118,6 +123,15 @@ function ContactCard({
             <input type="number" name="checkinFrequency" value={editingContactState.checkinFrequency} onChange={onEditingContactChange} min="1"/>
             <label>days</label>
           </div>
+          <div>
+            <label>Starting from</label>
+            <input 
+              type="date" 
+              name="lastCheckin" 
+              value={new Date(editingContactState.lastCheckin).toISOString().split('T')[0]} 
+              onChange={onEditingContactChange} 
+            />
+          </div>
           <div className="form-actions">
             <button type="submit" className="button-primary">Save Changes</button>
             <button type="button" className="button-secondary" onClick={handleCancelEditContact}>Cancel</button>
@@ -169,7 +183,6 @@ function ContactCard({
                 {contact.birthday && <p><strong>Birthday:</strong> {formatBirthday(contact.birthday)}</p>}
                 {contact.howWeMet && <p><strong>How we met:</strong> {contact.howWeMet}</p>}
                 {contact.keyFacts && <p><strong>Key facts:</strong> {contact.keyFacts}</p>}
-                {/* --- UPDATED: Moved to the last line in this section --- */}
                 <p className="frequency-detail"><strong>Check-in frequency:</strong> Every {contact.checkinFrequency} days</p>
               </div>
               <div className="tags-container">

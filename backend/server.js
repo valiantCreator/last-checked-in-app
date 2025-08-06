@@ -131,13 +131,13 @@ app.get('/api/contacts/archived', async (req, res) => {
 });
 
 app.post('/api/contacts', async (req, res) => {
-    const { firstName, checkinFrequency, howWeMet, keyFacts, birthday } = req.body;
-    const lastCheckin = new Date();
+    const { firstName, checkinFrequency, howWeMet, keyFacts, birthday, lastCheckin } = req.body;
+    const startDate = lastCheckin ? new Date(lastCheckin) : new Date();
     try {
         const result = await pool.query(
             `INSERT INTO contacts ("firstName", "checkinFrequency", "lastCheckin", "howWeMet", "keyFacts", birthday) 
              VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-            [firstName, checkinFrequency, lastCheckin, howWeMet, keyFacts, birthday]
+            [firstName, checkinFrequency, startDate, howWeMet, keyFacts, birthday]
         );
         res.status(201).json({ ...result.rows[0], tags: [] });
     } catch (err) {
@@ -146,12 +146,20 @@ app.post('/api/contacts', async (req, res) => {
     }
 });
 
+// --- UPDATED to accept and update the lastCheckin date ---
 app.put('/api/contacts/:id', async (req, res) => {
-    const { firstName, checkinFrequency, howWeMet, keyFacts, birthday } = req.body;
+    const { firstName, checkinFrequency, howWeMet, keyFacts, birthday, lastCheckin } = req.body;
     try {
         await pool.query(
-            `UPDATE contacts SET "firstName" = $1, "checkinFrequency" = $2, "howWeMet" = $3, "keyFacts" = $4, birthday = $5 WHERE id = $6`,
-            [firstName, checkinFrequency, howWeMet, keyFacts, birthday, req.params.id]
+            `UPDATE contacts SET 
+                "firstName" = $1, 
+                "checkinFrequency" = $2, 
+                "howWeMet" = $3, 
+                "keyFacts" = $4, 
+                birthday = $5,
+                "lastCheckin" = $6
+             WHERE id = $7`,
+            [firstName, checkinFrequency, howWeMet, keyFacts, birthday, lastCheckin, req.params.id]
         );
         res.json({ message: 'Contact updated successfully' });
     } catch (err) {
@@ -246,20 +254,16 @@ app.post('/api/contacts/:id/tags', async (req, res) => {
     }
 });
 
-// --- UPDATED DELETE TAG ENDPOINT ---
 app.delete('/api/contacts/:contactId/tags/:tagId', async (req, res) => {
     const { contactId, tagId } = req.params;
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        // Step 1: Remove the association
         await client.query('DELETE FROM contact_tags WHERE contact_id = $1 AND tag_id = $2', [contactId, tagId]);
         
-        // Step 2: Check if the tag is now orphaned
         const usageResult = await client.query('SELECT COUNT(*) FROM contact_tags WHERE tag_id = $1', [tagId]);
         const usageCount = parseInt(usageResult.rows[0].count, 10);
 
-        // Step 3: If orphaned, delete the tag from the main tags table
         if (usageCount === 0) {
             await client.query('DELETE FROM tags WHERE id = $1', [tagId]);
         }
@@ -323,7 +327,6 @@ app.post('/api/devices/token', async (req, res) => {
     }
 });
 
-// --- Test Overdue Button Functionality ---
 app.post('/api/contacts/:id/test-overdue', async (req, res) => {
   const { id } = req.params;
   const { fcmToken } = req.body;
@@ -334,20 +337,16 @@ app.post('/api/contacts/:id/test-overdue', async (req, res) => {
 
   try {
     const client = await pool.connect();
-
-    // Step 1: Get the contact's current check-in frequency
     const freqResult = await client.query('SELECT "firstName", "checkinFrequency" FROM contacts WHERE id = $1', [id]);
     const { firstName, checkinFrequency } = freqResult.rows[0];
     const contactName = firstName || 'A contact';
 
-    // Step 2: Calculate a new date that is exactly one day overdue
     const overdueDate = new Date();
     overdueDate.setDate(overdueDate.getDate() - (checkinFrequency + 1));
     await client.query('UPDATE contacts SET "lastCheckin" = $1 WHERE id = $2', [overdueDate, id]);
     
     client.release();
 
-    // Step 3: Send the notification using only the 'data' payload
     const message = {
       data: {
         title: 'Overdue Test Successful!',
@@ -363,7 +362,6 @@ app.post('/api/contacts/:id/test-overdue', async (req, res) => {
     res.status(500).json({ error: 'Failed to process request.' });
   }
 });
-
 
 // --- SCHEDULED JOB ---
 cron.schedule('0 9 * * *', async () => {
