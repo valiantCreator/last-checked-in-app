@@ -25,7 +25,8 @@ function ContactCard({
     setSnoozingContactId,
     handleSnooze,
     handleUpdateContact,
-    handleCancelEditContact
+    handleCancelEditContact,
+    handleTogglePin // Get the new handler
   } = handlers;
 
   const [newNoteContent, setNewNoteContent] = useState('');
@@ -45,9 +46,7 @@ function ContactCard({
       return new Date(contact.snooze_until).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     }
 
-    // --- UPDATED: This logic is now corrected for timezones ---
     const lastCheckinDate = new Date(contact.lastCheckin);
-    // The date from the DB might be UTC, so we adjust it to the user's local timezone for calculation
     const localLastCheckin = new Date(lastCheckinDate.valueOf() + lastCheckinDate.getTimezoneOffset() * 60 * 1000);
     
     const nextCheckinDate = new Date(localLastCheckin);
@@ -102,6 +101,10 @@ function ContactCard({
   if (displayMode === 'grid') {
     return (
         <div className={`card contact-item-grid ${overdue ? 'overdue' : ''}`}>
+            {/* --- NEW: Pin button for grid view --- */}
+            <button className="pin-button grid-pin-button" onClick={() => handleTogglePin(contact.id)}>
+              {contact.is_pinned ? '★' : '☆'}
+            </button>
             <h3>{contact.firstName}</h3>
             <p>Next check-in:</p>
             <strong>{nextCheckinDisplay}</strong>
@@ -140,7 +143,13 @@ function ContactCard({
       ) : (
         <>
           <div className="contact-header">
-            <h3>{contact.firstName}</h3>
+            <div className="contact-title-wrapper">
+              {/* --- NEW: Pin button for list view --- */}
+              <button className="pin-button" onClick={() => handleTogglePin(contact.id)}>
+                {contact.is_pinned ? '★' : '☆'}
+              </button>
+              <h3>{contact.firstName}</h3>
+            </div>
             <div className="contact-header-actions">
               <div className="header-buttons">
                 {overdue && (

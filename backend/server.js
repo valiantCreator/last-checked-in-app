@@ -41,9 +41,19 @@ const createTables = async () => {
                 "keyFacts" TEXT,
                 birthday TEXT,
                 is_archived BOOLEAN DEFAULT FALSE,
-                snooze_until TIMESTAMPTZ
+                snooze_until TIMESTAMPTZ,
+                is_pinned BOOLEAN DEFAULT FALSE
             );
         `);
+        // --- NEW: Add the is_pinned column if it doesn't exist ---
+        const columns = await client.query(`
+            SELECT column_name FROM information_schema.columns 
+            WHERE table_name='contacts' AND column_name='is_pinned';
+        `);
+        if (columns.rows.length === 0) {
+            await client.query('ALTER TABLE contacts ADD COLUMN is_pinned BOOLEAN DEFAULT FALSE;');
+        }
+
         await client.query(`
             CREATE TABLE IF NOT EXISTS notes (
                 id SERIAL PRIMARY KEY,
@@ -146,7 +156,6 @@ app.post('/api/contacts', async (req, res) => {
     }
 });
 
-// --- UPDATED to accept and update the lastCheckin date ---
 app.put('/api/contacts/:id', async (req, res) => {
     const { firstName, checkinFrequency, howWeMet, keyFacts, birthday, lastCheckin } = req.body;
     try {
@@ -162,6 +171,20 @@ app.put('/api/contacts/:id', async (req, res) => {
             [firstName, checkinFrequency, howWeMet, keyFacts, birthday, lastCheckin, req.params.id]
         );
         res.json({ message: 'Contact updated successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- NEW: Endpoint to toggle the pinned status of a contact ---
+app.put('/api/contacts/:id/pin', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'UPDATE contacts SET is_pinned = NOT is_pinned WHERE id = $1 RETURNING *',
+            [req.params.id]
+        );
+        res.json({ contact: result.rows[0] });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: err.message });

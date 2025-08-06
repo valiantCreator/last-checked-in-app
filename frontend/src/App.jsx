@@ -20,7 +20,6 @@ function App() {
   const [view, setView] = useState('active');
   const [archivedContacts, setArchivedContacts] = useState([]);
   
-  // --- UPDATED: Renamed state for clarity ---
   const [detailedContactId, setDetailedContactId] = useState(null);
   const [editingContact, setEditingContact] = useState(null);
   const [addingNoteToContactId, setAddingNoteToContactId] = useState(null);
@@ -64,41 +63,53 @@ function App() {
     }
   }, [debouncedGlobalSearch]);
 
-  const filteredAndSortedContacts = useMemo(() => {
+  // --- UPDATED: This hook now separates pinned contacts ---
+  const processedContacts = useMemo(() => {
     let displayedContacts = [...contacts];
 
+    // If a search or filter is active, it overrides pinning
     if (activeSearchFilter && searchResults) {
         const contactIdsFromSearch = new Set();
         searchResults.contacts.forEach(c => contactIdsFromSearch.add(c.id));
         searchResults.notes.forEach(n => contactIdsFromSearch.add(n.contactId));
         displayedContacts = contacts.filter(c => contactIdsFromSearch.has(c.id));
+        return { pinned: [], unpinned: displayedContacts }; // Return in the new format
     } 
     else if (selectedTagId) {
         displayedContacts = contacts.filter(contact =>
             contact.tags.some(tag => tag.id === parseInt(selectedTagId))
         );
+        return { pinned: [], unpinned: displayedContacts }; // Return in the new format
     }
+
+    // Default view: Separate pinned from unpinned
+    const pinned = displayedContacts.filter(c => c.is_pinned);
+    const unpinned = displayedContacts.filter(c => !c.is_pinned);
 
     const getDaysUntilDue = (c) => daysSince(c.lastCheckin) - c.checkinFrequency;
     switch (sortBy) {
       case 'closestCheckin':
-        displayedContacts.sort((a, b) => getDaysUntilDue(b) - getDaysUntilDue(a));
+        unpinned.sort((a, b) => getDaysUntilDue(b) - getDaysUntilDue(a));
         break;
       case 'mostOverdue':
-        displayedContacts.sort((a, b) => getDaysUntilDue(a) - getDaysUntilDue(b));
+        unpinned.sort((a, b) => getDaysUntilDue(a) - getDaysUntilDue(b));
         break;
       case 'nameAZ':
-        displayedContacts.sort((a, b) => a.firstName.localeCompare(b.firstName));
+        unpinned.sort((a, b) => a.firstName.localeCompare(b.firstName));
         break;
       case 'newestFirst':
-        displayedContacts.sort((a, b) => b.id - a.id);
+        unpinned.sort((a, b) => b.id - a.id);
         break;
       default: break;
     }
     if (sortDirection === 'asc') {
-        displayedContacts.reverse();
+        unpinned.reverse();
     }
-    return displayedContacts;
+    
+    // Pinned contacts are always sorted by name
+    pinned.sort((a, b) => a.firstName.localeCompare(b.firstName));
+
+    return { pinned, unpinned };
   }, [contacts, activeSearchFilter, searchResults, selectedTagId, sortBy, sortDirection]);
 
   const handleSearchSubmit = (e) => {
@@ -130,8 +141,6 @@ function App() {
         toast.success("Contact updated!");
       });
   };
-
-  // --- UPDATED: Renamed handler function ---
   const handleToggleDetails = (contactId) => {
     const newId = detailedContactId === contactId ? null : contactId;
     setDetailedContactId(newId);
@@ -144,7 +153,6 @@ function App() {
       }
     }
   };
-
   const handleSaveNote = (contactId, newNoteContent) => {
     if (!newNoteContent.trim()) return;
     axios.post(`${API_URL}/contacts/${contactId}/notes`, { content: newNoteContent })
@@ -234,30 +242,21 @@ function App() {
     }
   };
 
+  // --- NEW: Handler to toggle a contact's pinned status ---
+  const handleTogglePin = (contactId) => {
+    axios.put(`${API_URL}/contacts/${contactId}/pin`)
+      .then(() => fetchContacts());
+  };
+
   const handlers = {
-    handleCheckIn, 
-    handleToggleDetails, // UPDATED: Pass the renamed handler
-    handleMakeOverdue, 
-    handleTagAdded, 
-    handleRemoveTag,
-    handleEditContactClick: setEditingContact, 
-    handleArchiveContact, 
-    handleToggleAddNoteForm: setAddingNoteToContactId,
-    handleSaveNote, 
-    handleUpdateNote, 
-    handleEditNoteClick: setEditingNote, 
-    handleCancelEditNote: () => setEditingNote(null),
-    setSnoozingContactId, 
-    handleSnooze, 
-    handleUpdateContact, 
-    handleCancelEditContact: () => setEditingContact(null)
+    handleCheckIn, handleToggleDetails, handleMakeOverdue, handleTagAdded, handleRemoveTag,
+    handleEditContactClick: setEditingContact, handleArchiveContact, handleToggleAddNoteForm: setAddingNoteToContactId,
+    handleSaveNote, handleUpdateNote, handleEditNoteClick: setEditingNote, handleCancelEditNote: () => setEditingNote(null),
+    setSnoozingContactId, handleSnooze, handleUpdateContact, handleCancelEditContact: () => setEditingContact(null),
+    handleTogglePin // Pass the new handler
   };
   const uiState = {
-    editingContact, 
-    detailedContactId, // UPDATED: Pass the renamed state
-    addingNoteToContactId, 
-    editingNote, 
-    snoozingContactId
+    editingContact, detailedContactId, addingNoteToContactId, editingNote, snoozingContactId
   };
 
   return (
@@ -330,6 +329,24 @@ function App() {
               </select>
             </div>
 
+            {/* --- UPDATED: Conditionally render the Pinned section --- */}
+            {processedContacts.pinned.length > 0 && (
+              <div className="pinned-section">
+                <h2>Pinned</h2>
+                <div className={`contacts-container ${displayMode}`}>
+                  {processedContacts.pinned.map(contact => (
+                    <ContactCard 
+                      key={contact.id} 
+                      contact={contact} 
+                      handlers={handlers} 
+                      uiState={uiState}
+                      displayMode={displayMode}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="view-controls">
               <h2>My People</h2>
               <div className="view-toggle-buttons">
@@ -340,7 +357,7 @@ function App() {
           </div>
           
           <div className={`contacts-container ${displayMode}`}>
-            {filteredAndSortedContacts.map(contact => (
+            {processedContacts.unpinned.map(contact => (
               <ContactCard 
                 key={contact.id} 
                 contact={contact} 
