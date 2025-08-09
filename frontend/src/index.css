@@ -9,11 +9,11 @@
 .logo-title-container {
   display: flex;
   align-items: center;
-  gap: 0.75rem; /* Adjusts space between logo and title */
+  gap: 0.75rem;
 }
 
 .app-logo {
-  height: 40px; /* Or any size you prefer */
+  height: 40px;
   width: auto;
 }
 
@@ -30,7 +30,7 @@
   --overdue-bg: #ffebee;
   --overdue-border: #c62828;
   --pin-color: #ffc107;
-  --accent-color: #1a73e8; /* Added for modal consistency */
+  --accent-color: #1a73e8;
 }
 
 /* Define color variables for the dark theme */
@@ -46,7 +46,7 @@
   --overdue-bg: #4a1c1c;
   --overdue-border: #f48fb1;
   --pin-color: #ffd600;
-  --accent-color: #8ab4f8; /* Added for modal consistency */
+  --accent-color: #8ab4f8;
 }
 
 /* General body styles */
@@ -78,7 +78,7 @@ body {
   margin-bottom: 1rem;
   gap: 1rem;
   flex-wrap: wrap;
-  max-width: 700px; /* Constrain header width like other content */
+  max-width: 700px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -89,17 +89,7 @@ body {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 1rem;
-}
-.theme-toggle-button {
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-  cursor: pointer;
-  background-color: var(--card-bg);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  transition: background-color 0.3s, color 0.3s;
+  gap: 0.75rem; /* Reduced gap for tighter fit */
 }
 
 /* Base styles for cards */
@@ -110,7 +100,7 @@ body {
   border-radius: 12px;
   box-shadow: 0 4px 8px var(--card-shadow);
   transition: background-color 0.3s;
-  position: relative; /* Needed for absolute positioning of grid pin button */
+  position: relative;
 }
 
 /* Form-specific styles */
@@ -173,7 +163,7 @@ body {
 /* For GRID VIEW, default to a 2-column layout (mobile-first). */
 .contacts-container.grid {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* Default to 2 columns */
+    grid-template-columns: 1fr 1fr;
     gap: 1rem;
     margin-top: 1rem;
 }
@@ -622,8 +612,7 @@ body {
 input[type="date"] { color-scheme: light; }
 [data-theme='dark'] input[type="date"] { color-scheme: dark; }
 input[type="date"]:invalid { color: rgba(var(--text-color-rgb), 0.6); }
-input[type="date"]:focus,
-input[type="date"]:valid { color: var(--text-color); }
+input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
 
 /* Snooze Styles */
 .header-buttons {
@@ -798,25 +787,19 @@ input[type="date"]:valid { color: var(--text-color); }
   padding-top: 1rem;
 }
 
-
-/* --- NEW: Styles for the Export Calendar Modal --- */
-
-/* The semi-transparent background that covers the whole screen. */
 .modal-backdrop {
-  position: fixed; /* Sits on top of all other content */
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent black */
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000; /* Ensures it's on top */
-  backdrop-filter: blur(4px); /* Modern blur effect for the background */
+  z-index: 1000;
+  backdrop-filter: blur(4px);
 }
-
-/* The main content box of the modal. */
 .modal-content {
   background: var(--card-bg);
   color: var(--text-color);
@@ -824,87 +807,68 @@ input[type="date"]:valid { color: var(--text-color); }
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   width: 90%;
-  max-width: 500px; /* Prevents it from being too wide on desktops */
+  max-width: 500px;
   border: 1px solid var(--border-color);
-  animation: fadeIn 0.3s ease-out; /* Simple fade-in animation */
+  animation: fadeIn 0.3s ease-out;
 }
-
 .modal-content h2 {
   margin-top: 0;
   color: var(--text-color);
 }
-
 .modal-content p {
   margin-bottom: 1.5rem;
   font-size: 0.95rem;
   line-height: 1.5;
 }
-
-/* Styles for the checkboxes */
 .modal-option {
   margin-bottom: 1rem;
 }
-
 .modal-option label {
   display: flex;
   align-items: center;
   font-size: 1rem;
   cursor: pointer;
 }
-
 .modal-option input[type="checkbox"] {
   margin-right: 0.75rem;
   width: 18px;
   height: 18px;
-  accent-color: var(--accent-color); /* Uses the app's theme color */
+  accent-color: var(--accent-color);
 }
-
-/* Container for the radio buttons */
 .time-window-fieldset {
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 1rem;
   margin-top: 1.5rem;
 }
-
 .time-window-fieldset legend {
   padding: 0 0.5rem;
   font-size: 0.9rem;
   font-weight: 500;
 }
-
-/* Disable the fieldset visually when check-ins are not selected */
 .time-window-fieldset:disabled {
   opacity: 0.5;
 }
-
 .radio-group {
   display: grid;
-  grid-template-columns: 1fr 1fr; /* Two columns for a cleaner look */
+  grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
 }
-
 .radio-group label {
   display: flex;
   align-items: center;
   cursor: pointer;
 }
-
 .radio-group input[type="radio"] {
   margin-right: 0.5rem;
   accent-color: var(--accent-color);
 }
-
-
-/* Container for the Cancel/Export buttons */
 .modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
   margin-top: 2rem;
 }
-
-/* Styles for the "Files Ready" view */
 .download-links {
   display: flex;
   flex-direction: column;
@@ -912,14 +876,11 @@ input[type="date"]:valid { color: var(--text-color); }
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
 }
-
 .download-link {
   width: 100%;
   text-align: center;
   justify-content: center;
 }
-
-/* Keyframe animation for the modal appearing */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -929,4 +890,99 @@ input[type="date"]:valid { color: var(--text-color); }
     opacity: 1;
     transform: scale(1);
   }
+}
+
+/* --- CORRECTED & FINAL: Animated Theme Toggle Styles --- */
+.theme-toggle {
+  --size: 2rem;
+  --sun-color: #ffc107;
+  --moon-color: #a9a9a9;
+
+  background: none;
+  border: none;
+  padding: 0;
+  inline-size: var(--size);
+  block-size: var(--size);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  outline-offset: 5px;
+  color: var(--text-color);
+  transition: color .5s ease-out;
+}
+
+.theme-toggle:hover {
+  color: var(--primary-color);
+}
+
+.theme-toggle > svg {
+  inline-size: 100%;
+  block-size: 100%;
+  stroke-linecap: round;
+}
+
+/* In light mode, the button shows a moon, so color it grey */
+[data-theme="light"] .theme-toggle {
+  color: var(--moon-color);
+}
+
+/* In dark mode, the button shows a sun, so color it yellow */
+[data-theme="dark"] .theme-toggle {
+  color: var(--sun-color);
+}
+
+.sun-and-moon {
+  transform-origin: center center;
+  transition: transform .5s ease-out;
+}
+
+.sun-and-moon > .sun {
+  transform-origin: center center;
+  transition: transform .5s ease-out;
+}
+
+.sun-and-moon > .sun-beams {
+  transform-origin: center center;
+  transition: transform .5s ease-out, opacity .5s ease-out;
+}
+
+.sun-and-moon > .moon > circle {
+  transform-origin: center center;
+  transition: transform .25s ease-out;
+}
+
+/* LIGHT THEME: Icon should be a MOON */
+[data-theme='light'] .sun-and-moon {
+  transform: rotate(20deg);
+}
+
+[data-theme='light'] .sun-and-moon > .sun {
+  transform: scale(1.50);
+}
+
+[data-theme='light'] .sun-and-moon > .sun-beams {
+  opacity: 0;
+}
+
+[data-theme='light'] .sun-and-moon > .moon > circle {
+  transform: translateX(-9px);
+}
+
+/* DARK THEME: Icon should be a SUN */
+[data-theme='dark'] .sun-and-moon {
+  transform: rotate(0deg);
+}
+
+[data-theme='dark'] .sun-and-moon > .sun {
+  transform: scale(1);
+}
+
+[data-theme='dark'] .sun-and-moon > .sun-beams {
+  opacity: 1;
+}
+
+[data-theme='dark'] .sun-and-moon > .moon > circle {
+  transform: translateX(0);
 }

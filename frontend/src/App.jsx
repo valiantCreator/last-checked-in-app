@@ -13,7 +13,16 @@ import { API_URL } from './apiConfig.js';
 
 function App() {
   const [contacts, setContacts] = useState([]);
-  const [theme, setTheme] = useState('dark');
+  
+  // --- UPDATED: Theme state now initializes from localStorage ---
+  const [theme, setTheme] = useState(() => {
+    const savedTheme = localStorage.getItem('theme-preference');
+    if (savedTheme) {
+      return savedTheme;
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
   const [sortBy, setSortBy] = useState('newestFirst');
   const [sortDirection, setSortDirection] = useState('desc');
   const [allTags, setAllTags] = useState([]);
@@ -33,8 +42,10 @@ function App() {
   const [displayMode, setDisplayMode] = useState('list');
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
+  // --- UPDATED: This effect now also saves the theme to localStorage on change ---
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme-preference', theme);
   }, [theme]);
 
   const fetchContacts = async () => {
@@ -278,28 +289,23 @@ function App() {
       const fullName = contact.lastName ? `${contact.firstName} ${contact.lastName}` : contact.firstName;
 
       if (exportCheckins) {
-        // Start with the first upcoming check-in.
         let nextCheckinDate = (contact.snooze_until && new Date(contact.snooze_until) > today)
           ? new Date(contact.snooze_until)
           : calculateNextUpcomingCheckinDate(contact.lastCheckin, contact.checkinFrequency);
         
-        // --- NEW: Loop to generate all recurring events within the time window ---
         while (timeWindow === 'all' || nextCheckinDate <= timeWindowLimit) {
           const formattedCheckinDate = formatToICSDate(nextCheckinDate);
-          // Use a unique ID for each recurring instance by appending the date
           const checkinUID = `checkin-${contact.id}-${formattedCheckinDate}@lastchecked.in`;
           
           checkinICS += `BEGIN:VEVENT\nUID:${checkinUID}\nDTSTAMP:${formatToICSDate(new Date())}\nDTSTART;VALUE=DATE:${formattedCheckinDate}\nSUMMARY:Check in with ${fullName}\nDESCRIPTION:Time to reconnect with ${fullName}!\nEND:VEVENT\n`;
 
-          // If we are exporting all events, we need a break condition to avoid an infinite loop for 0-day frequencies
           if (timeWindow === 'all' && contact.checkinFrequency <= 0) {
               break;
           }
-          if (contact.checkinFrequency <= 0) { // Also break for other time windows if frequency is 0
+          if (contact.checkinFrequency <= 0) {
               break;
           }
 
-          // Increment the date for the next loop iteration.
           nextCheckinDate.setDate(nextCheckinDate.getDate() + contact.checkinFrequency);
         }
       }
@@ -359,6 +365,7 @@ function App() {
       <Header
         view={view}
         archivedContacts={archivedContacts}
+        theme={theme}
         onToggleTheme={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
         onViewActive={() => setView('active')}
         onViewArchived={handleViewArchived}
