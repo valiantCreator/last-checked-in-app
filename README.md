@@ -1,5 +1,5 @@
 # Last Checked In - Project Documentation
-**Version: 2.9 (As of August 9, 2025)**
+**Version: 3.0 (As of August 9, 2025)**
 **Author: Gemini**
 
 ## 1. Project Overview
@@ -29,9 +29,9 @@ The app is designed for individuals seeking a private tool to manage their socia
 - **Contact Management:** Add, edit, and view contacts with their name and a custom check-in frequency.
 - **Check-in System:** Manually log a "check-in" to reset the reminder timer. Contacts who are past their check-in frequency are visually highlighted as "overdue."
 - **Notes System:** Add multiple, timestamped notes for each contact.
-- **Dark Mode:** A fully functional light/dark mode theme.
 
 ### 2.2 Advanced Features (Implemented)
+- **(UPDATED) Animated Dark Mode & Persistence:** Replaced the text-based "Toggle Theme" button with a modern, animated sun/moon icon. The user's theme preference is now saved to their browser's `localStorage`, so their choice is remembered on future visits.
 - **Expanded Contact Details:** Store 'How We Met,' 'Key Facts,' and 'Birthday'.
 - **Tagging System:** A flexible, many-to-many tagging system.
 - **Advanced Filtering & Sorting:** Comprehensive controls to organize the contact list.
@@ -93,7 +93,8 @@ last-checked-in-app/
     │   │   ├── ExportCalendarModal.jsx
     │   │   ├── FilterControls.jsx
     │   │   ├── Header.jsx
-    │   │   └── TagInput.jsx
+    │   │   ├── TagInput.jsx
+    │   │   └── ThemeToggleButton.jsx  // --- NEW
     │   ├── App.jsx
     │   ├── apiConfig.js
     │   ├── firebase.js
@@ -145,6 +146,7 @@ This section provides a high-level overview of each critical file's purpose.
     - **Purpose:** The "brain" of the entire frontend application. It is the top-level component that manages all shared state and data logic.
     - **Key Logic:**
         - **State Management:** Holds all primary application state using `useState` hooks (e.g., `contacts`, `theme`, `sortBy`, `view`).
+        - **(UPDATED) Theme Persistence:** Initializes theme state from `localStorage` and updates it on change.
         - **Data Fetching:** Contains the `fetchContacts` function to get data from the backend API.
         - **Event Handlers:** Contains all the main handler functions (`handleCheckIn`, `handleUpdateContact`, `handleSnooze`, etc.) that perform API calls and update the state.
         - **Prop Drilling:** Passes state and handler functions down to child components as props.
@@ -156,7 +158,7 @@ This section provides a high-level overview of each critical file's purpose.
         - Displays contact information (name, check-in status, etc.).
         - Manages the toggle between a compact "summary" view and an expanded "detailed" view (which shows notes, birthday, etc.).
         - Renders differently based on the `displayMode` prop ('list' vs. 'grid').
-        - Contains the UI elements (buttons, forms) for all contact-specific actions like checking in, snoozing, editing, and adding notes. It receives the functions to perform these actions as props from `App.jsx`.
+        - Contains the UI elements for all contact-specific actions like checking in, snoozing, editing, and adding notes. It receives the functions to perform these actions as props from `App.jsx`.
 
 - `frontend/src/components/ExportCalendarModal.jsx`
     - **Purpose:** The UI component for the calendar export feature.
@@ -165,6 +167,12 @@ This section provides a high-level overview of each critical file's purpose.
         - Manages an internal view state to switch between the initial "options" view and the "files ready" view.
         - When the user confirms, it calls a function passed from `App.jsx` (`onGenerateFiles`) to get the calendar file data.
         - It handles the browser download logic, including triggering single or multiple downloads.
+        
+- **(NEW) `frontend/src/components/ThemeToggleButton.jsx`**
+    - **Purpose:** A dedicated presentational component for the animated theme toggle button.
+    - **Key Logic:**
+        - Contains the SVG structure for the sun and moon icons.
+        - Is controlled by props (`theme`, `onToggleTheme`) passed down from `App.jsx` via `Header.jsx`. All styling and animation logic is handled in `index.css`.
 
 - `frontend/src/utils.js`
     - **Purpose:** A utility file for pure, reusable helper functions, primarily for date manipulation.
@@ -184,6 +192,7 @@ This section provides a high-level overview of each critical file's purpose.
     - **Key Logic:**
         - Defines CSS variables for theming (light and dark modes).
         - Contains all styles for layout, components, and responsiveness.
+        - **(UPDATED)** Contains the keyframe and transition styles for the animated `ThemeToggleButton`.
 
 ---
 
