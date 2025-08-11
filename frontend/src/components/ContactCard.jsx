@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { isOverdue, formatBirthday, calculateNextCheckinDate, daysSince } from '../utils.js';
+import { isOverdue, formatBirthday, daysSince } from '../utils.js';
 import TagInput from './TagInput.jsx';
 
 function ContactCard({ 
   contact,
   handlers,
   uiState,
-  displayMode
+  displayMode,
+  selectionMode,
+  isSelected,
+  onToggleSelection,
 }) {
   const { editingContact, detailedContactId, addingNoteToContactId, editingNote, snoozingContactId } = uiState;
   const {
@@ -26,14 +29,13 @@ function ContactCard({
     handleSnooze,
     handleUpdateContact,
     handleCancelEditContact,
-    handleTogglePin // Get the new handler
+    handleTogglePin
   } = handlers;
 
   const [newNoteContent, setNewNoteContent] = useState('');
   const [editingNoteContent, setEditingNoteContent] = useState('');
   const [editingContactState, setEditingContactState] = useState(null);
   const [customSnoozeDays, setCustomSnoozeDays] = useState(7);
-
 
   const overdue = isOverdue(contact);
   const isEditingThisContact = editingContact && editingContact.id === contact.id;
@@ -45,20 +47,16 @@ function ContactCard({
     if (isSnoozed) {
       return new Date(contact.snooze_until).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     }
-
     const lastCheckinDate = new Date(contact.lastCheckin);
     const localLastCheckin = new Date(lastCheckinDate.valueOf() + lastCheckinDate.getTimezoneOffset() * 60 * 1000);
-    
     const nextCheckinDate = new Date(localLastCheckin);
     nextCheckinDate.setDate(localLastCheckin.getDate() + contact.checkinFrequency);
-    
     const today = new Date();
     if (nextCheckinDate.getFullYear() === today.getFullYear() &&
         nextCheckinDate.getMonth() === today.getMonth() &&
         nextCheckinDate.getDate() === today.getDate()) {
       return 'Today';
     }
-
     return nextCheckinDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   };
   const nextCheckinDisplay = getNextCheckinDisplay();
@@ -98,11 +96,24 @@ function ContactCard({
     }
   };
 
+  const handleCardClick = () => {
+    if (selectionMode) {
+      onToggleSelection(contact.id);
+    } else {
+      handleToggleDetails(contact.id);
+    }
+  };
+
   if (displayMode === 'grid') {
     return (
-        <div className={`card contact-item-grid ${overdue ? 'overdue' : ''}`}>
-            {/* --- NEW: Pin button for grid view --- */}
-            <button className="pin-button grid-pin-button" onClick={() => handleTogglePin(contact.id)}>
+        <div 
+          className={`card contact-item-grid ${overdue ? 'overdue' : ''} ${isSelected ? 'selected' : ''}`}
+          onClick={handleCardClick}
+        >
+            <div className="selection-checkbox-container grid-checkbox" onClick={(e) => { e.stopPropagation(); onToggleSelection(contact.id); }}>
+              <div className={`checkbox ${isSelected ? 'checked' : ''}`}></div>
+            </div>
+            <button className="pin-button grid-pin-button" onClick={(e) => { e.stopPropagation(); handleTogglePin(contact.id); }} disabled={selectionMode}>
               {contact.is_pinned ? '★' : '☆'}
             </button>
             <h3>{contact.firstName}</h3>
@@ -114,7 +125,7 @@ function ContactCard({
   }
 
   return (
-    <div className={`card contact-item ${overdue ? 'overdue' : ''}`}>
+    <div className={`card contact-item ${overdue ? 'overdue' : ''} ${isSelected ? 'selected' : ''}`}>
       {isEditingThisContact ? (
         <form onSubmit={onUpdateContactSubmit} className="contact-edit-form">
           <input name="firstName" value={editingContactState.firstName} onChange={onEditingContactChange} />
@@ -142,10 +153,12 @@ function ContactCard({
         </form>
       ) : (
         <>
-          <div className="contact-header">
+          <div className="contact-header" onClick={handleCardClick}>
             <div className="contact-title-wrapper">
-              {/* --- NEW: Pin button for list view --- */}
-              <button className="pin-button" onClick={() => handleTogglePin(contact.id)}>
+              <div className="selection-checkbox-container" onClick={(e) => { e.stopPropagation(); onToggleSelection(contact.id); }}>
+                <div className={`checkbox ${isSelected ? 'checked' : ''}`}></div>
+              </div>
+              <button className="pin-button" onClick={(e) => { e.stopPropagation(); handleTogglePin(contact.id); }} disabled={selectionMode}>
                 {contact.is_pinned ? '★' : '☆'}
               </button>
               <h3>{contact.firstName}</h3>
@@ -154,9 +167,9 @@ function ContactCard({
               <div className="header-buttons">
                 {overdue && (
                   <div className="snooze-container">
-                    <button className="button-secondary" onClick={() => setSnoozingContactId(snoozingContactId === contact.id ? null : contact.id)}>Snooze</button>
+                    <button className="button-secondary" onClick={(e) => { e.stopPropagation(); setSnoozingContactId(snoozingContactId === contact.id ? null : contact.id); }} disabled={selectionMode}>Snooze</button>
                     {snoozingContactId === contact.id && (
-                        <form className="snooze-options snooze-form" onSubmit={onCustomSnooze}>
+                        <form className="snooze-options snooze-form" onSubmit={onCustomSnooze} onClick={e => e.stopPropagation()}>
                             <input 
                               type="number"
                               value={customSnoozeDays}
@@ -170,8 +183,8 @@ function ContactCard({
                     )}
                   </div>
                 )}
-                <button className="button-primary" onClick={() => handleCheckIn(contact.id)}>Just Checked In!</button>
-                <button className="expand-collapse-button" onClick={() => handleToggleDetails(contact.id)} aria-expanded={isExpanded}>
+                <button className="button-primary" onClick={(e) => { e.stopPropagation(); handleCheckIn(contact.id); }} disabled={selectionMode}>Just Checked In!</button>
+                <button className="expand-collapse-button" onClick={(e) => { e.stopPropagation(); handleToggleDetails(contact.id); }} aria-expanded={isExpanded} disabled={selectionMode}>
                   {isExpanded ? 'Hide Details' : 'Show Details'}
                   <span className={`arrow ${isExpanded ? 'expanded' : ''}`}>▼</span>
                 </button>
@@ -183,7 +196,7 @@ function ContactCard({
             <p>
               Last checked in: <strong>{daysSince(contact.lastCheckin)} day(s) ago</strong> · Next: <strong>{nextCheckinDisplay}</strong>
             </p>
-            <button className="dev-button" onClick={() => handleMakeOverdue(contact.id)}>(Test: Make Overdue)</button>
+            <button className="dev-button" onClick={(e) => { e.stopPropagation(); handleMakeOverdue(contact.id); }}>(Test: Make Overdue)</button>
           </div>
 
           {isExpanded && (
@@ -198,7 +211,7 @@ function ContactCard({
                 {contact.tags && contact.tags.map(tag => (
                   <span key={tag.id} className="tag-badge">
                     {tag.name}
-                    <button onClick={() => handleRemoveTag(contact.id, tag.id)} className="remove-tag-btn">x</button>
+                    <button onClick={(e) => { e.stopPropagation(); handleRemoveTag(contact.id, tag.id); }} className="remove-tag-btn">x</button>
                   </span>
                 ))}
                  <TagInput contact={contact} onTagAdded={(newTag) => handleTagAdded(contact.id, newTag)} />
@@ -245,10 +258,10 @@ function ContactCard({
           )}
 
           <div className="contact-footer">
-            <button className="archive-button" onClick={() => handleArchiveContact(contact.id)}>Archive</button>
+            <button className="archive-button" onClick={(e) => { e.stopPropagation(); handleArchiveContact(contact.id); }} disabled={selectionMode}>Archive</button>
             <div className="footer-right-actions">
-                <button className="edit-contact-button" onClick={startEditingContact}>Edit Contact</button>
-                <button className="add-note-button" onClick={() => handleToggleAddNoteForm(contact.id === addingNoteToContactId ? null : contact.id)}>Add Note</button>
+                <button className="edit-contact-button" onClick={(e) => { e.stopPropagation(); startEditingContact(); }} disabled={selectionMode}>Edit Contact</button>
+                <button className="add-note-button" onClick={(e) => { e.stopPropagation(); handleToggleAddNoteForm(contact.id === addingNoteToContactId ? null : contact.id); }} disabled={selectionMode}>Add Note</button>
             </div>
           </div>
         </>

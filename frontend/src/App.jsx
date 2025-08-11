@@ -8,13 +8,13 @@ import AddContactForm from './components/AddContactForm.jsx';
 import ContactCard from './components/ContactCard.jsx';
 import ArchivedView from './components/ArchivedView.jsx';
 import ExportCalendarModal from './components/ExportCalendarModal.jsx';
+import BatchActionsToolbar from './components/BatchActionsToolbar.jsx';
 import { daysSince, isOverdue, calculateNextUpcomingCheckinDate, formatToICSDate, getNextBirthday } from './utils.js';
 import { API_URL } from './apiConfig.js';
 
 function App() {
   const [contacts, setContacts] = useState([]);
   
-  // --- UPDATED: Theme state now initializes from localStorage ---
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem('theme-preference');
     if (savedTheme) {
@@ -29,6 +29,10 @@ function App() {
   const [selectedTagId, setSelectedTagId] = useState('');
   const [view, setView] = useState('active');
   const [archivedContacts, setArchivedContacts] = useState([]);
+  
+  // --- NEW: State specifically for the archived count ---
+  const [archivedCount, setArchivedCount] = useState(0);
+
   const [detailedContactId, setDetailedContactId] = useState(null);
   const [editingContact, setEditingContact] = useState(null);
   const [addingNoteToContactId, setAddingNoteToContactId] = useState(null);
@@ -41,8 +45,8 @@ function App() {
   const [activeSearchFilter, setActiveSearchFilter] = useState('');
   const [displayMode, setDisplayMode] = useState('list');
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [selectedContactIds, setSelectedContactIds] = useState([]);
 
-  // --- UPDATED: This effect now also saves the theme to localStorage on change ---
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme-preference', theme);
@@ -58,10 +62,12 @@ function App() {
     }
   };
 
+  // --- UPDATED: This initial load effect now also fetches the archived count ---
   useEffect(() => {
     requestForToken();
     fetchContacts();
     axios.get(`${API_URL}/tags`).then(res => setAllTags(res.data.tags || []));
+    axios.get(`${API_URL}/contacts/archived/count`).then(res => setArchivedCount(res.data.count));
   }, []);
 
   useEffect(() => {
@@ -211,17 +217,24 @@ function App() {
     });
   };
 
+  // --- UPDATED: Now updates both active and archived lists/counts ---
   const handleArchiveContact = (contactId) => {
+    const contactToArchive = contacts.find(c => c.id === contactId);
     axios.put(`${API_URL}/contacts/${contactId}/archive`).then(() => {
-      fetchContacts();
-      toast.success("Contact archived.");
+        if(contactToArchive) {
+            setContacts(prev => prev.filter(c => c.id !== contactId));
+            setArchivedCount(prev => prev + 1); // Increment count
+        }
+        toast.success("Contact archived.");
     });
   };
 
+  // --- UPDATED: Now updates both active and archived counts ---
   const handleRestoreContact = (contactId) => {
     axios.put(`${API_URL}/contacts/${contactId}/restore`).then(() => {
       const contactToRestore = archivedContacts.find(c => c.id === contactId);
       setArchivedContacts(archivedContacts.filter(c => c.id !== contactId));
+      setArchivedCount(prev => prev - 1); // Decrement count
       if (contactToRestore) {
         setContacts([...contacts, { ...contactToRestore, notes: [], tags: contactToRestore.tags || [] }]);
       }
@@ -232,6 +245,7 @@ function App() {
   const handleDeletePermanently = (contactId) => {
     axios.delete(`${API_URL}/contacts/${contactId}`).then(() => {
       setArchivedContacts(archivedContacts.filter(c => c.id !== contactId));
+      // No need to change count, as it's already not in the main count
       toast.success("Contact permanently deleted.");
     });
   };
@@ -262,24 +276,78 @@ function App() {
   };
 
   const handleTogglePin = (contactId) => {
-    // Find the original contact to revert to in case of an error
     const originalContacts = [...contacts];
-    
-    // Optimistically update the UI
     setContacts(currentContacts => 
       currentContacts.map(c => 
         c.id === contactId ? { ...c, is_pinned: !c.is_pinned } : c
       )
     );
-
-    // Make the API call in the background
     axios.put(`${API_URL}/contacts/${contactId}/pin`)
       .catch(error => {
-        // If the API call fails, revert the UI state and show an error
         console.error("Failed to pin contact", error);
         toast.error("Could not update pin status.");
         setContacts(originalContacts);
       });
+  };
+
+  const handleToggleSelection = (contactId) => {
+    setSelectedContactIds(prev => 
+      prev.includes(contactId) 
+        ? prev.filter(id => id !== contactId) 
+        : [...prev, contactId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const allVisibleContactIds = [...processedContacts.pinned, ...processedContacts.unpinned].map(c => c.id);
+    setSelectedContactIds(allVisibleContactIds);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedContactIds([]);
+  };
+
+  // --- UPDATED: Now updates archived count ---
+  const handleBatchArchive = () => {
+    axios.post(`${API_URL}/contacts/batch-archive`, { contactIds: selectedContactIds })
+      .then(() => {
+        toast.success(`${selectedContactIds.length} contacts archived.`);
+        setArchivedCount(prev => prev + selectedContactIds.length); // Increment count
+        setContacts(contacts.filter(c => !selectedContactIds.includes(c.id)));
+        setSelectedContactIds([]);
+      })
+      .catch(err => {
+        console.error("Batch archive failed", err);
+        toast.error("Could not archive contacts.");
+      });
+  };
+
+  const handleBatchSnooze = (days) => {
+    axios.post(`${API_URL}/contacts/batch-snooze`, { contactIds: selectedContactIds, snooze_days: days })
+      .then(() => {
+        toast.success(`${selectedContactIds.length} contacts snoozed.`);
+        fetchContacts();
+        setSelectedContactIds([]);
+      })
+      .catch(err => {
+        console.error("Batch snooze failed", err);
+        toast.error("Could not snooze contacts.");
+      });
+  };
+
+  const handleBatchDelete = () => {
+    if (window.confirm(`Are you sure you want to permanently delete ${selectedContactIds.length} contacts? This action cannot be undone.`)) {
+      axios.post(`${API_URL}/contacts/batch-delete`, { contactIds: selectedContactIds })
+        .then(() => {
+          toast.success(`${selectedContactIds.length} contacts deleted.`);
+          setContacts(contacts.filter(c => !selectedContactIds.includes(c.id)));
+          setSelectedContactIds([]);
+        })
+        .catch(err => {
+          console.error("Batch delete failed", err);
+          toast.error("Could not delete contacts.");
+        });
+    }
   };
 
   const handleOpenExportModal = () => {
@@ -293,39 +361,27 @@ function App() {
   const generateCalendarFiles = ({ exportBirthdays, exportCheckins, timeWindow }) => {
     let birthdayICS = '';
     let checkinICS = '';
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const timeWindowLimit = new Date(today);
     if (timeWindow !== 'all') {
       timeWindowLimit.setDate(timeWindowLimit.getDate() + parseInt(timeWindow));
     }
-
     contacts.forEach(contact => {
       const fullName = contact.lastName ? `${contact.firstName} ${contact.lastName}` : contact.firstName;
-
       if (exportCheckins) {
         let nextCheckinDate = (contact.snooze_until && new Date(contact.snooze_until) > today)
           ? new Date(contact.snooze_until)
           : calculateNextUpcomingCheckinDate(contact.lastCheckin, contact.checkinFrequency);
-        
         while (timeWindow === 'all' || nextCheckinDate <= timeWindowLimit) {
           const formattedCheckinDate = formatToICSDate(nextCheckinDate);
           const checkinUID = `checkin-${contact.id}-${formattedCheckinDate}@lastchecked.in`;
-          
           checkinICS += `BEGIN:VEVENT\nUID:${checkinUID}\nDTSTAMP:${formatToICSDate(new Date())}\nDTSTART;VALUE=DATE:${formattedCheckinDate}\nSUMMARY:Check in with ${fullName}\nDESCRIPTION:Time to reconnect with ${fullName}!\nEND:VEVENT\n`;
-
-          if (timeWindow === 'all' && contact.checkinFrequency <= 0) {
-              break;
-          }
-          if (contact.checkinFrequency <= 0) {
-              break;
-          }
-
+          if (timeWindow === 'all' && contact.checkinFrequency <= 0) { break; }
+          if (contact.checkinFrequency <= 0) { break; }
           nextCheckinDate.setDate(nextCheckinDate.getDate() + contact.checkinFrequency);
         }
       }
-
       if (exportBirthdays && contact.birthday) {
         const nextBirthdayDate = getNextBirthday(contact.birthday);
         if (nextBirthdayDate) {
@@ -335,20 +391,12 @@ function App() {
         }
       }
     });
-
     const createFullICS = (content) => {
       if (!content) return null;
       return `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//LastCheckedIn//NONSGML v1.0//EN\nCALSCALE:GREGORIAN\n${content}END:VCALENDAR`;
     };
-
-    const timeWindowMap = {
-      '7': 'next_7_days',
-      '30': 'next_30_days',
-      '365': 'next_year',
-      'all': 'all_upcoming'
-    };
+    const timeWindowMap = { '7': 'next_7_days', '30': 'next_30_days', '365': 'next_year', 'all': 'all_upcoming' };
     const checkinFilename = `checkins_${timeWindowMap[timeWindow]}.ics`;
-
     return {
       birthdays: exportBirthdays ? { content: createFullICS(birthdayICS), filename: 'birthdays.ics' } : null,
       checkins: exportCheckins ? { content: createFullICS(checkinICS), filename: checkinFilename } : null
@@ -366,8 +414,10 @@ function App() {
     editingContact, detailedContactId, addingNoteToContactId, editingNote, snoozingContactId
   };
 
+  const selectionMode = selectedContactIds.length > 0;
+
   return (
-    <div className="app-container">
+    <div className={`app-container ${selectionMode ? 'selection-mode-active' : ''}`}>
       <Toaster
         position="top-center"
         toastOptions={{
@@ -380,7 +430,8 @@ function App() {
       />
       <Header
         view={view}
-        archivedContacts={archivedContacts}
+        // --- UPDATED: Pass the new count to the header ---
+        archivedCount={archivedCount}
         theme={theme}
         onToggleTheme={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
         onViewActive={() => setView('active')}
@@ -445,6 +496,9 @@ function App() {
                       handlers={handlers}
                       uiState={uiState}
                       displayMode={displayMode}
+                      selectionMode={selectionMode}
+                      isSelected={selectedContactIds.includes(contact.id)}
+                      onToggleSelection={handleToggleSelection}
                     />
                   ))}
                 </div>
@@ -466,6 +520,9 @@ function App() {
                 handlers={handlers}
                 uiState={uiState}
                 displayMode={displayMode}
+                selectionMode={selectionMode}
+                isSelected={selectedContactIds.includes(contact.id)}
+                onToggleSelection={handleToggleSelection}
               />
             ))}
           </div>
@@ -478,6 +535,18 @@ function App() {
         />
       )}
       
+      {selectionMode && (
+        <BatchActionsToolbar 
+          selectedCount={selectedContactIds.length}
+          onSelectAll={handleSelectAll}
+          onClear={handleClearSelection}
+          onSnooze={handleBatchSnooze}
+          onArchive={handleBatchArchive}
+          onDelete={handleBatchDelete}
+          totalContacts={contacts.length}
+        />
+      )}
+
       <ExportCalendarModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}

@@ -7,6 +7,10 @@ const admin = require('firebase-admin');
 const cron = require('node-cron');
 const { Pool } = require('pg'); // Import the PostgreSQL client
 
+// --- NEW: Import security packages ---
+const rateLimit = require('express-rate-limit');
+const { z } = require('zod'); // Zod for validation
+
 // --- Database Connection ---
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -27,6 +31,64 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// --- NEW: Rate Limiting Middleware ---
+const apiLimiter = rateLimit({
+	windowMs: 15 * 60 * 1000, // 15 minutes
+	max: 100, // Limit each IP to 100 requests per window
+	standardHeaders: true,
+	legacyHeaders: false,
+  message: { error: 'Too many API requests from this IP, please try again after 15 minutes.' },
+});
+
+app.use('/api/', apiLimiter);
+
+
+// --- NEW: Zod Validation Schemas ---
+const contactSchema = z.object({
+  firstName: z.string().min(1, { message: "First name is required" }).max(255),
+  checkinFrequency: z.number().int().positive({ message: "Frequency must be a positive number" }),
+  howWeMet: z.string().optional().nullable(),
+  keyFacts: z.string().optional().nullable(),
+  birthday: z.string().optional().nullable(),
+  lastCheckin: z.string().datetime({ message: "Invalid date format for last check-in" }).optional(),
+});
+
+const noteSchema = z.object({
+  content: z.string().min(1, { message: "Note content cannot be empty" }),
+});
+
+const tagSchema = z.object({
+  tagName: z.string().min(1, { message: "Tag name is required" }),
+});
+
+const snoozeSchema = z.object({
+  snooze_days: z.number().int().positive({ message: "Snooze days must be a positive number" }),
+});
+
+const batchActionSchema = z.object({
+  contactIds: z.array(z.number().int().positive()).min(1, { message: "At least one contact ID is required." }),
+  snooze_days: z.number().int().positive().optional(),
+});
+
+const tokenSchema = z.object({
+  token: z.string().min(1, { message: "FCM token is required" }),
+});
+
+const testOverdueSchema = z.object({
+  fcmToken: z.string().min(1, { message: "FCM token is required" }),
+});
+
+// --- NEW: Validation Middleware Factory ---
+const validate = (schema) => (req, res, next) => {
+  try {
+    schema.parse(req.body);
+    next();
+  } catch (e) {
+    res.status(400).json({ error: "Invalid request data", details: e.errors });
+  }
+};
+
+
 // --- Function to Create Tables on Server Startup ---
 const createTables = async () => {
     const client = await pool.connect();
@@ -45,7 +107,6 @@ const createTables = async () => {
                 is_pinned BOOLEAN DEFAULT FALSE
             );
         `);
-        // --- NEW: Add the is_pinned column if it doesn't exist ---
         const columns = await client.query(`
             SELECT column_name FROM information_schema.columns 
             WHERE table_name='contacts' AND column_name='is_pinned';
@@ -91,8 +152,48 @@ const createTables = async () => {
 };
 
 // =================================================================
-// --- API Endpoints (PostgreSQL Version) ---
+// --- API Endpoints ---
 // =================================================================
+
+app.post('/api/contacts/batch-archive', validate(batchActionSchema), async (req, res) => {
+    const { contactIds } = req.body;
+    try {
+        await pool.query('UPDATE contacts SET is_archived = TRUE WHERE id = ANY($1::int[])', [contactIds]);
+        res.json({ message: `${contactIds.length} contacts archived successfully.` });
+    } catch (err) {
+        console.error('Error batch archiving contacts:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/contacts/batch-delete', validate(batchActionSchema), async (req, res) => {
+    const { contactIds } = req.body;
+    try {
+        await pool.query('DELETE FROM contacts WHERE id = ANY($1::int[])', [contactIds]);
+        res.json({ message: `${contactIds.length} contacts deleted successfully.` });
+    } catch (err) {
+        console.error('Error batch deleting contacts:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/contacts/batch-snooze', validate(batchActionSchema), async (req, res) => {
+    const { contactIds, snooze_days } = req.body;
+    if (!snooze_days) {
+        return res.status(400).json({ error: "snooze_days is required for batch snooze." });
+    }
+    const snoozeUntil = new Date();
+    snoozeUntil.setDate(snoozeUntil.getDate() + snooze_days);
+
+    try {
+        await pool.query('UPDATE contacts SET snooze_until = $1 WHERE id = ANY($2::int[])', [snoozeUntil, contactIds]);
+        res.json({ message: `${contactIds.length} contacts snoozed successfully.` });
+    } catch (err) {
+        console.error('Error batch snoozing contacts:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/search', async (req, res) => {
     const { q } = req.query;
     if (!q) return res.json({ results: { contacts: [], notes: [] } });
@@ -140,7 +241,20 @@ app.get('/api/contacts/archived', async (req, res) => {
     }
 });
 
-app.post('/api/contacts', async (req, res) => {
+// --- NEW: Endpoint to get only the count of archived contacts ---
+app.get('/api/contacts/archived/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM contacts WHERE is_archived = TRUE');
+        // The result from COUNT(*) is a string, so we parse it to an integer.
+        const count = parseInt(result.rows[0].count, 10);
+        res.json({ count });
+    } catch (err) {
+        console.error('Error getting archived count:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/contacts', validate(contactSchema), async (req, res) => {
     const { firstName, checkinFrequency, howWeMet, keyFacts, birthday, lastCheckin } = req.body;
     const startDate = lastCheckin ? new Date(lastCheckin) : new Date();
     try {
@@ -156,7 +270,7 @@ app.post('/api/contacts', async (req, res) => {
     }
 });
 
-app.put('/api/contacts/:id', async (req, res) => {
+app.put('/api/contacts/:id', validate(contactSchema), async (req, res) => {
     const { firstName, checkinFrequency, howWeMet, keyFacts, birthday, lastCheckin } = req.body;
     try {
         await pool.query(
@@ -177,7 +291,6 @@ app.put('/api/contacts/:id', async (req, res) => {
     }
 });
 
-// --- NEW: Endpoint to toggle the pinned status of a contact ---
 app.put('/api/contacts/:id/pin', async (req, res) => {
     try {
         const result = await pool.query(
@@ -232,9 +345,8 @@ app.delete('/api/contacts/:id', async (req, res) => {
     }
 });
 
-app.put('/api/contacts/:id/snooze', async (req, res) => {
+app.put('/api/contacts/:id/snooze', validate(snoozeSchema), async (req, res) => {
     const { snooze_days } = req.body;
-    if (!snooze_days) return res.status(400).json({ error: 'snooze_days is required' });
     const snoozeUntil = new Date();
     snoozeUntil.setDate(snoozeUntil.getDate() + parseInt(snooze_days, 10));
     try {
@@ -256,10 +368,9 @@ app.get('/api/tags', async (req, res) => {
     }
 });
 
-app.post('/api/contacts/:id/tags', async (req, res) => {
+app.post('/api/contacts/:id/tags', validate(tagSchema), async (req, res) => {
     const { tagName } = req.body;
     const contactId = req.params.id;
-    if (!tagName) return res.status(400).json({ error: 'tagName is required' });
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
@@ -312,9 +423,8 @@ app.get('/api/contacts/:id/notes', async (req, res) => {
     }
 });
 
-app.post('/api/contacts/:id/notes', async (req, res) => {
+app.post('/api/contacts/:id/notes', validate(noteSchema), async (req, res) => {
     const { content } = req.body;
-    if (!content) return res.status(400).json({ error: 'Note content cannot be empty' });
     const createdAt = new Date();
     try {
         const result = await pool.query('INSERT INTO notes (content, "createdAt", "contactId") VALUES ($1, $2, $3) RETURNING *', [content, createdAt, req.params.id]);
@@ -325,9 +435,8 @@ app.post('/api/contacts/:id/notes', async (req, res) => {
     }
 });
 
-app.put('/api/notes/:noteId', async (req, res) => {
+app.put('/api/notes/:noteId', validate(noteSchema), async (req, res) => {
     const { content } = req.body;
-    if (!content) return res.status(400).json({ error: 'Note content cannot be empty' });
     const modifiedAt = new Date();
     try {
         await pool.query('UPDATE notes SET content = $1, "modifiedAt" = $2 WHERE id = $3', [content, modifiedAt, req.params.noteId]);
@@ -338,9 +447,8 @@ app.put('/api/notes/:noteId', async (req, res) => {
     }
 });
 
-app.post('/api/devices/token', async (req, res) => {
+app.post('/api/devices/token', validate(tokenSchema), async (req, res) => {
     const { token } = req.body;
-    if (!token) return res.status(400).json({ error: 'FCM token is required' });
     try {
         await pool.query('INSERT INTO devices (fcm_token) VALUES ($1) ON CONFLICT (fcm_token) DO NOTHING', [token]);
         res.status(201).json({ message: 'Token saved successfully' });
@@ -350,13 +458,9 @@ app.post('/api/devices/token', async (req, res) => {
     }
 });
 
-app.post('/api/contacts/:id/test-overdue', async (req, res) => {
+app.post('/api/contacts/:id/test-overdue', validate(testOverdueSchema), async (req, res) => {
   const { id } = req.params;
   const { fcmToken } = req.body;
-
-  if (!fcmToken) {
-    return res.status(400).json({ error: 'FCM token is required.' });
-  }
 
   try {
     const client = await pool.connect();
@@ -390,7 +494,7 @@ app.post('/api/contacts/:id/test-overdue', async (req, res) => {
 cron.schedule('0 9 * * *', async () => {
     console.log('Running daily check for overdue contacts...');
     try {
-        const contactsResult = await pool.query("SELECT * FROM contacts WHERE is_archived = 0");
+        const contactsResult = await pool.query("SELECT * FROM contacts WHERE is_archived = FALSE");
         const allContacts = contactsResult.rows;
 
         const devicesResult = await pool.query("SELECT fcm_token FROM devices");

@@ -1,15 +1,14 @@
 import React from 'react';
-// --- NEW: Import the new theme toggle component ---
 import ThemeToggleButton from './ThemeToggleButton';
 
 function Header({
   view,
-  archivedContacts,
+  // --- UPDATED: Receive archivedCount (a number) instead of the full array ---
+  archivedCount, 
   onToggleTheme,
   onViewArchived,
   onViewActive,
   onExportToCalendar,
-  // --- NEW: Receive the current theme state ---
   theme 
 }) {
   return (
@@ -22,7 +21,8 @@ function Header({
       <div className="header-actions">
         {view === 'active' ? (
           <button className="button-secondary" onClick={onViewArchived}>
-            View Archived ({archivedContacts.length})
+            {/* --- UPDATED: Display the count directly --- */}
+            View Archived ({archivedCount})
           </button>
         ) : (
           <button className="button-secondary" onClick={onViewActive}>
@@ -36,7 +36,6 @@ function Header({
             </button>
         )}
 
-        {/* --- UPDATED: Use the new animated toggle button --- */}
         <ThemeToggleButton theme={theme} onToggleTheme={onToggleTheme} />
       </div>
     </div>

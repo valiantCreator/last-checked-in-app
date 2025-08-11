@@ -99,8 +99,9 @@ body {
   margin: 1rem 0;
   border-radius: 12px;
   box-shadow: 0 4px 8px var(--card-shadow);
-  transition: background-color 0.3s;
+  transition: background-color 0.3s, border-color 0.3s;
   position: relative;
+  border: 2px solid transparent;
 }
 
 /* Form-specific styles */
@@ -787,6 +788,7 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
   padding-top: 1rem;
 }
 
+/* Modal Styles */
 .modal-backdrop {
   position: fixed;
   top: 0;
@@ -892,7 +894,7 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
   }
 }
 
-/* --- CORRECTED & FINAL: Animated Theme Toggle Styles --- */
+/* --- Animated Theme Toggle Styles --- */
 .theme-toggle {
   --size: 2rem;
   --sun-color: #ffc107;
@@ -914,7 +916,7 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
 }
 
 .theme-toggle:hover {
-  color: var(--primary-color);
+  color: var(--primary-color) !important;
 }
 
 .theme-toggle > svg {
@@ -923,19 +925,16 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
   stroke-linecap: round;
 }
 
-/* In light mode, the button shows a moon, so color it grey */
 [data-theme="light"] .theme-toggle {
   color: var(--moon-color);
 }
 
-/* In dark mode, the button shows a sun, so color it yellow */
 [data-theme="dark"] .theme-toggle {
   color: var(--sun-color);
 }
 
 .sun-and-moon {
   transform-origin: center center;
-  transition: transform .5s ease-out;
 }
 
 .sun-and-moon > .sun {
@@ -953,13 +952,13 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
   transition: transform .25s ease-out;
 }
 
-/* LIGHT THEME: Icon should be a MOON */
 [data-theme='light'] .sun-and-moon {
-  transform: rotate(20deg);
+  transform: rotate(-90deg);
+  transition: transform .5s ease-out;
 }
 
 [data-theme='light'] .sun-and-moon > .sun {
-  transform: scale(1.50);
+  transform: scale(1.75);
 }
 
 [data-theme='light'] .sun-and-moon > .sun-beams {
@@ -967,12 +966,12 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
 }
 
 [data-theme='light'] .sun-and-moon > .moon > circle {
-  transform: translateX(-9px);
+  transform: translateX(-7px);
 }
 
-/* DARK THEME: Icon should be a SUN */
 [data-theme='dark'] .sun-and-moon {
   transform: rotate(0deg);
+  transition: transform .5s ease-out;
 }
 
 [data-theme='dark'] .sun-and-moon > .sun {
@@ -985,4 +984,113 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
 
 [data-theme='dark'] .sun-and-moon > .moon > circle {
   transform: translateX(0);
+}
+
+/* --- NEW: Batch Action Styles --- */
+.app-container.selection-mode-active {
+  padding-bottom: 100px; /* Make space for the toolbar */
+}
+
+.batch-actions-toolbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: var(--card-bg);
+  padding: 1rem;
+  box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.1);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 900;
+  transform: translateY(100%);
+  animation: slideIn 0.3s forwards;
+}
+
+@keyframes slideIn {
+  to {
+    transform: translateY(0);
+  }
+}
+
+.batch-actions-toolbar .selection-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.batch-actions-toolbar .actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.select-all-button {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+}
+.select-all-button:hover {
+  background-color: var(--background-color);
+}
+
+.checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkbox.checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.checkbox.checked::after {
+  content: '✔';
+  color: var(--primary-text);
+  font-size: 14px;
+}
+
+.card.selected {
+  border-color: var(--primary-color) !important;
+  background-color: rgba(var(--text-color-rgb), 0.05);
+}
+
+.selection-checkbox-container {
+  opacity: 0; /* Hidden by default */
+  transition: opacity 0.2s;
+}
+
+/* Show checkbox on hover ONLY if not in selection mode */
+.card:hover .selection-checkbox-container {
+  opacity: 1;
+}
+
+/* Once in selection mode, all checkboxes are permanently visible */
+.selection-mode-active .selection-checkbox-container {
+  opacity: 1;
+}
+
+.selection-checkbox-container {
+  padding-right: 0.5rem;
+  cursor: pointer;
+}
+
+.grid-checkbox {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 10;
 }

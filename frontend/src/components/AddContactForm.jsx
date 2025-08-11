@@ -6,7 +6,6 @@ function AddContactForm({ onContactAdded }) {
   const [firstName, setFirstName] = useState('');
   const [checkinFrequency, setCheckinFrequency] = useState(7);
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-  // --- RE-ADDED: State for the missing fields ---
   const [howWeMet, setHowWeMet] = useState('');
   const [keyFacts, setKeyFacts] = useState('');
   const [birthday, setBirthday] = useState('');
@@ -16,14 +15,18 @@ function AddContactForm({ onContactAdded }) {
     e.preventDefault();
     if (!firstName.trim() || !checkinFrequency) return;
 
+    // --- FIX: Convert the date string to a full ISO string for backend validation ---
+    // The date input gives us 'YYYY-MM-DD'. We convert it to a Date object,
+    // then to a full ISO string (e.g., "2025-08-11T12:00:00.000Z") which Zod expects.
+    const fullIsoDate = new Date(startDate).toISOString();
+
     const newContact = {
       firstName: firstName.trim(),
       checkinFrequency: parseInt(checkinFrequency, 10),
-      lastCheckin: startDate,
-      // --- RE-ADDED: Include missing fields in the submission ---
+      lastCheckin: fullIsoDate, // Use the corrected full ISO date
       howWeMet: howWeMet.trim(),
       keyFacts: keyFacts.trim(),
-      birthday: birthday,
+      birthday: birthday || null, // Send null if the birthday is empty
     };
 
     axios.post(`${API_URL}/contacts`, newContact)
@@ -37,7 +40,15 @@ function AddContactForm({ onContactAdded }) {
         setKeyFacts('');
         setBirthday('');
       })
-      .catch(err => console.error("Error adding contact:", err));
+      .catch(err => {
+        console.error("Error adding contact:", err);
+        // --- IMPROVEMENT: Give user feedback on validation error ---
+        if (err.response && err.response.status === 400) {
+          toast.error("Please make sure all required fields are filled out correctly.");
+        } else {
+          toast.error("Could not add contact.");
+        }
+      });
   };
 
   return (
@@ -53,7 +64,6 @@ function AddContactForm({ onContactAdded }) {
             required
             className="full-width-field"
           />
-          {/* --- RE-ADDED: The missing input fields --- */}
           <input
             type="text"
             value={howWeMet}
