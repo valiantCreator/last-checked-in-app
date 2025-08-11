@@ -262,8 +262,24 @@ function App() {
   };
 
   const handleTogglePin = (contactId) => {
+    // Find the original contact to revert to in case of an error
+    const originalContacts = [...contacts];
+    
+    // Optimistically update the UI
+    setContacts(currentContacts => 
+      currentContacts.map(c => 
+        c.id === contactId ? { ...c, is_pinned: !c.is_pinned } : c
+      )
+    );
+
+    // Make the API call in the background
     axios.put(`${API_URL}/contacts/${contactId}/pin`)
-      .then(() => fetchContacts());
+      .catch(error => {
+        // If the API call fails, revert the UI state and show an error
+        console.error("Failed to pin contact", error);
+        toast.error("Could not update pin status.");
+        setContacts(originalContacts);
+      });
   };
 
   const handleOpenExportModal = () => {
