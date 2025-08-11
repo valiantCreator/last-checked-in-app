@@ -788,7 +788,6 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
   padding-top: 1rem;
 }
 
-/* Modal Styles */
 .modal-backdrop {
   position: fixed;
   top: 0;
@@ -894,7 +893,7 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
   }
 }
 
-/* --- Animated Theme Toggle Styles --- */
+/* --- CORRECTED & FINAL: Animated Theme Toggle Styles --- */
 .theme-toggle {
   --size: 2rem;
   --sun-color: #ffc107;
@@ -916,7 +915,7 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
 }
 
 .theme-toggle:hover {
-  color: var(--primary-color) !important;
+  color: var(--primary-color);
 }
 
 .theme-toggle > svg {
@@ -925,16 +924,19 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
   stroke-linecap: round;
 }
 
+/* In light mode, the button shows a moon, so color it grey */
 [data-theme="light"] .theme-toggle {
   color: var(--moon-color);
 }
 
+/* In dark mode, the button shows a sun, so color it yellow */
 [data-theme="dark"] .theme-toggle {
   color: var(--sun-color);
 }
 
 .sun-and-moon {
   transform-origin: center center;
+  transition: transform .5s ease-out;
 }
 
 .sun-and-moon > .sun {
@@ -952,13 +954,13 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
   transition: transform .25s ease-out;
 }
 
+/* LIGHT THEME: Icon should be a MOON */
 [data-theme='light'] .sun-and-moon {
-  transform: rotate(-90deg);
-  transition: transform .5s ease-out;
+  transform: rotate(20deg);
 }
 
 [data-theme='light'] .sun-and-moon > .sun {
-  transform: scale(1.75);
+  transform: scale(1.50);
 }
 
 [data-theme='light'] .sun-and-moon > .sun-beams {
@@ -966,12 +968,12 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
 }
 
 [data-theme='light'] .sun-and-moon > .moon > circle {
-  transform: translateX(-7px);
+  transform: translateX(-9px);
 }
 
+/* DARK THEME: Icon should be a SUN */
 [data-theme='dark'] .sun-and-moon {
   transform: rotate(0deg);
-  transition: transform .5s ease-out;
 }
 
 [data-theme='dark'] .sun-and-moon > .sun {
@@ -986,9 +988,9 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
   transform: translateX(0);
 }
 
-/* --- NEW: Batch Action Styles --- */
+/* --- Batch Action Styles --- */
 .app-container.selection-mode-active {
-  padding-bottom: 100px; /* Make space for the toolbar */
+  padding-bottom: 100px;
 }
 
 .batch-actions-toolbar {
@@ -1073,12 +1075,10 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
   transition: opacity 0.2s;
 }
 
-/* Show checkbox on hover ONLY if not in selection mode */
 .card:hover .selection-checkbox-container {
   opacity: 1;
 }
 
-/* Once in selection mode, all checkboxes are permanently visible */
 .selection-mode-active .selection-checkbox-container {
   opacity: 1;
 }
