@@ -1,5 +1,5 @@
 # Last Checked In - Project Documentation
-**Version: 3.0 (As of August 9, 2025)**
+**Version: 4.0 (As of August 11, 2025)**
 **Author: Gemini**
 
 ## 1. Project Overview
@@ -31,7 +31,7 @@ The app is designed for individuals seeking a private tool to manage their socia
 - **Notes System:** Add multiple, timestamped notes for each contact.
 
 ### 2.2 Advanced Features (Implemented)
-- **(UPDATED) Animated Dark Mode & Persistence:** Replaced the text-based "Toggle Theme" button with a modern, animated sun/moon icon. The user's theme preference is now saved to their browser's `localStorage`, so their choice is remembered on future visits.
+- **Animated Dark Mode & Persistence:** Replaced the text-based "Toggle Theme" button with a modern, animated sun/moon icon. The user's theme preference is now saved to their browser's `localStorage`, so their choice is remembered on future visits.
 - **Expanded Contact Details:** Store 'How We Met,' 'Key Facts,' and 'Birthday'.
 - **Tagging System:** A flexible, many-to-many tagging system.
 - **Advanced Filtering & Sorting:** Comprehensive controls to organize the contact list.
@@ -44,13 +44,10 @@ The app is designed for individuals seeking a private tool to manage their socia
 - **Intuitive Date Display:** Snooze dates are reflected as the next check-in, and check-ins due today are labeled "Today".
 - **Custom Snooze Durations:** Allows users to input a custom number of days to snooze a reminder.
 - **Refactored Contact Card UI:** A cleaner "summary" view and an expandable "detailed" view for contact cards.
-- **Favorite/Pin Contacts:** Users can pin their most important contacts. A star icon on each contact card toggles the pinned status. Pinned contacts appear in a separate "Pinned" section at the top of the main list for easy access. This section is temporarily hidden when a search or filter is active.
+- **Favorite/Pin Contacts:** Users can pin important contacts. A star icon on each contact card toggles the pinned status. Pinned contacts appear in a separate "Pinned" section at the top of the main list for easy access. This section is temporarily hidden when a search or filter is active.
 - **Calendar Export (.ics):** Allows users to export their contacts' birthdays and check-in reminders into a universal `.ics` file format, compatible with Google Calendar, Outlook, Apple Calendar, and others.
-    - An "Export" button in the header opens a modal with options.
-    - Users can choose to export birthdays (as recurring annual events) and/or check-ins.
-    - For check-ins, users can select a specific time window (next 7, 30, 365 days, or all upcoming) to prevent calendar clutter.
-    - The system intelligently generates all recurring check-ins for a contact within the selected time window.
-    - If both birthdays and check-ins are selected, the modal provides separate download links for each file (`birthdays.ics` and a dynamically named check-ins file, e.g., `checkins_next_30_days.ics`).
+- **(NEW) Batch Actions:** Allows users to select multiple contacts to perform bulk operations. A contextual toolbar appears at the bottom of the screen with options to Archive, Snooze, or Delete all selected contacts at once.
+- **(NEW) Backend Security:** The backend API is now protected with rate limiting to prevent spam/abuse and input validation (using Zod schemas) to reject malformed requests, ensuring data integrity and app stability.
 
 ---
 
@@ -58,7 +55,7 @@ The app is designed for individuals seeking a private tool to manage their socia
 
 ### 3.1 Technology Stack
 - **Frontend:** React (Vite), JavaScript (ES6+), Axios, use-debounce, Firebase SDK, react-hot-toast, CSS3 with CSS Variables.
-- **Backend:** Node.js with Express.js, PostgreSQL, node-cron, Firebase Admin SDK, dotenv.
+- **Backend:** Node.js with Express.js, PostgreSQL, node-cron, Firebase Admin SDK, dotenv, express-rate-limit, zod.
 - **Deployment:**
     - **Frontend:** Vercel (as a Progressive Web App)
     - **Backend:** Render (Web Service)
@@ -89,12 +86,13 @@ last-checked-in-app/
     │   ├── components/
     │   │   ├── AddContactForm.jsx
     │   │   ├── ArchivedView.jsx
+    │   │   ├── BatchActionsToolbar.jsx  // --- NEW
     │   │   ├── ContactCard.jsx
     │   │   ├── ExportCalendarModal.jsx
     │   │   ├── FilterControls.jsx
     │   │   ├── Header.jsx
     │   │   ├── TagInput.jsx
-    │   │   └── ThemeToggleButton.jsx  // --- NEW
+    │   │   └── ThemeToggleButton.jsx
     │   ├── App.jsx
     │   ├── apiConfig.js
     │   ├── firebase.js
@@ -109,6 +107,7 @@ The backend uses a PostgreSQL database with a connection pool. All API endpoints
 - **(UPDATE) Database Schema:** The `contacts` table has been updated with a new `is_pinned` boolean column, which defaults to `false`.
 - **(NEW) Pin/Unpin Endpoint:**
     - `PUT /api/contacts/:id/pin`: Toggles the `is_pinned` status of a contact in the database and returns the updated contact object.
+- **(NEW) Batch & Utility Endpoints:** Added new endpoints to support batch operations (`POST /api/contacts/batch-archive`, etc.) and to efficiently fetch the archived contact count (`GET /api/contacts/archived/count`).
 
 ### 3.4 Frontend Architecture (Component-Based)
 - **State Management & Data Flow**
@@ -129,9 +128,9 @@ This section provides a high-level overview of each critical file's purpose.
 - `backend/server.js`
     - **Purpose:** The entry point and core of the backend application.
     - **Key Logic:**
-        - Initializes the Express.js server.
-        - Connects to the PostgreSQL database.
-        - Defines all API endpoints (e.g., `GET /api/contacts`, `POST /api/contacts/:id/checkin`, `PUT /api/contacts/:id/pin`).
+        - Initializes the Express.js server and connects to the PostgreSQL database.
+        - **(UPDATED)** Implements application-wide API rate limiting and Zod validation schemas for all incoming data.
+        - Defines all API endpoints, including new endpoints for batch operations and fetching the archived count.
         - Contains the `node-cron` scheduled job for sending daily push notifications.
 
 ### Frontend
@@ -146,19 +145,24 @@ This section provides a high-level overview of each critical file's purpose.
     - **Purpose:** The "brain" of the entire frontend application. It is the top-level component that manages all shared state and data logic.
     - **Key Logic:**
         - **State Management:** Holds all primary application state using `useState` hooks (e.g., `contacts`, `theme`, `sortBy`, `view`).
-        - **(UPDATED) Theme Persistence:** Initializes theme state from `localStorage` and updates it on change.
+        - **(UPDATED)** Manages state for batch selections (`selectedContactIds`) and the initial archived count.
+        - **(UPDATED)** Theme Persistence: Initializes theme state from `localStorage` and updates it on change.
         - **Data Fetching:** Contains the `fetchContacts` function to get data from the backend API.
-        - **Event Handlers:** Contains all the main handler functions (`handleCheckIn`, `handleUpdateContact`, `handleSnooze`, etc.) that perform API calls and update the state.
+        - **Event Handlers:** Contains all the main handler functions (`handleCheckIn`, `handleUpdateContact`, `handleSnooze`, etc.) that perform API calls and update the state, including new handlers for batch actions.
         - **Prop Drilling:** Passes state and handler functions down to child components as props.
         - **Derived State:** Uses `useMemo` to efficiently compute the sorted and filtered list of contacts (`processedContacts`) whenever the source data or filter settings change.
 
 - `frontend/src/components/ContactCard.jsx`
     - **Purpose:** A presentational component responsible for rendering a single contact.
     - **Key Logic:**
-        - Displays contact information (name, check-in status, etc.).
+        - **(UPDATED)** Now displays a checkbox that appears on hover to enable selection mode. The card's appearance changes when it is selected.
         - Manages the toggle between a compact "summary" view and an expanded "detailed" view (which shows notes, birthday, etc.).
         - Renders differently based on the `displayMode` prop ('list' vs. 'grid').
         - Contains the UI elements for all contact-specific actions like checking in, snoozing, editing, and adding notes. It receives the functions to perform these actions as props from `App.jsx`.
+
+- **(NEW) `frontend/src/components/BatchActionsToolbar.jsx`**
+    - **Purpose:** A contextual toolbar for performing bulk operations.
+    - **Key Logic:** Appears fixed at the bottom of the screen only when one or more contacts are selected. Provides buttons for "Select All," "Snooze," "Archive," and "Delete."
 
 - `frontend/src/components/ExportCalendarModal.jsx`
     - **Purpose:** The UI component for the calendar export feature.
@@ -167,8 +171,8 @@ This section provides a high-level overview of each critical file's purpose.
         - Manages an internal view state to switch between the initial "options" view and the "files ready" view.
         - When the user confirms, it calls a function passed from `App.jsx` (`onGenerateFiles`) to get the calendar file data.
         - It handles the browser download logic, including triggering single or multiple downloads.
-        
-- **(NEW) `frontend/src/components/ThemeToggleButton.jsx`**
+
+- `frontend/src/components/ThemeToggleButton.jsx`
     - **Purpose:** A dedicated presentational component for the animated theme toggle button.
     - **Key Logic:**
         - Contains the SVG structure for the sun and moon icons.
@@ -187,12 +191,12 @@ This section provides a high-level overview of each critical file's purpose.
         - Initializes the Firebase app with credentials.
         - Contains the `requestForToken` function, which prompts the user for notification permissions and retrieves the unique device token required to send push notifications.
 
-- `frontend/src/index.css`
+- `frontend/srcs/index.css`
     - **Purpose:** The global stylesheet for the application.
     - **Key Logic:**
         - Defines CSS variables for theming (light and dark modes).
         - Contains all styles for layout, components, and responsiveness.
-        - **(UPDATED)** Contains the keyframe and transition styles for the animated `ThemeToggleButton`.
+        - **(UPDATED)** Contains the keyframe and transition styles for the animated `ThemeToggleButton` and the new `BatchActionsToolbar`.
 
 ---
 
