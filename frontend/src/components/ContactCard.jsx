@@ -164,25 +164,27 @@ function ContactCard({
               <h3>{contact.firstName}</h3>
             </div>
             <div className="contact-header-actions">
+              {/* --- FIX: Snooze button is now isolated from the other buttons --- */}
+              {overdue && (
+                <div className="snooze-container">
+                  <button className="button-secondary" onClick={(e) => { e.stopPropagation(); setSnoozingContactId(snoozingContactId === contact.id ? null : contact.id); }} disabled={selectionMode}>Snooze</button>
+                  {snoozingContactId === contact.id && (
+                      <form className="snooze-options snooze-form" onSubmit={onCustomSnooze} onClick={e => e.stopPropagation()}>
+                          <input 
+                            type="number"
+                            value={customSnoozeDays}
+                            onChange={(e) => setCustomSnoozeDays(e.target.value)}
+                            min="1"
+                            className="snooze-input"
+                          />
+                          <label>days</label>
+                          <button type="submit" className="snooze-submit-button">Snooze</button>
+                      </form>
+                  )}
+                </div>
+              )}
+              {/* This container now has a stable width, preventing layout shift */}
               <div className="header-buttons">
-                {overdue && (
-                  <div className="snooze-container">
-                    <button className="button-secondary" onClick={(e) => { e.stopPropagation(); setSnoozingContactId(snoozingContactId === contact.id ? null : contact.id); }} disabled={selectionMode}>Snooze</button>
-                    {snoozingContactId === contact.id && (
-                        <form className="snooze-options snooze-form" onSubmit={onCustomSnooze} onClick={e => e.stopPropagation()}>
-                            <input 
-                              type="number"
-                              value={customSnoozeDays}
-                              onChange={(e) => setCustomSnoozeDays(e.target.value)}
-                              min="1"
-                              className="snooze-input"
-                            />
-                            <label>days</label>
-                            <button type="submit" className="snooze-submit-button">Snooze</button>
-                        </form>
-                    )}
-                  </div>
-                )}
                 <button className="button-primary" onClick={(e) => { e.stopPropagation(); handleCheckIn(contact.id); }} disabled={selectionMode}>Just Checked In!</button>
                 <button className="expand-collapse-button" onClick={(e) => { e.stopPropagation(); handleToggleDetails(contact.id); }} aria-expanded={isExpanded} disabled={selectionMode}>
                   {isExpanded ? 'Hide Details' : 'Show Details'}
