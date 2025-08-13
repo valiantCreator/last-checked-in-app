@@ -155,6 +155,7 @@ const createTables = async () => {
 // --- API Endpoints ---
 // =================================================================
 
+// --- Batch Action Endpoints ---
 app.post('/api/contacts/batch-archive', validate(batchActionSchema), async (req, res) => {
     const { contactIds } = req.body;
     try {
@@ -194,6 +195,20 @@ app.post('/api/contacts/batch-snooze', validate(batchActionSchema), async (req, 
     }
 });
 
+// --- NEW: Endpoint to batch restore contacts ---
+app.post('/api/contacts/batch-restore', validate(batchActionSchema), async (req, res) => {
+    const { contactIds } = req.body;
+    try {
+        await pool.query('UPDATE contacts SET is_archived = FALSE WHERE id = ANY($1::int[])', [contactIds]);
+        res.json({ message: `${contactIds.length} contacts restored successfully.` });
+    } catch (err) {
+        console.error('Error batch restoring contacts:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+// --- Existing Endpoints ---
 app.get('/api/search', async (req, res) => {
     const { q } = req.query;
     if (!q) return res.json({ results: { contacts: [], notes: [] } });
@@ -241,11 +256,9 @@ app.get('/api/contacts/archived', async (req, res) => {
     }
 });
 
-// --- NEW: Endpoint to get only the count of archived contacts ---
 app.get('/api/contacts/archived/count', async (req, res) => {
     try {
         const result = await pool.query('SELECT COUNT(*) FROM contacts WHERE is_archived = TRUE');
-        // The result from COUNT(*) is a string, so we parse it to an integer.
         const count = parseInt(result.rows[0].count, 10);
         res.json({ count });
     } catch (err) {

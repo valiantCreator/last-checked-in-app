@@ -30,7 +30,6 @@ function App() {
   const [view, setView] = useState('active');
   const [archivedContacts, setArchivedContacts] = useState([]);
   
-  // --- NEW: State specifically for the archived count ---
   const [archivedCount, setArchivedCount] = useState(0);
 
   const [detailedContactId, setDetailedContactId] = useState(null);
@@ -47,6 +46,9 @@ function App() {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [selectedContactIds, setSelectedContactIds] = useState([]);
 
+  // --- NEW: State for archived contact selection ---
+  const [selectedArchivedIds, setSelectedArchivedIds] = useState([]);
+
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme-preference', theme);
@@ -62,7 +64,6 @@ function App() {
     }
   };
 
-  // --- UPDATED: This initial load effect now also fetches the archived count ---
   useEffect(() => {
     requestForToken();
     fetchContacts();
@@ -214,27 +215,31 @@ function App() {
     axios.get(`${API_URL}/contacts/archived`).then(res => {
       setArchivedContacts(res.data.contacts || []);
       setView('archived');
+      setSelectedContactIds([]); // Clear main selection when switching views
     });
   };
 
-  // --- UPDATED: Now updates both active and archived lists/counts ---
+  const handleViewActive = () => {
+    setView('active');
+    setSelectedArchivedIds([]); // Clear archived selection when switching views
+  };
+
   const handleArchiveContact = (contactId) => {
     const contactToArchive = contacts.find(c => c.id === contactId);
     axios.put(`${API_URL}/contacts/${contactId}/archive`).then(() => {
         if(contactToArchive) {
             setContacts(prev => prev.filter(c => c.id !== contactId));
-            setArchivedCount(prev => prev + 1); // Increment count
+            setArchivedCount(prev => prev + 1);
         }
         toast.success("Contact archived.");
     });
   };
 
-  // --- UPDATED: Now updates both active and archived counts ---
   const handleRestoreContact = (contactId) => {
+    const contactToRestore = archivedContacts.find(c => c.id === contactId);
     axios.put(`${API_URL}/contacts/${contactId}/restore`).then(() => {
-      const contactToRestore = archivedContacts.find(c => c.id === contactId);
       setArchivedContacts(archivedContacts.filter(c => c.id !== contactId));
-      setArchivedCount(prev => prev - 1); // Decrement count
+      setArchivedCount(prev => prev - 1);
       if (contactToRestore) {
         setContacts([...contacts, { ...contactToRestore, notes: [], tags: contactToRestore.tags || [] }]);
       }
@@ -245,7 +250,7 @@ function App() {
   const handleDeletePermanently = (contactId) => {
     axios.delete(`${API_URL}/contacts/${contactId}`).then(() => {
       setArchivedContacts(archivedContacts.filter(c => c.id !== contactId));
-      // No need to change count, as it's already not in the main count
+      setArchivedCount(prev => prev - 1);
       toast.success("Contact permanently deleted.");
     });
   };
@@ -307,12 +312,11 @@ function App() {
     setSelectedContactIds([]);
   };
 
-  // --- UPDATED: Now updates archived count ---
   const handleBatchArchive = () => {
     axios.post(`${API_URL}/contacts/batch-archive`, { contactIds: selectedContactIds })
       .then(() => {
         toast.success(`${selectedContactIds.length} contacts archived.`);
-        setArchivedCount(prev => prev + selectedContactIds.length); // Increment count
+        setArchivedCount(prev => prev + selectedContactIds.length);
         setContacts(contacts.filter(c => !selectedContactIds.includes(c.id)));
         setSelectedContactIds([]);
       })
@@ -335,13 +339,54 @@ function App() {
       });
   };
 
+  // --- NEW: Archived View Batch Handlers ---
+  const handleToggleArchivedSelection = (contactId) => {
+    setSelectedArchivedIds(prev => 
+      prev.includes(contactId) 
+        ? prev.filter(id => id !== contactId) 
+        : [...prev, contactId]
+    );
+  };
+
+  const handleSelectAllArchived = () => {
+    const allArchivedIds = archivedContacts.map(c => c.id);
+    setSelectedArchivedIds(allArchivedIds);
+  };
+
+  const handleClearArchivedSelection = () => {
+    setSelectedArchivedIds([]);
+  };
+
+  const handleBatchRestore = () => {
+    axios.post(`${API_URL}/contacts/batch-restore`, { contactIds: selectedArchivedIds })
+      .then(() => {
+        toast.success(`${selectedArchivedIds.length} contacts restored.`);
+        const restored = archivedContacts.filter(c => selectedArchivedIds.includes(c.id));
+        setContacts(prev => [...prev, ...restored]);
+        setArchivedContacts(archivedContacts.filter(c => !selectedArchivedIds.includes(c.id)));
+        setArchivedCount(prev => prev - selectedArchivedIds.length);
+        setSelectedArchivedIds([]);
+      })
+      .catch(err => {
+        console.error("Batch restore failed", err);
+        toast.error("Could not restore contacts.");
+      });
+  };
+
   const handleBatchDelete = () => {
-    if (window.confirm(`Are you sure you want to permanently delete ${selectedContactIds.length} contacts? This action cannot be undone.`)) {
-      axios.post(`${API_URL}/contacts/batch-delete`, { contactIds: selectedContactIds })
+    const idsToDelete = view === 'active' ? selectedContactIds : selectedArchivedIds;
+    if (window.confirm(`Are you sure you want to permanently delete ${idsToDelete.length} contacts? This action cannot be undone.`)) {
+      axios.post(`${API_URL}/contacts/batch-delete`, { contactIds: idsToDelete })
         .then(() => {
-          toast.success(`${selectedContactIds.length} contacts deleted.`);
-          setContacts(contacts.filter(c => !selectedContactIds.includes(c.id)));
-          setSelectedContactIds([]);
+          toast.success(`${idsToDelete.length} contacts deleted.`);
+          if (view === 'active') {
+            setContacts(contacts.filter(c => !idsToDelete.includes(c.id)));
+            setSelectedContactIds([]);
+          } else {
+            setArchivedContacts(archivedContacts.filter(c => !idsToDelete.includes(c.id)));
+            setArchivedCount(prev => prev - idsToDelete.length);
+            setSelectedArchivedIds([]);
+          }
         })
         .catch(err => {
           console.error("Batch delete failed", err);
@@ -430,11 +475,10 @@ function App() {
       />
       <Header
         view={view}
-        // --- UPDATED: Pass the new count to the header ---
         archivedCount={archivedCount}
         theme={theme}
         onToggleTheme={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
-        onViewActive={() => setView('active')}
+        onViewActive={handleViewActive}
         onViewArchived={handleViewArchived}
         onExportToCalendar={handleOpenExportModal}
       />
@@ -532,10 +576,17 @@ function App() {
           archivedContacts={archivedContacts}
           onRestore={handleRestoreContact}
           onDeletePermanently={handleDeletePermanently}
+          // --- NEW: Pass selection props to ArchivedView ---
+          selectedArchivedIds={selectedArchivedIds}
+          onToggleArchivedSelection={handleToggleArchivedSelection}
+          onSelectAllArchived={handleSelectAllArchived}
+          onClearArchivedSelection={handleClearArchivedSelection}
+          onBatchRestore={handleBatchRestore}
+          onBatchDelete={handleBatchDelete}
         />
       )}
       
-      {selectionMode && (
+      {selectionMode && view === 'active' && (
         <BatchActionsToolbar 
           selectedCount={selectedContactIds.length}
           onSelectAll={handleSelectAll}

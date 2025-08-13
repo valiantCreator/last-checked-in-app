@@ -1,12 +1,11 @@
 import React from 'react';
 
-function BatchActionsToolbar({ 
-  selectedCount, 
-  onSelectAll, 
+function ArchivedActionsToolbar({
+  selectedCount,
+  onSelectAll,
   onClear,
-  onSnooze,
-  onArchive,
-  onDelete, // This prop is no longer used here but we'll leave it for now
+  onRestore,
+  onDelete,
   totalContacts
 }) {
   const allSelected = selectedCount > 0 && selectedCount === totalContacts;
@@ -14,7 +13,7 @@ function BatchActionsToolbar({
   return (
     <div className="batch-actions-toolbar">
       <div className="selection-info">
-        <button 
+        <button
           className="select-all-button"
           onClick={allSelected ? onClear : onSelectAll}
           title={allSelected ? "Deselect All" : "Select All"}
@@ -24,11 +23,11 @@ function BatchActionsToolbar({
         </button>
       </div>
       <div className="actions">
-        <button onClick={() => onSnooze(7)} className="button-secondary">Snooze 1 Week</button>
-        <button onClick={onArchive} className="button-secondary">Archive</button>
+        <button onClick={onRestore} className="button-secondary">Restore</button>
+        <button onClick={onDelete} className="button-danger">Delete Permanently</button>
       </div>
     </div>
   );
 }
 
-export default BatchActionsToolbar;
+export default ArchivedActionsToolbar;
