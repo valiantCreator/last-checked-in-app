@@ -13,16 +13,16 @@ const { z } = require('zod'); // Zod for validation
 
 // --- Database Connection ---
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false 
-  }
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
 
 // --- Firebase Admin Setup ---
 const serviceAccount = require('./serviceAccountKey.json');
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+    credential: admin.credential.cert(serviceAccount)
 });
 
 const app = express();
@@ -33,11 +33,11 @@ app.use(express.json());
 
 // --- NEW: Rate Limiting Middleware ---
 const apiLimiter = rateLimit({
-	windowMs: 15 * 60 * 1000, // 15 minutes
-	max: 100, // Limit each IP to 100 requests per window
-	standardHeaders: true,
-	legacyHeaders: false,
-  message: { error: 'Too many API requests from this IP, please try again after 15 minutes.' },
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per window
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many API requests from this IP, please try again after 15 minutes.' },
 });
 
 app.use('/api/', apiLimiter);
@@ -45,47 +45,43 @@ app.use('/api/', apiLimiter);
 
 // --- NEW: Zod Validation Schemas ---
 const contactSchema = z.object({
-  firstName: z.string().min(1, { message: "First name is required" }).max(255),
-  checkinFrequency: z.number().int().positive({ message: "Frequency must be a positive number" }),
-  howWeMet: z.string().optional().nullable(),
-  keyFacts: z.string().optional().nullable(),
-  birthday: z.string().optional().nullable(),
-  lastCheckin: z.string().datetime({ message: "Invalid date format for last check-in" }).optional(),
+    firstName: z.string().min(1, { message: "First name is required" }).max(255),
+    checkinFrequency: z.number().int().positive({ message: "Frequency must be a positive number" }),
+    howWeMet: z.string().optional().nullable(),
+    keyFacts: z.string().optional().nullable(),
+    birthday: z.string().optional().nullable(),
+    lastCheckin: z.string().datetime({ message: "Invalid date format for last check-in" }).optional(),
 });
 
 const noteSchema = z.object({
-  content: z.string().min(1, { message: "Note content cannot be empty" }),
+    content: z.string().min(1, { message: "Note content cannot be empty" }),
 });
 
 const tagSchema = z.object({
-  tagName: z.string().min(1, { message: "Tag name is required" }),
+    tagName: z.string().min(1, { message: "Tag name is required" }),
 });
 
 const snoozeSchema = z.object({
-  snooze_days: z.number().int().positive({ message: "Snooze days must be a positive number" }),
+    snooze_days: z.number().int().positive({ message: "Snooze days must be a positive number" }),
 });
 
 const batchActionSchema = z.object({
-  contactIds: z.array(z.number().int().positive()).min(1, { message: "At least one contact ID is required." }),
-  snooze_days: z.number().int().positive().optional(),
+    contactIds: z.array(z.number().int().positive()).min(1, { message: "At least one contact ID is required." }),
+    snooze_days: z.number().int().positive().optional(),
 });
 
 const tokenSchema = z.object({
-  token: z.string().min(1, { message: "FCM token is required" }),
-});
-
-const testOverdueSchema = z.object({
-  fcmToken: z.string().min(1, { message: "FCM token is required" }),
+    token: z.string().min(1, { message: "FCM token is required" }),
 });
 
 // --- NEW: Validation Middleware Factory ---
 const validate = (schema) => (req, res, next) => {
-  try {
-    schema.parse(req.body);
-    next();
-  } catch (e) {
-    res.status(400).json({ error: "Invalid request data", details: e.errors });
-  }
+    try {
+        schema.parse(req.body);
+        next();
+    } catch (e) {
+        res.status(400).json({ error: "Invalid request data", details: e.errors });
+    }
 };
 
 
@@ -108,7 +104,7 @@ const createTables = async () => {
             );
         `);
         const columns = await client.query(`
-            SELECT column_name FROM information_schema.columns 
+            SELECT column_name FROM information_schema.columns
             WHERE table_name='contacts' AND column_name='is_pinned';
         `);
         if (columns.rows.length === 0) {
@@ -216,9 +212,9 @@ app.get('/api/search', async (req, res) => {
     try {
         const contactsResult = await pool.query('SELECT * FROM contacts WHERE "firstName" ILIKE $1 AND is_archived = FALSE', [searchTerm]);
         const notesResult = await pool.query(`
-            SELECT n.*, c."firstName" as "contactFirstName" 
-            FROM notes n 
-            JOIN contacts c ON n."contactId" = c.id 
+            SELECT n.*, c."firstName" as "contactFirstName"
+            FROM notes n
+            JOIN contacts c ON n."contactId" = c.id
             WHERE n.content ILIKE $1 AND c.is_archived = FALSE
         `, [searchTerm]);
         res.json({ results: { contacts: contactsResult.rows, notes: notesResult.rows } });
@@ -272,7 +268,7 @@ app.post('/api/contacts', validate(contactSchema), async (req, res) => {
     const startDate = lastCheckin ? new Date(lastCheckin) : new Date();
     try {
         const result = await pool.query(
-            `INSERT INTO contacts ("firstName", "checkinFrequency", "lastCheckin", "howWeMet", "keyFacts", birthday) 
+            `INSERT INTO contacts ("firstName", "checkinFrequency", "lastCheckin", "howWeMet", "keyFacts", birthday)
              VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
             [firstName, checkinFrequency, startDate, howWeMet, keyFacts, birthday]
         );
@@ -287,11 +283,11 @@ app.put('/api/contacts/:id', validate(contactSchema), async (req, res) => {
     const { firstName, checkinFrequency, howWeMet, keyFacts, birthday, lastCheckin } = req.body;
     try {
         await pool.query(
-            `UPDATE contacts SET 
-                "firstName" = $1, 
-                "checkinFrequency" = $2, 
-                "howWeMet" = $3, 
-                "keyFacts" = $4, 
+            `UPDATE contacts SET
+                "firstName" = $1,
+                "checkinFrequency" = $2,
+                "howWeMet" = $3,
+                "keyFacts" = $4,
                 birthday = $5,
                 "lastCheckin" = $6
              WHERE id = $7`,
@@ -471,77 +467,83 @@ app.post('/api/devices/token', validate(tokenSchema), async (req, res) => {
     }
 });
 
-app.post('/api/contacts/:id/test-overdue', validate(testOverdueSchema), async (req, res) => {
-  const { id } = req.params;
-  const { fcmToken } = req.body;
-
-  try {
-    const client = await pool.connect();
-    const freqResult = await client.query('SELECT "firstName", "checkinFrequency" FROM contacts WHERE id = $1', [id]);
-    const { firstName, checkinFrequency } = freqResult.rows[0];
-    const contactName = firstName || 'A contact';
-
-    const overdueDate = new Date();
-    overdueDate.setDate(overdueDate.getDate() - (checkinFrequency + 1));
-    await client.query('UPDATE contacts SET "lastCheckin" = $1 WHERE id = $2', [overdueDate, id]);
-    
-    client.release();
-
-    const message = {
-      data: {
-        title: 'Overdue Test Successful!',
-        body: `You have a new overdue notification for ${contactName}.`,
-      },
-      token: fcmToken
-    };
-    await admin.messaging().send(message);
-
-    res.json({ message: 'Contact made overdue and test notification sent successfully.' });
-  } catch (error) {
-    console.error('Error in test-overdue endpoint:', error);
-    res.status(500).json({ error: 'Failed to process request.' });
-  }
-});
-
 // --- SCHEDULED JOB ---
 cron.schedule('0 9 * * *', async () => {
-    console.log('Running daily check for overdue contacts...');
-    try {
-        const contactsResult = await pool.query("SELECT * FROM contacts WHERE is_archived = FALSE");
-        const allContacts = contactsResult.rows;
+    console.log(`[${new Date().toISOString()}] Running daily check for overdue contacts...`);
 
+    try {
+        // Step 1: Get all overdue contacts in a single, efficient query.
+        // This query correctly calculates the due date and filters out archived/snoozed contacts.
+        const overdueResult = await pool.query(`
+            SELECT id, "firstName"
+            FROM contacts
+            WHERE
+                is_archived = FALSE
+                AND (snooze_until IS NULL OR snooze_until < NOW())
+                AND ("lastCheckin" + "checkinFrequency" * INTERVAL '1 day') < NOW()
+        `);
+
+        const overdueContacts = overdueResult.rows;
+        const overdueCount = overdueContacts.length;
+
+        // Step 2: If no overdue contacts, log it and stop.
+        if (overdueCount === 0) {
+            console.log(`[${new Date().toISOString()}] No overdue contacts found. Job finished.`);
+            return;
+        }
+
+        console.log(`[${new Date().toISOString()}] Found ${overdueCount} overdue contacts.`);
+
+        // Step 3: Get all registered device FCM tokens.
         const devicesResult = await pool.query("SELECT fcm_token FROM devices");
         const allDeviceTokens = devicesResult.rows.map(row => row.fcm_token);
 
         if (allDeviceTokens.length === 0) {
-            console.log('No devices registered for notifications.');
+            console.log(`[${new Date().toISOString()}] Found overdue contacts, but no devices are registered for notifications. Job finished.`);
             return;
         }
 
-        const overdueContacts = allContacts.filter(contact => {
-            const now = new Date();
-            if (contact.snooze_until && new Date(contact.snooze_until) > now) return false;
-            const lastCheckin = new Date(contact.lastCheckin);
-            const dueDate = new Date(lastCheckin.setDate(lastCheckin.getDate() + contact.checkinFrequency));
-            return dueDate < now;
-        });
-
-        if (overdueContacts.length > 0) {
-            console.log(`Found ${overdueContacts.length} overdue contacts. Sending notifications.`);
-            const message = {
-                notification: {
-                    title: 'Check-in Reminder!',
-                    body: `You have ${overdueContacts.length} people to check in with today.`
-                },
-                tokens: allDeviceTokens,
-            };
-
-            await admin.messaging().sendEachForMulticast(message);
+        // Step 4: Construct the dynamic notification message.
+        let notificationBody;
+        if (overdueCount === 1) {
+            notificationBody = `You have an overdue check-in for ${overdueContacts[0].firstName}.`;
         } else {
-            console.log('No overdue contacts found today.');
+            notificationBody = `You have ${overdueCount} overdue check-ins.`;
         }
+        
+        console.log(`[${new Date().toISOString()}] Preparing to send notification: "${notificationBody}" to ${allDeviceTokens.length} device(s).`);
+
+        // Step 5: Create the payload and send the notification to all devices.
+        const message = {
+            notification: {
+                title: 'Check-in Reminder',
+                body: notificationBody,
+            },
+            data: {
+                app_url: '/' // Directs the user to the home page on notification click
+            },
+            tokens: allDeviceTokens,
+        };
+
+        const response = await admin.messaging().sendEachForMulticast(message);
+        console.log(`[${new Date().toISOString()}] Successfully sent message to ${response.successCount} devices.`);
+        
+        if (response.failureCount > 0) {
+            console.warn(`[${new Date().toISOString()}] Failed to send message to ${response.failureCount} devices.`);
+            // Optional: Advanced error handling to remove invalid tokens
+            const failedTokens = [];
+            response.responses.forEach((resp, idx) => {
+              if (!resp.success) {
+                failedTokens.push(allDeviceTokens[idx]);
+              }
+            });
+            console.log(`[${new Date().toISOString()}] List of failed tokens:`, failedTokens);
+            // To automatically clean up your database, you could add:
+            await pool.query('DELETE FROM devices WHERE fcm_token = ANY($1::text[])', [failedTokens]);
+        }
+
     } catch (error) {
-        console.error('Error sending notifications:', error);
+        console.error(`[${new Date().toISOString()}] FATAL ERROR during scheduled job:`, error);
     }
 });
 
