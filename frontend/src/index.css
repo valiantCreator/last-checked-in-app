@@ -615,63 +615,11 @@ input[type="date"] { color-scheme: light; }
 input[type="date"]:invalid { color: rgba(var(--text-color-rgb), 0.6); }
 input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
 
-/* Snooze Styles */
 .header-buttons {
     display: flex;
     align-items: center;
     gap: 0.5rem;
 }
-.snooze-container { position: relative; }
-.snooze-options {
-    position: absolute;
-    right: 0;
-    top: 100%;
-    margin-top: 0.5rem;
-    background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    box-shadow: 0 4px 8px var(--card-shadow);
-    z-index: 20;
-    display: flex;
-    width: max-content;
-}
-
-.snooze-form {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-}
-
-.snooze-input {
-  width: 60px;
-  padding: 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background-color: var(--background-color);
-  color: var(--text-color);
-  text-align: center;
-}
-
-.snooze-submit-button {
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--overdue-border);
-  background-color: transparent;
-  color: var(--overdue-border);
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
-  white-space: nowrap;
-  text-align: center;
-}
-
-.snooze-submit-button:hover {
-  background-color: var(--border-color);
-}
-
 
 .dev-button {
     font-size: 0.75rem;
@@ -811,6 +759,7 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
   max-width: 500px;
   border: 1px solid var(--border-color);
   animation: fadeIn 0.3s ease-out;
+  text-align: center; /* Center align text for snooze modal */
 }
 .modal-content h2 {
   margin-top: 0;
@@ -866,7 +815,7 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
 }
 .modal-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center; /* Center buttons for snooze modal */
   gap: 0.75rem;
   margin-top: 2rem;
 }
@@ -882,6 +831,33 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
   text-align: center;
   justify-content: center;
 }
+
+/* NEW: Styles for Snooze Modal Inputs */
+.modal-input-group {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 2rem 0;
+}
+
+.modal-input {
+  width: 100px;
+  padding: 0.75rem;
+  font-size: 2rem;
+  text-align: center;
+  font-weight: bold;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+.modal-input-group label {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

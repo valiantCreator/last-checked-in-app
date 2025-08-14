@@ -9,6 +9,7 @@ import ContactCard from './components/ContactCard.jsx';
 import ArchivedView from './components/ArchivedView.jsx';
 import ExportCalendarModal from './components/ExportCalendarModal.jsx';
 import BatchActionsToolbar from './components/BatchActionsToolbar.jsx';
+import SnoozeModal from './components/SnoozeModal.jsx'; // NEW: Import the modal component
 import { daysSince, isOverdue, calculateNextUpcomingCheckinDate, formatToICSDate, getNextBirthday } from './utils.js';
 import { API_URL } from './apiConfig.js';
 
@@ -36,7 +37,7 @@ function App() {
   const [editingContact, setEditingContact] = useState(null);
   const [addingNoteToContactId, setAddingNoteToContactId] = useState(null);
   const [editingNote, setEditingNote] = useState(null);
-  const [snoozingContactId, setSnoozingContactId] = useState(null);
+  const [snoozingContact, setSnoozingContact] = useState(null); // UPDATED: State for the modal
   const [globalSearchTerm, setGlobalSearchTerm] = useState('');
   const [debouncedGlobalSearch] = useDebounce(globalSearchTerm, 300);
   const [searchResults, setSearchResults] = useState(null);
@@ -255,30 +256,16 @@ function App() {
     });
   };
 
+  // UPDATED: handleSnooze now closes the modal
   const handleSnooze = (contactId, days) => {
     axios.put(`${API_URL}/contacts/${contactId}/snooze`, { snooze_days: days }).then(() => {
-      setSnoozingContactId(null);
+      setSnoozingContact(null);
       fetchContacts();
       toast.success("Snoozed!");
     });
   };
 
-  const handleMakeOverdue = async (contactId) => {
-    try {
-      const currentToken = await requestForToken();
-      if (currentToken) {
-        console.log("Sending test notification to token:", currentToken);
-        await axios.post(`${API_URL}/contacts/${contactId}/test-overdue`, { fcmToken: currentToken });
-        await fetchContacts();
-        toast.success('Test notification sent!');
-      } else {
-        toast.error('Could not get notification token. Please grant permission.');
-      }
-    } catch (err) {
-      console.error('Error sending test notification:', err);
-      toast.error('Failed to send test notification.');
-    }
-  };
+  // REMOVED: handleMakeOverdue function is deleted as it's no longer used.
 
   const handleTogglePin = (contactId) => {
     const originalContacts = [...contacts];
@@ -449,14 +436,15 @@ function App() {
   };
 
   const handlers = {
-    handleCheckIn, handleToggleDetails, handleMakeOverdue, handleTagAdded, handleRemoveTag,
+    handleCheckIn, handleToggleDetails, handleTagAdded, handleRemoveTag,
     handleEditContactClick: setEditingContact, handleArchiveContact, handleToggleAddNoteForm: setAddingNoteToContactId,
     handleSaveNote, handleUpdateNote, handleEditNoteClick: setEditingNote, handleCancelEditNote: () => setEditingNote(null),
-    setSnoozingContactId, handleSnooze, handleUpdateContact, handleCancelEditContact: () => setEditingContact(null),
-    handleTogglePin
+    handleSnooze, handleUpdateContact, handleCancelEditContact: () => setEditingContact(null),
+    handleTogglePin,
+    handleOpenSnoozeModal: setSnoozingContact, // UPDATED: Pass the modal opener
   };
   const uiState = {
-    editingContact, detailedContactId, addingNoteToContactId, editingNote, snoozingContactId
+    editingContact, detailedContactId, addingNoteToContactId, editingNote
   };
 
   const selectionMode = selectedContactIds.length > 0;
@@ -603,6 +591,15 @@ function App() {
         onClose={() => setIsExportModalOpen(false)}
         onGenerateFiles={generateCalendarFiles}
       />
+
+      {/* NEW: Conditionally render the SnoozeModal */}
+      {snoozingContact && (
+        <SnoozeModal
+            contact={snoozingContact}
+            onClose={() => setSnoozingContact(null)}
+            onSnooze={handleSnooze}
+        />
+      )}
     </div>
   );
 }
