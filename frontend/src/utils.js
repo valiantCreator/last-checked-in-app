@@ -1,97 +1,114 @@
+import { addDays, startOfDay, format, isToday, isTomorrow, isWithinInterval, differenceInCalendarDays } from 'date-fns';
+
+// --- This function for the Agenda View is correct and remains unchanged. ---
+export function generateAgendaViewData(contacts) {
+  const today = startOfDay(new Date());
+  const agendaLimit = addDays(today, 7); 
+
+  const agendaSkeleton = Array.from({ length: 8 }).map((_, i) => {
+    const date = addDays(today, i);
+    let title;
+    if (isToday(date)) {
+      title = 'Today';
+    } else if (isTomorrow(date)) {
+      title = 'Tomorrow';
+    } else {
+      title = format(date, 'EEEE, MMMM d');
+    }
+    return { date, title, contacts: [] };
+  });
+
+  contacts.forEach(contact => {
+    const effectiveDate = getEffectiveCheckinDate(contact);
+    
+    if (effectiveDate && isWithinInterval(effectiveDate, { start: today, end: agendaLimit })) {
+      const dayIndex = differenceInCalendarDays(effectiveDate, today);
+      if (dayIndex >= 0 && dayIndex < 8) {
+        agendaSkeleton[dayIndex].contacts.push(contact);
+      }
+    }
+  });
+
+  agendaSkeleton.forEach(day => {
+    day.contacts.sort((a, b) => a.firstName.localeCompare(b.firstName));
+  });
+
+  return agendaSkeleton;
+}
+
+// This function is for the Agenda view and is correct.
+export function getEffectiveCheckinDate(contact) {
+    const today = startOfDay(new Date());
+    if (contact.snooze_until) {
+        const snoozeDate = startOfDay(new Date(contact.snooze_until));
+        if (snoozeDate >= today) {
+            return snoozeDate;
+        }
+    }
+    return calculateNextUpcomingCheckinDate(contact.lastCheckin, contact.checkinFrequency);
+}
+
+// --- LOGIC CORRECTION FOR isOverdue ---
+// This function is now simple and only determines if a contact is currently overdue.
+export function isOverdue(contact) {
+    const today = startOfDay(new Date());
+
+    // If snoozed until a future date, it's not overdue.
+    if (contact.snooze_until && startOfDay(new Date(contact.snooze_until)) > today) {
+        return false;
+    }
+    
+    // Calculate the simple due date by adding frequency to the last check-in.
+    const dueDate = addDays(startOfDay(new Date(contact.lastCheckin)), contact.checkinFrequency);
+    
+    // It's overdue if the due date is today or in the past.
+    return dueDate <= today;
+}
+
+
 export function daysSince(dateString) {
-  const today = new Date();
-  const lastDate = new Date(dateString);
-  today.setHours(0, 0, 0, 0);
-  lastDate.setHours(0, 0, 0, 0);
-  const diffTime = today - lastDate;
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const today = startOfDay(new Date());
+  const lastDate = startOfDay(new Date(dateString));
+  return differenceInCalendarDays(today, lastDate);
 }
 
 export function formatBirthday(dateString) {
-  if (!dateString || !dateString.includes('-')) return dateString;
-  const date = new Date(dateString);
-  const userTimezoneOffset = date.getTimezoneOffset() * 60000;
-  const adjustedDate = new Date(date.getTime() + userTimezoneOffset);
-  return adjustedDate.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-  });
+  if (!dateString) return dateString;
+  const date = new Date(dateString); 
+  return format(date, 'MMMM d');
 }
 
-export function isOverdue(contact) {
-    const now = new Date();
-    if (contact.snooze_until && new Date(contact.snooze_until) > now) {
-        return false;
-    }
-    const daysSinceCheckin = daysSince(contact.lastCheckin);
-    return daysSinceCheckin > contact.checkinFrequency;
-}
-
-// --- DEPRECATED: This function is no longer used but kept for reference if needed. ---
-export function calculateNextCheckinDate(lastCheckin, frequency) {
-    const lastDate = new Date(lastCheckin);
-    lastDate.setDate(lastDate.getDate() + frequency);
-    return lastDate;
-}
-
-// --- REVISED: A more robust function to find the next check-in date. ---
 export function calculateNextUpcomingCheckinDate(lastCheckin, frequency) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  if (frequency <= 0) return null;
+  const today = startOfDay(new Date());
+  const lastDate = startOfDay(new Date(lastCheckin));
 
-    const lastDate = new Date(lastCheckin);
-    lastDate.setHours(0, 0, 0, 0);
-
-    const daysSinceLast = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
-    
-    if (daysSinceLast <= frequency) {
-        // Not overdue, so just add frequency to the last check-in date.
-        const nextDate = new Date(lastDate);
-        nextDate.setDate(nextDate.getDate() + frequency);
-        return nextDate;
-    } else {
-        // Is overdue. Find how many cycles have been missed.
-        const cyclesMissed = Math.floor((daysSinceLast - frequency) / frequency) + 1;
-        const daysToAdd = cyclesMissed * frequency;
-        const nextDate = new Date(lastDate);
-        nextDate.setDate(nextDate.getDate() + frequency + daysToAdd);
-        return nextDate;
-    }
+  const daysSinceLast = differenceInCalendarDays(today, lastDate);
+  
+  if (daysSinceLast <= frequency) {
+    return addDays(lastDate, frequency);
+  } else {
+    const cyclesMissed = Math.floor((daysSinceLast - 1) / frequency);
+    const daysToAdd = (cyclesMissed + 1) * frequency;
+    return addDays(lastDate, daysToAdd);
+  }
 }
 
-
-// --- Helper function to format a date for the iCalendar (.ics) standard ---
 export function formatToICSDate(date) {
-    if (!date) return '';
-    const d = new Date(date);
-    // Adjust for timezone offset to prevent the date from shifting
-    const userTimezoneOffset = d.getTimezoneOffset() * 60000;
-    const adjustedDate = new Date(d.getTime() + userTimezoneOffset);
-
-    const year = adjustedDate.getUTCFullYear();
-    const month = String(adjustedDate.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(adjustedDate.getUTCDate()).padStart(2, '0');
-    return `${year}${month}${day}`;
+  if (!date) return '';
+  return format(date, 'yyyyMMdd');
 }
 
-// --- Helper function to calculate the next occurrence of a birthday ---
 export function getNextBirthday(birthdayString) {
-    if (!birthdayString) return null;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Normalize to the start of today
-
-    const birthDate = new Date(birthdayString);
-    const userTimezoneOffset = birthDate.getTimezoneOffset() * 60000;
-    const adjustedBirthDate = new Date(birthDate.getTime() + userTimezoneOffset);
-    
-    const birthMonth = adjustedBirthDate.getUTCMonth();
-    const birthDay = adjustedBirthDate.getUTCDate();
-    
-    let nextBirthday = new Date(today.getFullYear(), birthMonth, birthDay);
-
-    if (nextBirthday < today) {
-        nextBirthday.setFullYear(today.getFullYear() + 1);
-    }
-    
-    return nextBirthday;
+  if (!birthdayString) return null;
+  const today = startOfDay(new Date());
+  const parts = birthdayString.split('-');
+  const birthMonth = parseInt(parts[1], 10) - 1; 
+  const birthDay = parseInt(parts[2], 10);
+  
+  let nextBirthday = new Date(today.getFullYear(), birthMonth, birthDay);
+  if (nextBirthday < today) {
+    nextBirthday.setFullYear(today.getFullYear() + 1);
+  }
+  return startOfDay(nextBirthday);
 }

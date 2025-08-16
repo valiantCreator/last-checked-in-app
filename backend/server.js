@@ -191,7 +191,6 @@ app.post('/api/contacts/batch-snooze', validate(batchActionSchema), async (req, 
     }
 });
 
-// --- NEW: Endpoint to batch restore contacts ---
 app.post('/api/contacts/batch-restore', validate(batchActionSchema), async (req, res) => {
     const { contactIds } = req.body;
     try {
@@ -199,6 +198,20 @@ app.post('/api/contacts/batch-restore', validate(batchActionSchema), async (req,
         res.json({ message: `${contactIds.length} contacts restored successfully.` });
     } catch (err) {
         console.error('Error batch restoring contacts:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// NEW BATCH ENDPOINT: For checking in with multiple contacts at once.
+app.post('/api/contacts/batch-checkin', validate(batchActionSchema), async (req, res) => {
+    const { contactIds } = req.body;
+    const lastCheckin = new Date();
+    try {
+        // Update all specified contacts with the new check-in date and clear any snoozes.
+        await pool.query('UPDATE contacts SET "lastCheckin" = $1, snooze_until = NULL WHERE id = ANY($2::int[])', [lastCheckin, contactIds]);
+        res.json({ message: `${contactIds.length} contacts checked in successfully.` });
+    } catch (err) {
+        console.error('Error batch checking in with contacts:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -479,8 +492,12 @@ cron.schedule('0 9 * * *', async () => {
             FROM contacts
             WHERE
                 is_archived = FALSE
-                AND (snooze_until IS NULL OR snooze_until < NOW())
-                AND ("lastCheckin" + "checkinFrequency" * INTERVAL '1 day') < NOW()
+                -- CORRECTED LOGIC: Check against the calendar date, not the exact time.
+                -- A contact snoozed UNTIL today is not overdue. They become overdue TOMORROW.
+                AND (snooze_until IS NULL OR CAST(snooze_until AS DATE) < CURRENT_DATE)
+                -- CORRECTED LOGIC: Check against the calendar date, not the exact time.
+                -- This correctly includes contacts due AT ANY TIME today.
+                AND CAST(("lastCheckin" + "checkinFrequency" * INTERVAL '1 day') AS DATE) <= CURRENT_DATE
         `);
 
         const overdueContacts = overdueResult.rows;

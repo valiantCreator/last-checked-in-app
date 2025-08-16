@@ -4,9 +4,11 @@ function BatchActionsToolbar({
   selectedCount, 
   onSelectAll, 
   onClear,
-  onSnooze,
+  onSnooze, // This prop is no longer used here, but kept for consistency
   onArchive,
   onDelete, // This prop is no longer used here but we'll leave it for now
+  onCheckIn,
+  onOpenSnoozeModal, // NEW: A handler to open the batch snooze modal
   totalContacts
 }) {
   const allSelected = selectedCount > 0 && selectedCount === totalContacts;
@@ -24,7 +26,10 @@ function BatchActionsToolbar({
         </button>
       </div>
       <div className="actions">
-        <button onClick={() => onSnooze(7)} className="button-secondary">Snooze 1 Week</button>
+        {/* The primary action is now batch check-in */}
+        <button onClick={onCheckIn} className="button-primary">Just Checked In!</button>
+        {/* UPDATED: This button now opens the modal instead of having hardcoded logic */}
+        <button onClick={onOpenSnoozeModal} className="button-secondary">Snooze</button>
         <button onClick={onArchive} className="button-secondary">Archive</button>
       </div>
     </div>

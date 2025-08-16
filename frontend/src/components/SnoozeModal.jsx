@@ -1,50 +1,60 @@
 import React, { useState } from 'react';
 
-function SnoozeModal({ contact, onClose, onSnooze }) {
-  // The modal manages its own state for the input field.
-  const [days, setDays] = useState(7);
+// NEW: The modal is now smarter and can handle single or batch operations.
+function SnoozeModal({
+  contact,      // The contact object (for single snooze)
+  isBatchMode,  // A boolean to indicate if we're snoozing a batch
+  count,        // The number of contacts in the batch
+  onClose,
+  onSnooze
+}) {
+  // State to hold the number of days to snooze for. Default to 1.
+  const [days, setDays] = useState(1);
 
   const handleSnoozeClick = () => {
-    // Basic validation to ensure a positive number is entered.
+    // Basic validation to ensure days is a positive number.
     const snoozeDays = parseInt(days, 10);
     if (snoozeDays > 0) {
-      onSnooze(contact.id, snoozeDays);
+      // The onSnooze prop is now more flexible.
+      // For a single contact, App.jsx passes a function like `(id, d) => ...`
+      // For a batch, App.jsx passes a function like `(d) => ...`
+      if (isBatchMode) {
+        onSnooze(snoozeDays);
+      } else {
+        onSnooze(contact.id, snoozeDays);
+      }
     }
   };
-
-  // Allows the user to submit by pressing Enter in the input field.
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      handleSnoozeClick();
-    }
-  };
+  
+  // Determine the title based on whether it's a single contact or a batch.
+  const title = isBatchMode
+    ? `Snooze ${count} contacts`
+    : `Snooze ${contact?.firstName}`;
 
   return (
-    // The modal-backdrop covers the whole screen and closes the modal when clicked.
     <div className="modal-backdrop" onClick={onClose}>
-      {/* We stop propagation on the modal-content so clicking inside it doesn't close it. */}
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h2>Snooze {contact.firstName}</h2>
-        <p>Snooze reminder for how many days?</p>
+        <h2>{title}</h2>
+        <p>Select how many days from now you'd like to be reminded.</p>
+        
         <div className="modal-input-group">
           <input
             type="number"
             value={days}
             onChange={(e) => setDays(e.target.value)}
-            onKeyDown={handleKeyDown}
-            min="1"
             className="modal-input"
-            // autoFocus selects the input field as soon as the modal opens.
-            autoFocus 
+            min="1"
+            autoFocus
           />
-          <label>days</label>
+          <label>day(s)</label>
         </div>
+
         <div className="modal-actions">
-          <button className="button-secondary" onClick={onClose}>
-            Cancel
-          </button>
-          <button className="button-primary" onClick={handleSnoozeClick}>
+          <button onClick={handleSnoozeClick} className="button-primary">
             Snooze
+          </button>
+          <button onClick={onClose} className="button-secondary">
+            Cancel
           </button>
         </div>
       </div>

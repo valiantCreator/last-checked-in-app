@@ -31,6 +31,7 @@
   --overdue-border: #c62828;
   --pin-color: #ffc107;
   --accent-color: #1a73e8;
+  --toolbar-bg: hsl(0 0% 100% / 0.7); /* Slightly transparent for backdrop */
 }
 
 /* Define color variables for the dark theme */
@@ -47,6 +48,7 @@
   --overdue-border: #f48fb1;
   --pin-color: #ffd600;
   --accent-color: #8ab4f8;
+  --toolbar-bg: hsl(0 0% 12% / 0.7); /* Slightly transparent for backdrop */
 }
 
 /* General body styles */
@@ -83,8 +85,8 @@ body {
   margin-right: auto;
 }
 .app-header h1 {
-    font-size: 1.5rem;
-    margin: 0;
+  font-size: 1.5rem;
+  margin: 0;
 }
 .header-actions {
   display: flex;
@@ -117,39 +119,39 @@ body {
   width: 100%;
 }
 .form-card textarea {
-    resize: vertical;
+  resize: vertical;
 }
 .form-card input::placeholder,
 .form-card textarea::placeholder {
-    color: var(--text-color);
-    opacity: 0.6;
+  color: var(--text-color);
+  opacity: 0.6;
 }
 
 /* View Controls */
 .view-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin: 1rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1rem 0;
 }
 .view-toggle-buttons button {
-    background: none;
-    border: 1px solid var(--border-color);
-    color: var(--text-color);
-    padding: 0.5rem 1rem;
-    cursor: pointer;
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
 }
 .view-toggle-buttons button:first-child {
-    border-radius: 8px 0 0 8px;
-    border-right: none;
+  border-radius: 8px 0 0 8px;
+  border-right: none;
 }
 .view-toggle-buttons button:last-child {
-    border-radius: 0 8px 8px 0;
+  border-radius: 0 8px 8px 0;
 }
 .view-toggle-buttons button.active {
-    background-color: var(--primary-color);
-    color: var(--primary-text);
-    border-color: var(--primary-color);
+  background-color: var(--primary-color);
+  color: var(--primary-text);
+  border-color: var(--primary-color);
 }
 
 
@@ -157,66 +159,66 @@ body {
 
 /* For LIST VIEW, keep the container narrow and centered. */
 .contacts-container.list {
-    max-width: 700px;
-    margin: 0 auto;
+  max-width: 700px;
+  margin: 0 auto;
 }
 
 /* For GRID VIEW, default to a 2-column layout (mobile-first). */
 .contacts-container.grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-top: 1rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
 /* On medium screens (tablets), switch to 3 columns. */
 @media (min-width: 768px) {
-    .contacts-container.grid {
-        grid-template-columns: 1fr 1fr 1fr;
-    }
+  .contacts-container.grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
 }
 
 /* On large screens (desktops), switch to 4 columns. */
 @media (min-width: 1024px) {
-    .contacts-container.grid {
-        grid-template-columns: 1fr 1fr 1fr 1fr;
-    }
+  .contacts-container.grid {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
 }
 
 /* This rule removes the default margin from .card elements ONLY when they are in a grid. */
 .contacts-container.grid .card {
-    margin: 0;
+  margin: 0;
 }
 
 /* Styles for the compact card variant used in Grid View */
 .contact-item-grid {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 1.5rem 1rem;
-    height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 1.5rem 1rem;
+  height: 100%;
 }
 
 .contact-item-grid h3 {
-    margin: 0 0 1rem 0;
+  margin: 0 0 1rem 0;
 }
 
 .contact-item-grid p {
-    margin: 0.25rem 0;
-    opacity: 0.8;
+  margin: 0.25rem 0;
+  opacity: 0.8;
 }
 
 .contact-item-grid strong {
-    font-size: 1.1rem;
-    font-weight: 500;
-    opacity: 1;
+  font-size: 1.1rem;
+  font-weight: 500;
+  opacity: 1;
 }
 
 .contact-item-grid .grid-birthday {
-    margin-top: 1rem;
-    font-size: 0.9rem;
+  margin-top: 1rem;
+  font-size: 0.9rem;
 }
 
 /* --- END: Final Adaptive Grid & List View Styles --- */
@@ -228,19 +230,19 @@ body {
 }
 .contact-header {
   display: flex;
-  flex-direction: column; 
+  flex-direction: column;
   gap: 0.5rem;
 }
-.contact-header h3 { 
-    margin: 0; 
-    line-height: 1.2;
-    word-break: break-word;
+.contact-header h3 {
+  margin: 0;
+  line-height: 1.2;
+  word-break: break-word;
 }
 .contact-header-actions {
-    display: flex;
-    flex-wrap: wrap; 
-    align-items: center;
-    gap: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
 }
 .overdue {
   border-left-color: var(--overdue-border);
@@ -249,13 +251,13 @@ body {
 
 @media (min-width: 600px) {
   .contact-header {
-    flex-direction: row; 
+    flex-direction: row;
     justify-content: space-between;
     align-items: flex-start;
     gap: 1rem;
   }
   .contact-header-actions {
-    flex-shrink: 0; 
+    flex-shrink: 0;
   }
 }
 
@@ -314,8 +316,8 @@ body {
   min-height: 80px;
 }
 .add-note-actions {
-    display: flex;
-    gap: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
 }
 .note {
   background-color: var(--background-color);
@@ -364,9 +366,9 @@ body {
 }
 .remind-me-container,
 .start-date-container {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 .remind-me-container input[type="number"] { width: 80px; }
 .form-card button { margin-top: 1rem; }
@@ -532,8 +534,8 @@ body {
   min-width: 150px;
 }
 .footer-right-actions {
-    display: flex;
-    gap: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
 }
 .contact-footer button {
   padding: 0.5rem 1rem;
@@ -545,13 +547,13 @@ body {
   font-weight: 500;
 }
 .contact-footer .add-note-button {
-    background-color: var(--primary-color);
-    color: var(--primary-text);
-    border-color: var(--primary-color);
+  background-color: var(--primary-color);
+  color: var(--primary-text);
+  border-color: var(--primary-color);
 }
 .contact-footer .archive-button {
-    color: var(--overdue-border);
-    border-color: var(--overdue-border);
+  color: var(--overdue-border);
+  border-color: var(--overdue-border);
 }
 
 /* Expand/Collapse Button */
@@ -579,34 +581,34 @@ body {
 
 /* Reusable Button Styles */
 .button-secondary {
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-    background-color: transparent;
-    color: var(--text-color);
-    cursor: pointer;
-    font-weight: 500;
-    font-size: 0.9rem;
-    transition: background-color 0.2s;
-    white-space: nowrap;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+  color: var(--text-color);
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+  white-space: nowrap;
 }
 .button-secondary:hover { background-color: var(--border-color); }
 .button-primary {
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    border: 1px solid var(--primary-color);
-    background-color: var(--primary-color);
-    color: var(--primary-text);
-    cursor: pointer;
-    font-weight: 500;
-    font-size: 0.9rem;
-    transition: opacity 0.2s;
-    white-space: nowrap;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--primary-color);
+  background-color: var(--primary-color);
+  color: var(--primary-text);
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: opacity 0.2s;
+  white-space: nowrap;
 }
 .button-primary:hover { opacity: 0.9; }
 .button-danger {
-    color: var(--overdue-border);
-    border-color: var(--overdue-border);
+  color: var(--overdue-border);
+  border-color: var(--overdue-border);
 }
 
 /* Theme-aware Date Picker */
@@ -616,105 +618,105 @@ input[type="date"]:invalid { color: rgba(var(--text-color-rgb), 0.6); }
 input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
 
 .header-buttons {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .dev-button {
-    font-size: 0.75rem;
-    opacity: 0.5;
-    margin-left: 1rem;
-    background: none;
-    border: none;
-    color: var(--text-color);
-    cursor: pointer;
+  font-size: 0.75rem;
+  opacity: 0.5;
+  margin-left: 1rem;
+  background: none;
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
 }
 .snooze-info {
-    font-style: italic;
-    opacity: 0.8;
+  font-style: italic;
+  opacity: 0.8;
 }
 
 /* Global Search Bar Styles (now inside filter card) */
 .filter-controls .search-container {
-    position: relative;
-    width: 100%;
-    display: flex;
-    align-items: center;
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
 }
 .clear-search-button {
-    background: rgba(var(--text-color-rgb), 0.1);
-    border: none;
-    color: var(--text-color);
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: bold;
-    line-height: 1;
-    z-index: 5;
-    opacity: 0.7;
-    margin-left: -2.2rem;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  background: rgba(var(--text-color-rgb), 0.1);
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  line-height: 1;
+  z-index: 5;
+  opacity: 0.7;
+  margin-left: -2.2rem;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .clear-search-button:hover {
-    opacity: 1;
-    background: rgba(var(--text-color-rgb), 0.2);
+  opacity: 1;
+  background: rgba(var(--text-color-rgb), 0.2);
 }
 .search-results {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 0 0 12px 12px;
-    box-shadow: 0 4px 8px var(--card-shadow);
-    z-index: 100;
-    max-height: 400px;
-    overflow-y: auto;
-    padding: 0.5rem 0;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 4px 8px var(--card-shadow);
+  z-index: 100;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 0.5rem 0;
 }
 .results-section h4 {
-    margin: 0.5rem 1rem;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    opacity: 0.7;
+  margin: 0.5rem 1rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  opacity: 0.7;
 }
 .search-results ul {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
 }
 .search-results li {
-    padding: 0.75rem 1rem;
-    cursor: pointer;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
 }
 .search-results li:hover { background-color: var(--background-color); }
 .note-contact-name {
-    font-style: italic;
-    opacity: 0.7;
-    margin-left: 0.5rem;
+  font-style: italic;
+  opacity: 0.7;
+  margin-left: 0.5rem;
 }
 .no-results {
-    padding: 0.75rem 1rem;
-    opacity: 0.7;
+  padding: 0.75rem 1rem;
+  opacity: 0.7;
 }
 
 /* Media Query for Desktop */
 @media (min-width: 768px) {
-    .form-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-    .form-grid .full-width-field,
-    .form-grid textarea,
-    .form-grid .remind-me-container,
-    .form-grid .start-date-container {
-        grid-column: 1 / -1;
-    }
+  .form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .form-grid .full-width-field,
+  .form-grid textarea,
+  .form-grid .remind-me-container,
+  .form-grid .start-date-container {
+    grid-column: 1 / -1;
+  }
 }
 
 .checkin-status-line {
@@ -964,81 +966,9 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
   transform: translateX(0);
 }
 
-/* --- Batch Action Styles --- */
+/* --- BATCH ACTIONS & SELECTION STYLES --- */
 .app-container.selection-mode-active {
-  padding-bottom: 100px;
-}
-
-.batch-actions-toolbar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background-color: var(--card-bg);
-  padding: 1rem;
-  box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.1);
-  border-top: 1px solid var(--border-color);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  z-index: 900;
-  transform: translateY(100%);
-  animation: slideIn 0.3s forwards;
-}
-
-@keyframes slideIn {
-  to {
-    transform: translateY(0);
-  }
-}
-
-.batch-actions-toolbar .selection-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.batch-actions-toolbar .actions {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.select-all-button {
-  background: none;
-  border: none;
-  color: var(--text-color);
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 1rem;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 8px;
-}
-.select-all-button:hover {
-  background-color: var(--background-color);
-}
-
-.checkbox {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--border-color);
-  border-radius: 4px;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.checkbox.checked {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-}
-
-.checkbox.checked::after {
-  content: '✔';
-  color: var(--primary-text);
-  font-size: 14px;
+  padding-bottom: 100px; /* Leave space for the toolbar */
 }
 
 .card.selected {
@@ -1046,22 +976,30 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
   background-color: rgba(var(--text-color-rgb), 0.05);
 }
 
-.selection-checkbox-container {
-  opacity: 0; /* Hidden by default */
-  transition: opacity 0.2s;
+/* NEW: Global style for all checkboxes (on cards and in the toolbar) */
+.checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color); /* This provides the visible border in the default state */
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative; /* Needed for the checkmark pseudo-element */
 }
 
-.card:hover .selection-checkbox-container {
-  opacity: 1;
+/* Style for when a checkbox is checked */
+.checkbox.checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
 }
 
-.selection-mode-active .selection-checkbox-container {
-  opacity: 1;
-}
-
-.selection-checkbox-container {
-  padding-right: 0.5rem;
-  cursor: pointer;
+/* The checkmark pseudo-element */
+.checkbox.checked::after {
+  content: '✓';
+  color: var(--primary-text);
+  font-size: 14px;
 }
 
 .grid-checkbox {
@@ -1071,17 +1009,118 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
   z-index: 10;
 }
 
-/* --- Responsive Styles for Batch Actions Toolbar --- */
-@media (max-width: 420px) {
-  /* On very narrow screens, stack the toolbar elements */
+/* NEW/FINAL CHECKBOX LOGIC: "Always visible, with defined space" */
+.selection-checkbox-container {
+  /* This gives the container a defined size so it can't be squashed by the layout. */
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0; /* Prevents the flex container from shrinking this item. CRITICAL. */
+
+  /* Checkbox is always visible but faded out by default for mobile-friendliness. */
+  opacity: 0.2;
+  transition: opacity 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+/* On desktop, provide a better hover affordance. */
+.card:hover .selection-checkbox-container {
+  opacity: 0.6;
+}
+
+/* When selection mode is active, or the card is selected, make checkbox fully opaque. */
+.selection-mode-active .selection-checkbox-container,
+.card.selected .selection-checkbox-container {
+  opacity: 1;
+}
+
+/* --- REVISED & RESPONSIVE: Batch Actions Toolbar --- */
+.batch-actions-toolbar {
+  background-color: var(--toolbar-bg);
+  backdrop-filter: blur(8px); /* Frosted glass effect */
+  padding: 0.75rem 1rem;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-wrap: wrap; /* Allows sections to wrap on very small screens */
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem; /* Space between selection info and actions block */
+  border-top: 1px solid var(--border-color);
+  z-index: 100;
+  /* Animate the slide-up */
+  transform: translateY(100%);
+  transition: transform 0.3s ease-in-out;
+}
+
+/* This class triggers the slide-up animation */
+.selection-mode-active .batch-actions-toolbar {
+  transform: translateY(0);
+}
+
+.batch-actions-toolbar .selection-info {
+  flex-shrink: 0; /* Prevents this from shrinking */
+}
+
+.batch-actions-toolbar .actions {
+  display: flex;
+  flex-wrap: wrap; /* THIS is the key for responsive buttons */
+  gap: 0.75rem; /* Space between the buttons themselves */
+  justify-content: flex-end; /* Align buttons to the right by default */
+  flex-grow: 1; /* Allows this section to take up remaining space */
+}
+
+.select-all-button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: none;
+  border: none;
+  color: var(--text-color);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0;
+}
+.select-all-button:hover {
+  opacity: 0.8;
+}
+
+.select-all-button .checkbox {
+  /* This now inherits from the global .checkbox style, so it only needs specifics */
+  border-color: var(--primary-color);
+}
+
+/* On very narrow screens, center everything for a better layout */
+@media (max-width: 480px) {
   .batch-actions-toolbar {
-    flex-direction: column;
-    align-items: stretch; /* Make items take full width */
-    gap: 0.75rem;
+    justify-content: center;
   }
 
-  /* Make the action buttons justify to the end of their row */
   .batch-actions-toolbar .actions {
-    justify-content: flex-end;
+    justify-content: center;
   }
+}
+
+/* --- NEW: Agenda View Specific Styles --- */
+.agenda-day-heading {
+  font-size: 1.25rem;
+  margin: 2rem 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.agenda-day-heading.today {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.no-checkins-message {
+  color: var(--text-color);
+  opacity: 0.6;
+  text-align: center;
+  padding: 2rem;
+  background-color: rgba(var(--text-color-rgb), 0.03);
+  border-radius: 8px;
+  margin: 1rem 0;
 }

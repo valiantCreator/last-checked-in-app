@@ -9,8 +9,9 @@ import ContactCard from './components/ContactCard.jsx';
 import ArchivedView from './components/ArchivedView.jsx';
 import ExportCalendarModal from './components/ExportCalendarModal.jsx';
 import BatchActionsToolbar from './components/BatchActionsToolbar.jsx';
-import SnoozeModal from './components/SnoozeModal.jsx'; // NEW: Import the modal component
-import { daysSince, isOverdue, calculateNextUpcomingCheckinDate, formatToICSDate, getNextBirthday } from './utils.js';
+import SnoozeModal from './components/SnoozeModal.jsx';
+import AgendaView from './components/AgendaView.jsx';
+import { isOverdue, generateAgendaViewData, calculateNextUpcomingCheckinDate, formatToICSDate, getNextBirthday } from './utils.js';
 import { API_URL } from './apiConfig.js';
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
   const [allTags, setAllTags] = useState([]);
   const [selectedTagId, setSelectedTagId] = useState('');
   const [view, setView] = useState('active');
+  const [displayMode, setDisplayMode] = useState('list');
   const [archivedContacts, setArchivedContacts] = useState([]);
   
   const [archivedCount, setArchivedCount] = useState(0);
@@ -37,17 +39,16 @@ function App() {
   const [editingContact, setEditingContact] = useState(null);
   const [addingNoteToContactId, setAddingNoteToContactId] = useState(null);
   const [editingNote, setEditingNote] = useState(null);
-  const [snoozingContact, setSnoozingContact] = useState(null); // UPDATED: State for the modal
+  const [snoozingContact, setSnoozingContact] = useState(null);
+  // NEW: State to control the batch snooze modal
+  const [isBatchSnoozing, setIsBatchSnoozing] = useState(false);
   const [globalSearchTerm, setGlobalSearchTerm] = useState('');
   const [debouncedGlobalSearch] = useDebounce(globalSearchTerm, 300);
   const [searchResults, setSearchResults] = useState(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [activeSearchFilter, setActiveSearchFilter] = useState('');
-  const [displayMode, setDisplayMode] = useState('list');
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [selectedContactIds, setSelectedContactIds] = useState([]);
-
-  // --- NEW: State for archived contact selection ---
   const [selectedArchivedIds, setSelectedArchivedIds] = useState([]);
 
   useEffect(() => {
@@ -80,6 +81,8 @@ function App() {
       setSearchResults(null);
     }
   }, [debouncedGlobalSearch]);
+  
+  const agendaData = useMemo(() => generateAgendaViewData(contacts), [contacts]);
 
   const processedContacts = useMemo(() => {
     let displayedContacts = [...contacts];
@@ -101,13 +104,18 @@ function App() {
     const pinned = displayedContacts.filter(c => c.is_pinned);
     const unpinned = displayedContacts.filter(c => !c.is_pinned);
 
-    const getDaysUntilDue = (c) => daysSince(c.lastCheckin) - c.checkinFrequency;
+    const getDaysSinceDue = (c) => {
+        const effectiveDate = calculateNextUpcomingCheckinDate(c.lastCheckin, c.checkinFrequency);
+        if (!effectiveDate) return Number.MIN_SAFE_INTEGER;
+        return (new Date() - effectiveDate) / (1000 * 60 * 60 * 24);
+    };
+
     switch (sortBy) {
       case 'closestCheckin':
-        unpinned.sort((a, b) => getDaysUntilDue(b) - getDaysUntilDue(a));
+        unpinned.sort((a, b) => getDaysSinceDue(a) - getDaysSinceDue(b));
         break;
       case 'mostOverdue':
-        unpinned.sort((a, b) => getDaysUntilDue(a) - getDaysUntilDue(b));
+        unpinned.sort((a, b) => getDaysSinceDue(b) - getDaysSinceDue(a));
         break;
       case 'nameAZ':
         unpinned.sort((a, b) => a.firstName.localeCompare(b.firstName));
@@ -216,21 +224,21 @@ function App() {
     axios.get(`${API_URL}/contacts/archived`).then(res => {
       setArchivedContacts(res.data.contacts || []);
       setView('archived');
-      setSelectedContactIds([]); // Clear main selection when switching views
+      setSelectedContactIds([]);
     });
   };
 
   const handleViewActive = () => {
     setView('active');
-    setSelectedArchivedIds([]); // Clear archived selection when switching views
+    setSelectedArchivedIds([]);
   };
 
   const handleArchiveContact = (contactId) => {
     const contactToArchive = contacts.find(c => c.id === contactId);
     axios.put(`${API_URL}/contacts/${contactId}/archive`).then(() => {
         if(contactToArchive) {
-            setContacts(prev => prev.filter(c => c.id !== contactId));
-            setArchivedCount(prev => prev + 1);
+          setContacts(prev => prev.filter(c => c.id !== contactId));
+          setArchivedCount(prev => prev + 1);
         }
         toast.success("Contact archived.");
     });
@@ -256,7 +264,6 @@ function App() {
     });
   };
 
-  // UPDATED: handleSnooze now closes the modal
   const handleSnooze = (contactId, days) => {
     axios.put(`${API_URL}/contacts/${contactId}/snooze`, { snooze_days: days }).then(() => {
       setSnoozingContact(null);
@@ -264,8 +271,6 @@ function App() {
       toast.success("Snoozed!");
     });
   };
-
-  // REMOVED: handleMakeOverdue function is deleted as it's no longer used.
 
   const handleTogglePin = (contactId) => {
     const originalContacts = [...contacts];
@@ -291,7 +296,16 @@ function App() {
   };
 
   const handleSelectAll = () => {
-    const allVisibleContactIds = [...processedContacts.pinned, ...processedContacts.unpinned].map(c => c.id);
+    let allVisibleContactIds = [];
+    if (displayMode === 'agenda') {
+        agendaData.forEach(day => {
+            day.contacts.forEach(contact => {
+                allVisibleContactIds.push(contact.id);
+            });
+        });
+    } else {
+        allVisibleContactIds = [...processedContacts.pinned, ...processedContacts.unpinned].map(c => c.id);
+    }
     setSelectedContactIds(allVisibleContactIds);
   };
 
@@ -313,12 +327,14 @@ function App() {
       });
   };
 
+  // UPDATED: This function is now called FROM the modal
   const handleBatchSnooze = (days) => {
     axios.post(`${API_URL}/contacts/batch-snooze`, { contactIds: selectedContactIds, snooze_days: days })
       .then(() => {
         toast.success(`${selectedContactIds.length} contacts snoozed.`);
         fetchContacts();
         setSelectedContactIds([]);
+        setIsBatchSnoozing(false); // Close the modal on success
       })
       .catch(err => {
         console.error("Batch snooze failed", err);
@@ -326,7 +342,24 @@ function App() {
       });
   };
 
-  // --- NEW: Archived View Batch Handlers ---
+  const handleBatchCheckIn = () => {
+    axios.post(`${API_URL}/contacts/batch-checkin`, { contactIds: selectedContactIds })
+      .then(() => {
+        toast.success(`${selectedContactIds.length} contacts checked in.`);
+        fetchContacts();
+        setSelectedContactIds([]);
+      })
+      .catch(err => {
+        console.error("Batch check-in failed", err);
+        toast.error("Could not check in contacts.");
+      });
+  };
+  
+  // NEW: Handler to open the batch snooze modal
+  const handleOpenBatchSnoozeModal = () => {
+    setIsBatchSnoozing(true);
+  };
+
   const handleToggleArchivedSelection = (contactId) => {
     setSelectedArchivedIds(prev => 
       prev.includes(contactId) 
@@ -441,10 +474,10 @@ function App() {
     handleSaveNote, handleUpdateNote, handleEditNoteClick: setEditingNote, handleCancelEditNote: () => setEditingNote(null),
     handleSnooze, handleUpdateContact, handleCancelEditContact: () => setEditingContact(null),
     handleTogglePin,
-    handleOpenSnoozeModal: setSnoozingContact, // UPDATED: Pass the modal opener
+    handleOpenSnoozeModal: setSnoozingContact,
   };
   const uiState = {
-    editingContact, detailedContactId, addingNoteToContactId, editingNote
+    editingContact, detailedContactId, addingNoteToContactId, editingNote, isOverdue
   };
 
   const selectionMode = selectedContactIds.length > 0;
@@ -476,95 +509,65 @@ function App() {
           <div className="content-wrapper">
             <AddContactForm onContactAdded={handleAddContact} />
             <div className="card filter-controls">
-              <form className="search-container" onSubmit={handleSearchSubmit}>
-                <input
-                  type="text"
-                  placeholder="Search contacts and notes..."
-                  value={globalSearchTerm}
-                  onChange={(e) => setGlobalSearchTerm(e.target.value)}
-                  onFocus={() => setIsSearchFocused(true)}
-                  onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-                  className="search-input"
-                />
-                {activeSearchFilter && <button type="button" className="clear-search-button" onClick={handleClearSearch}>X</button>}
-                {isSearchFocused && searchResults && (
-                  <div className="search-results">
-                    {searchResults.contacts.length > 0 && (
-                      <div className="results-section"><h4>Contacts</h4><ul>{searchResults.contacts.map(c => <li key={`c-${c.id}`} onMouseDown={() => { setGlobalSearchTerm(c.firstName); setActiveSearchFilter(c.firstName); }}>{c.firstName}</li>)}</ul></div>
-                    )}
-                    {searchResults.notes.length > 0 && (
-                      <div className="results-section"><h4>Notes</h4><ul>{searchResults.notes.map(n => <li key={`n-${n.id}`} onMouseDown={() => { setGlobalSearchTerm(n.content); setActiveSearchFilter(n.content); }}>"{n.content.substring(0, 30)}..."<span className="note-contact-name">({n.contactFirstName})</span></li>)}</ul></div>
-                    )}
-                    {searchResults.contacts.length === 0 && searchResults.notes.length === 0 && debouncedGlobalSearch && (
-                      <p className="no-results">No results found.</p>
-                    )}
+                <form className="search-container" onSubmit={handleSearchSubmit}>
+                  <input type="text" placeholder="Search contacts and notes..." value={globalSearchTerm} onChange={(e) => setGlobalSearchTerm(e.target.value)} onFocus={() => setIsSearchFocused(true)} onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)} className="search-input" />
+                  {activeSearchFilter && <button type="button" className="clear-search-button" onClick={handleClearSearch}>X</button>}
+                  {isSearchFocused && searchResults && (
+                    <div className="search-results">
+                      {searchResults.contacts.length > 0 && (<div className="results-section"><h4>Contacts</h4><ul>{searchResults.contacts.map(c => <li key={`c-${c.id}`} onMouseDown={() => { setGlobalSearchTerm(c.firstName); setActiveSearchFilter(c.firstName); }}>{c.firstName}</li>)}</ul></div>)}
+                      {searchResults.notes.length > 0 && (<div className="results-section"><h4>Notes</h4><ul>{searchResults.notes.map(n => <li key={`n-${n.id}`} onMouseDown={() => { setGlobalSearchTerm(n.content); setActiveSearchFilter(n.content); }}>"{n.content.substring(0, 30)}..."<span className="note-contact-name">({n.contactFirstName})</span></li>)}</ul></div>)}
+                      {searchResults.contacts.length === 0 && searchResults.notes.length === 0 && debouncedGlobalSearch && (<p className="no-results">No results found.</p>)}
+                    </div>
+                  )}
+                </form>
+                <div className="sort-controls">
+                  <select className="sort-dropdown" value={sortBy} onChange={(e) => setSortBy(e.target.value)}><option value="newestFirst">Sort by: Date Added</option><option value="closestCheckin">Sort by: Closest Check-in</option><option value="mostOverdue">Sort by: Most Overdue</option><option value="nameAZ">Sort by: Name (A-Z)</option></select>
+                  <button className="sort-direction-button" onClick={() => setSortDirection(sd => sd === 'asc' ? 'desc' : 'asc')} title={`Sort ${sortDirection === 'asc' ? 'Descending' : 'Ascending'}`}>{sortDirection === 'asc' ? '↑' : '↓'}</button>
+                </div>
+                <select className="tag-filter-dropdown" value={selectedTagId} onChange={(e) => setSelectedTagId(e.target.value)}><option value="">Filter by Tag: All</option>{allTags.map(tag => (<option key={tag.id} value={tag.id}>{tag.name}</option>))}</select>
+            </div>
+                {displayMode !== 'agenda' && processedContacts.pinned.length > 0 && (
+                  <div className="pinned-section">
+                    <h2>Pinned</h2>
+                    <div className={`contacts-container ${displayMode}`}>
+                      {processedContacts.pinned.map(contact => (
+                        <ContactCard key={contact.id} contact={contact} handlers={handlers} uiState={uiState} displayMode={displayMode} selectionMode={selectionMode} isSelected={selectedContactIds.includes(contact.id)} onToggleSelection={handleToggleSelection} />
+                      ))}
+                    </div>
                   </div>
                 )}
-              </form>
-              <div className="sort-controls">
-                <select className="sort-dropdown" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                  <option value="newestFirst">Sort by: Date Added</option>
-                  <option value="closestCheckin">Sort by: Closest Check-in</option>
-                  <option value="mostOverdue">Sort by: Most Overdue</option>
-                  <option value="nameAZ">Sort by: Name (A-Z)</option>
-                </select>
-                <button className="sort-direction-button" onClick={() => setSortDirection(sd => sd === 'asc' ? 'desc' : 'asc')} title={`Sort ${sortDirection === 'asc' ? 'Descending' : 'Ascending'}`}>{sortDirection === 'asc' ? '↑' : '↓'}</button>
-              </div>
-              <select className="tag-filter-dropdown" value={selectedTagId} onChange={(e) => setSelectedTagId(e.target.value)}>
-                <option value="">Filter by Tag: All</option>
-                {allTags.map(tag => (
-                  <option key={tag.id} value={tag.id}>{tag.name}</option>
-                ))}
-              </select>
-            </div>
-            {processedContacts.pinned.length > 0 && (
-              <div className="pinned-section">
-                <h2>Pinned</h2>
-                <div className={`contacts-container ${displayMode}`}>
-                  {processedContacts.pinned.map(contact => (
-                    <ContactCard
-                      key={contact.id}
-                      contact={contact}
-                      handlers={handlers}
-                      uiState={uiState}
-                      displayMode={displayMode}
-                      selectionMode={selectionMode}
-                      isSelected={selectedContactIds.includes(contact.id)}
-                      onToggleSelection={handleToggleSelection}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
             <div className="view-controls">
-              <h2>My People</h2>
+              <h2>{displayMode === 'agenda' ? 'Agenda' : 'My People'}</h2>
               <div className="view-toggle-buttons">
                 <button className={displayMode === 'list' ? 'active' : ''} onClick={() => setDisplayMode('list')}>List</button>
                 <button className={displayMode === 'grid' ? 'active' : ''} onClick={() => setDisplayMode('grid')}>Grid</button>
+                <button className={displayMode === 'agenda' ? 'active' : ''} onClick={() => setDisplayMode('agenda')}>Agenda</button>
               </div>
             </div>
           </div>
-          <div className={`contacts-container ${displayMode}`}>
-            {processedContacts.unpinned.map(contact => (
-              <ContactCard
-                key={contact.id}
-                contact={contact}
-                handlers={handlers}
-                uiState={uiState}
-                displayMode={displayMode}
-                selectionMode={selectionMode}
-                isSelected={selectedContactIds.includes(contact.id)}
-                onToggleSelection={handleToggleSelection}
-              />
-            ))}
-          </div>
+
+            {displayMode === 'agenda' ? (
+                <AgendaView 
+                    agendaData={agendaData}
+                    handlers={handlers}
+                    uiState={uiState}
+                    selectionMode={selectionMode}
+                    selectedContactIds={selectedContactIds}
+                    onToggleSelection={handleToggleSelection}
+                />
+            ) : (
+                <div className={`contacts-container ${displayMode}`}>
+                    {processedContacts.unpinned.map(contact => (
+                        <ContactCard key={contact.id} contact={contact} handlers={handlers} uiState={uiState} displayMode={displayMode} selectionMode={selectionMode} isSelected={selectedContactIds.includes(contact.id)} onToggleSelection={handleToggleSelection} />
+                    ))}
+                </div>
+            )}
         </>
       ) : (
         <ArchivedView
           archivedContacts={archivedContacts}
           onRestore={handleRestoreContact}
           onDeletePermanently={handleDeletePermanently}
-          // --- NEW: Pass selection props to ArchivedView ---
           selectedArchivedIds={selectedArchivedIds}
           onToggleArchivedSelection={handleToggleArchivedSelection}
           onSelectAllArchived={handleSelectAllArchived}
@@ -579,9 +582,10 @@ function App() {
           selectedCount={selectedContactIds.length}
           onSelectAll={handleSelectAll}
           onClear={handleClearSelection}
-          onSnooze={handleBatchSnooze}
           onArchive={handleBatchArchive}
           onDelete={handleBatchDelete}
+          onCheckIn={handleBatchCheckIn}
+          onOpenSnoozeModal={handleOpenBatchSnoozeModal} // Pass the new handler
           totalContacts={contacts.length}
         />
       )}
@@ -592,12 +596,17 @@ function App() {
         onGenerateFiles={generateCalendarFiles}
       />
 
-      {/* NEW: Conditionally render the SnoozeModal */}
-      {snoozingContact && (
+      {/* UPDATED: The modal now serves single and batch modes */}
+      {(snoozingContact || isBatchSnoozing) && (
         <SnoozeModal
-            contact={snoozingContact}
-            onClose={() => setSnoozingContact(null)}
-            onSnooze={handleSnooze}
+            contact={snoozingContact} // This is null in batch mode
+            isBatchMode={isBatchSnoozing}
+            count={selectedContactIds.length}
+            onClose={() => {
+              setSnoozingContact(null);
+              setIsBatchSnoozing(false);
+            }}
+            onSnooze={isBatchSnoozing ? handleBatchSnooze : handleSnooze}
         />
       )}
     </div>

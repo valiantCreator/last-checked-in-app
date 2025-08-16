@@ -27,7 +27,7 @@ function ContactCard({
     handleUpdateContact,
     handleCancelEditContact,
     handleTogglePin,
-    handleOpenSnoozeModal // UPDATED: Get the new handler
+    handleOpenSnoozeModal
   } = handlers;
 
   const [newNoteContent, setNewNoteContent] = useState('');
@@ -115,7 +115,9 @@ function ContactCard({
   }
 
   return (
-    <div className={`card contact-item ${overdue ? 'overdue' : ''} ${isSelected ? 'selected' : ''}`}>
+    <div 
+      className={`card contact-item ${overdue ? 'overdue' : ''} ${isSelected ? 'selected' : ''}`}
+    >
       {isEditingThisContact ? (
         <form onSubmit={onUpdateContactSubmit} className="contact-edit-form">
           <input name="firstName" value={editingContactState.firstName} onChange={onEditingContactChange} />
@@ -154,7 +156,6 @@ function ContactCard({
               <h3>{contact.firstName}</h3>
             </div>
             <div className="contact-header-actions">
-              {/* UPDATED: Simplified Snooze Button */}
               {overdue && (
                 <button
                   className="button-secondary"
@@ -198,7 +199,7 @@ function ContactCard({
                     <button onClick={(e) => { e.stopPropagation(); handleRemoveTag(contact.id, tag.id); }} className="remove-tag-btn">x</button>
                   </span>
                 ))}
-                 <TagInput contact={contact} onTagAdded={(newTag) => handleTagAdded(contact.id, newTag)} />
+                  <TagInput contact={contact} onTagAdded={(newTag) => handleTagAdded(contact.id, newTag)} />
               </div>
               <div className="notes-section">
                 {isAddingNote && (
