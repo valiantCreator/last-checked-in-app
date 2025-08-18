@@ -19,7 +19,7 @@ import AgendaView from './components/AgendaView.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx'; // Import the guard
 import { isOverdue, generateAgendaViewData, calculateNextUpcomingCheckinDate, formatToICSDate, getNextBirthday } from './utils.js';
 // --- UPDATED: Import our configured 'api' instance ---
-import api from './apiConfig.js'; 
+import api from './apiConfig.js';
 
 // --- NEW: Page Component Imports ---
 import LoginPage from './pages/LoginPage.jsx';
@@ -98,7 +98,7 @@ function MainApplication() {
       setSearchResults(null);
     }
   }, [debouncedGlobalSearch]);
-  
+
   const agendaData = useMemo(() => generateAgendaViewData(contacts), [contacts]);
 
   // ALL API CALLS BELOW HAVE BEEN SWITCHED FROM 'axios' TO 'api'
@@ -120,37 +120,34 @@ function MainApplication() {
     const pinned = displayedContacts.filter(c => c.is_pinned);
     const unpinned = displayedContacts.filter(c => !c.is_pinned);
     const getDaysSinceDue = (c) => {
-        const effectiveDate = calculateNextUpcomingCheckinDate(c.lastCheckin, c.checkinFrequency);
+        const effectiveDate = calculateNextUpcomingCheckinDate(c.last_checkin, c.checkin_frequency);
         if (!effectiveDate) return Number.MIN_SAFE_INTEGER;
         return (new Date() - effectiveDate) / (1000 * 60 * 60 * 24);
     };
     switch (sortBy) {
       case 'closestCheckin': unpinned.sort((a, b) => getDaysSinceDue(a) - getDaysSinceDue(b)); break;
       case 'mostOverdue': unpinned.sort((a, b) => getDaysSinceDue(b) - getDaysSinceDue(a)); break;
-      // FIX: Sort by the 'name' property, not 'firstName'
       case 'nameAZ': unpinned.sort((a, b) => a.name.localeCompare(b.name)); break;
       case 'newestFirst': unpinned.sort((a, b) => b.id - a.id); break;
       default: break;
     }
     if (sortDirection === 'asc') { unpinned.reverse(); }
-    pinned.sort((a, b) => a.firstName.localeCompare(b.firstName));
+    pinned.sort((a, b) => a.name.localeCompare(b.name));
     return { pinned, unpinned };
   }, [contacts, activeSearchFilter, searchResults, selectedTagId, sortBy, sortDirection]);
 
   const handleSearchSubmit = (e) => { e.preventDefault(); setActiveSearchFilter(globalSearchTerm); setIsSearchFocused(false); };
   const handleClearSearch = () => { setGlobalSearchTerm(''); setActiveSearchFilter(''); setSearchResults(null); };
-  // Replace your existing handleAddContact function with this one.
+  
   const handleAddContact = () => {
-    // We no longer need to accept the new contact data as an argument.
-    // We'll just refetch the whole list to ensure perfect data consistency.
     toast.success("Contact added!");
-    fetchContacts(); // This will get the new, complete list from the server.
-  };  
+    fetchContacts();
+  };
+  
   const handleCheckIn = (id) => {
     const originalContacts = [...contacts];
     const checkinTime = new Date().toISOString();
 
-    // Optimistic Update: Update the UI immediately.
     setContacts(currentContacts =>
       currentContacts.map(c =>
         c.id === id
@@ -160,10 +157,8 @@ function MainApplication() {
     );
     toast.success("Checked in!");
 
-    // Make the API call in the background.
     api.post(`/contacts/${id}/checkin`)
       .catch(error => {
-        // If it fails, revert the change and show an error.
         console.error("Failed to check in", error);
         toast.error("Could not save check-in. Reverting.");
         setContacts(originalContacts);
@@ -243,13 +238,12 @@ function MainApplication() {
       toast.success("Contact permanently deleted.");
     });
   };
-  // For snoozing a single contact
+  
   const handleSnooze = (contactId, days) => {
-    // UPDATED: Using 'api.put' which is authenticated
     api.put(`/contacts/${contactId}/snooze`, { snooze_days: days })
       .then(() => {
         setSnoozingContact(null);
-        fetchContacts(); // This will now run successfully
+        fetchContacts();
         toast.success("Snoozed!");
       })
       .catch(err => {
@@ -274,15 +268,14 @@ function MainApplication() {
   };
   const handleClearSelection = () => { setSelectedContactIds([]); };
   const handleBatchArchive = () => { api.post(`/contacts/batch-archive`, { contactIds: selectedContactIds }).then(() => { toast.success(`${selectedContactIds.length} contacts archived.`); setArchivedCount(prev => prev + selectedContactIds.length); setContacts(contacts.filter(c => !selectedContactIds.includes(c.id))); setSelectedContactIds([]); }).catch(err => { console.error("Batch archive failed", err); toast.error("Could not archive contacts."); }); };
-  // For snoozing multiple contacts from the toolbar
+
   const handleBatchSnooze = (days) => {
-    // UPDATED: Using 'api.post' which is authenticated
     api.post(`/contacts/batch-snooze`, { contactIds: selectedContactIds, snooze_days: days })
       .then(() => {
         toast.success(`${selectedContactIds.length} contacts snoozed.`);
-        fetchContacts(); // This will now run successfully
+        fetchContacts();
         setSelectedContactIds([]);
-        setIsBatchSnoozing(false); 
+        setIsBatchSnoozing(false);
       })
       .catch(err => {
         console.error("Batch snooze failed", err);
@@ -294,7 +287,7 @@ function MainApplication() {
   const handleToggleArchivedSelection = (contactId) => { setSelectedArchivedIds(prev => prev.includes(contactId) ? prev.filter(id => id !== contactId) : [...prev, contactId]); };
   const handleSelectAllArchived = () => { const allArchivedIds = archivedContacts.map(c => c.id); setSelectedArchivedIds(allArchivedIds); };
   const handleClearArchivedSelection = () => { setSelectedArchivedIds([]); };
-  const handleBatchRestore = () => { api.post(`/contacts/batch-restore`, { contactIds: selectedArchivedIds }).then(() => { toast.success(`${selectedArchivedIds.length} contacts restored.`); const restored = archivedContacts.filter(c => selectedArchivedIds.includes(c.id)); setContacts(prev => [...prev, ...restored]); setArchivedContacts(archivedContacts.filter(c => !selectedArchivedIds.includes(c.id))); setArchivedCount(prev => prev - selectedArchivedIds.length); setSelectedArchivedIds([]); }).catch(err => { console.error("Batch restore failed", err); toast.error("Could not restore contacts."); }); };
+  const handleBatchRestore = () => { api.post(`/contacts/batch-restore`, { contactIds: selectedArchivedIds }).then(() => { toast.success(`${selectedContactIds.length} contacts restored.`); const restored = archivedContacts.filter(c => selectedArchivedIds.includes(c.id)); setContacts(prev => [...prev, ...restored]); setArchivedContacts(archivedContacts.filter(c => !selectedArchivedIds.includes(c.id))); setArchivedCount(prev => prev - selectedArchivedIds.length); setSelectedArchivedIds([]); }).catch(err => { console.error("Batch restore failed", err); toast.error("Could not restore contacts."); }); };
   const handleBatchDelete = () => {
     const idsToDelete = view === 'active' ? selectedContactIds : selectedArchivedIds;
     if (window.confirm(`Are you sure you want to permanently delete ${idsToDelete.length} contacts? This action cannot be undone.`)) {
@@ -303,7 +296,34 @@ function MainApplication() {
   };
   const handleOpenExportModal = () => { if (contacts.length === 0) { toast.error("There are no contacts to export."); return; } setIsExportModalOpen(true); };
   const generateCalendarFiles = ({ exportBirthdays, exportCheckins, timeWindow }) => {
-    let birthdayICS = ''; let checkinICS = ''; const today = new Date(); today.setHours(0, 0, 0, 0); const timeWindowLimit = new Date(today); if (timeWindow !== 'all') { timeWindowLimit.setDate(timeWindowLimit.getDate() + parseInt(timeWindow)); } contacts.forEach(contact => { const fullName = contact.lastName ? `${contact.firstName} ${contact.lastName}` : contact.firstName; if (exportCheckins) { let nextCheckinDate = (contact.snooze_until && new Date(contact.snooze_until) > today) ? new Date(contact.snooze_until) : calculateNextUpcomingCheckinDate(contact.lastCheckin, contact.checkinFrequency); while (timeWindow === 'all' || nextCheckinDate <= timeWindowLimit) { const formattedCheckinDate = formatToICSDate(nextCheckinDate); const checkinUID = `checkin-${contact.id}-${formattedCheckinDate}@lastchecked.in`; checkinICS += `BEGIN:VEVENT\nUID:${checkinUID}\nDTSTAMP:${formatToICSDate(new Date())}\nDTSTART;VALUE=DATE:${formattedCheckinDate}\nSUMMARY:Check in with ${fullName}\nDESCRIPTION:Time to reconnect with ${fullName}!\nEND:VEVENT\n`; if (timeWindow === 'all' && contact.checkinFrequency <= 0) { break; } if (contact.checkinFrequency <= 0) { break; } nextCheckinDate.setDate(nextCheckinDate.getDate() + contact.checkinFrequency); } } if (exportBirthdays && contact.birthday) { const nextBirthdayDate = getNextBirthday(contact.birthday); if (nextBirthdayDate) { const formattedBirthday = formatToICSDate(nextBirthdayDate); const birthdayUID = `birthday-${contact.id}@lastchecked.in`; birthdayICS += `BEGIN:VEVENT\nUID:${birthdayUID}\nDTSTAMP:${formatToICSDate(new Date())}\nDTSTART;VALUE=DATE:${formattedBirthday}\nSUMMARY:🎂 ${fullName}'s Birthday\nDESCRIPTION:Wish ${fullName} a happy birthday!\nRRULE:FREQ=YEARLY\nEND:VEVENT\n`; } } }); const createFullICS = (content) => { if (!content) return null; return `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//LastCheckedIn//NONSGML v1.0//EN\nCALSCALE:GREGORIAN\n${content}END:VCALENDAR`; }; const timeWindowMap = { '7': 'next_7_days', '30': 'next_30_days', '365': 'next_year', 'all': 'all_upcoming' }; const checkinFilename = `checkins_${timeWindowMap[timeWindow]}.ics`; return { birthdays: exportBirthdays ? { content: createFullICS(birthdayICS), filename: 'birthdays.ics' } : null, checkins: exportCheckins ? { content: createFullICS(checkinICS), filename: checkinFilename } : null };
+    let birthdayICS = ''; let checkinICS = ''; const today = new Date(); today.setHours(0, 0, 0, 0); const timeWindowLimit = new Date(today); if (timeWindow !== 'all') { timeWindowLimit.setDate(timeWindowLimit.getDate() + parseInt(timeWindow)); } contacts.forEach(contact => { 
+      const fullName = contact.name; 
+      if (exportCheckins) { 
+        let nextCheckinDate = (contact.snooze_until && new Date(contact.snooze_until) > today) ? new Date(contact.snooze_until) : calculateNextUpcomingCheckinDate(contact.last_checkin, contact.checkin_frequency); 
+        if (nextCheckinDate) {
+          while (timeWindow === 'all' || nextCheckinDate <= timeWindowLimit) { 
+            const formattedCheckinDate = formatToICSDate(nextCheckinDate); 
+            const checkinUID = `checkin-${contact.id}-${formattedCheckinDate}@lastchecked.in`; 
+            checkinICS += `BEGIN:VEVENT\nUID:${checkinUID}\nDTSTAMP:${formatToICSDate(new Date())}\nDTSTART;VALUE=DATE:${formattedCheckinDate}\nSUMMARY:Check in with ${fullName}\nDESCRIPTION:Time to reconnect with ${fullName}!\nEND:VEVENT\n`; 
+            if (timeWindow === 'all' && contact.checkin_frequency <= 0) { break; } 
+            if (contact.checkin_frequency <= 0) { break; } 
+            nextCheckinDate.setDate(nextCheckinDate.getDate() + contact.checkin_frequency); 
+          } 
+        }
+      } 
+      if (exportBirthdays && contact.birthday) {
+        // FIX: The previous date creation was incorrect for full timestamps.
+        // The new Date() constructor correctly parses full ISO timestamp strings on its own.
+        const originalBirthdayDate = new Date(contact.birthday);
+
+        if (!isNaN(originalBirthdayDate.getTime())) {
+          const formattedBirthday = formatToICSDate(originalBirthdayDate);
+          const birthdayUID = `birthday-${contact.id}@lastchecked.in`;
+          birthdayICS += `BEGIN:VEVENT\nUID:${birthdayUID}\nDTSTAMP:${formatToICSDate(new Date())}\nDTSTART;VALUE=DATE:${formattedBirthday}\nSUMMARY:🎂 ${fullName}'s Birthday\nDESCRIPTION:Wish ${fullName} a happy birthday!\nRRULE:FREQ=YEARLY\nEND:VEVENT\n`;
+        }
+      } 
+    }); 
+    const createFullICS = (content) => { if (!content) return null; return `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//LastCheckedIn//NONSGML v1.0//EN\nCALSCALE:GREGORIAN\n${content}END:VCALENDAR`; }; const timeWindowMap = { '7': 'next_7_days', '30': 'next_30_days', '365': 'next_year', 'all': 'all_upcoming' }; const checkinFilename = `checkins_${timeWindowMap[timeWindow]}.ics`; return { birthdays: exportBirthdays ? { content: createFullICS(birthdayICS), filename: 'birthdays.ics' } : null, checkins: exportCheckins ? { content: createFullICS(checkinICS), filename: checkinFilename } : null };
   };
   const handlers = { handleCheckIn, handleToggleDetails, handleTagAdded, handleRemoveTag, handleEditContactClick: setEditingContact, handleArchiveContact, handleToggleAddNoteForm: setAddingNoteToContactId, handleSaveNote, handleUpdateNote, handleEditNoteClick: setEditingNote, handleCancelEditNote: () => setEditingNote(null), handleSnooze, handleUpdateContact, handleCancelEditContact: () => setEditingContact(null), handleTogglePin, handleOpenSnoozeModal: setSnoozingContact, };
   const uiState = { editingContact, detailedContactId, addingNoteToContactId, editingNote, isOverdue };
@@ -340,7 +360,7 @@ function MainApplication() {
                 {activeSearchFilter && <button type="button" className="clear-search-button" onClick={handleClearSearch}>X</button>}
                 {isSearchFocused && searchResults && (
                   <div className="search-results">
-                    {searchResults.contacts.length > 0 && (<div className="results-section"><h4>Contacts</h4><ul>{searchResults.contacts.map(c => <li key={`c-${c.id}`} onMouseDown={() => { setGlobalSearchTerm(c.firstName); setActiveSearchFilter(c.firstName); }}>{c.firstName}</li>)}</ul></div>)}
+                    {searchResults.contacts.length > 0 && (<div className="results-section"><h4>Contacts</h4><ul>{searchResults.contacts.map(c => <li key={`c-${c.id}`} onMouseDown={() => { setGlobalSearchTerm(c.name); setActiveSearchFilter(c.name); }}>{c.name}</li>)}</ul></div>)}
                     {searchResults.notes.length > 0 && (<div className="results-section"><h4>Notes</h4><ul>{searchResults.notes.map(n => <li key={`n-${n.id}`} onMouseDown={() => { setGlobalSearchTerm(n.content); setActiveSearchFilter(n.content); }}>"{n.content.substring(0, 30)}..."<span className="note-contact-name">({n.contactFirstName})</span></li>)}</ul></div>)}
                     {searchResults.contacts.length === 0 && searchResults.notes.length === 0 && debouncedGlobalSearch && (<p className="no-results">No results found.</p>)}
                   </div>
@@ -395,7 +415,7 @@ function MainApplication() {
         />
       )}
       {selectionMode && view === 'active' && (
-        <BatchActionsToolbar 
+        <BatchActionsToolbar
           selectedCount={selectedContactIds.length}
           onSelectAll={handleSelectAll}
           onClear={handleClearSelection}
@@ -436,13 +456,13 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route 
-            path="/" 
+          <Route
+            path="/"
             element={
               <ProtectedRoute>
                 <MainApplication />
               </ProtectedRoute>
-            } 
+            }
           />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
