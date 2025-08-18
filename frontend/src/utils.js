@@ -1,6 +1,5 @@
 import { addDays, startOfDay, format, isToday, isTomorrow, isWithinInterval, differenceInCalendarDays } from 'date-fns';
 
-// --- This function for the Agenda View is correct and remains unchanged. ---
 export function generateAgendaViewData(contacts) {
   const today = startOfDay(new Date());
   const agendaLimit = addDays(today, 7); 
@@ -20,7 +19,6 @@ export function generateAgendaViewData(contacts) {
 
   contacts.forEach(contact => {
     const effectiveDate = getEffectiveCheckinDate(contact);
-    
     if (effectiveDate && isWithinInterval(effectiveDate, { start: today, end: agendaLimit })) {
       const dayIndex = differenceInCalendarDays(effectiveDate, today);
       if (dayIndex >= 0 && dayIndex < 8) {
@@ -30,13 +28,12 @@ export function generateAgendaViewData(contacts) {
   });
 
   agendaSkeleton.forEach(day => {
-    day.contacts.sort((a, b) => a.firstName.localeCompare(b.firstName));
+    day.contacts.sort((a, b) => a.name.localeCompare(b.name));
   });
 
   return agendaSkeleton;
 }
 
-// This function is for the Agenda view and is correct.
 export function getEffectiveCheckinDate(contact) {
     const today = startOfDay(new Date());
     if (contact.snooze_until) {
@@ -45,26 +42,19 @@ export function getEffectiveCheckinDate(contact) {
             return snoozeDate;
         }
     }
-    return calculateNextUpcomingCheckinDate(contact.lastCheckin, contact.checkinFrequency);
+    // FIX: Using snake_case properties
+    return calculateNextUpcomingCheckinDate(contact.last_checkin, contact.checkin_frequency);
 }
 
-// --- LOGIC CORRECTION FOR isOverdue ---
-// This function is now simple and only determines if a contact is currently overdue.
 export function isOverdue(contact) {
     const today = startOfDay(new Date());
-
-    // If snoozed until a future date, it's not overdue.
     if (contact.snooze_until && startOfDay(new Date(contact.snooze_until)) > today) {
         return false;
     }
-    
-    // Calculate the simple due date by adding frequency to the last check-in.
-    const dueDate = addDays(startOfDay(new Date(contact.lastCheckin)), contact.checkinFrequency);
-    
-    // It's overdue if the due date is today or in the past.
+    // FIX: Using snake_case properties
+    const dueDate = addDays(startOfDay(new Date(contact.last_checkin)), contact.checkin_frequency);
     return dueDate <= today;
 }
-
 
 export function daysSince(dateString) {
   const today = startOfDay(new Date());
@@ -79,12 +69,11 @@ export function formatBirthday(dateString) {
 }
 
 export function calculateNextUpcomingCheckinDate(lastCheckin, frequency) {
-  if (frequency <= 0) return null;
+  if (!lastCheckin || frequency <= 0) return null; // Added a guard for missing lastCheckin
   const today = startOfDay(new Date());
   const lastDate = startOfDay(new Date(lastCheckin));
-
   const daysSinceLast = differenceInCalendarDays(today, lastDate);
-  
+
   if (daysSinceLast <= frequency) {
     return addDays(lastDate, frequency);
   } else {
@@ -105,7 +94,7 @@ export function getNextBirthday(birthdayString) {
   const parts = birthdayString.split('-');
   const birthMonth = parseInt(parts[1], 10) - 1; 
   const birthDay = parseInt(parts[2], 10);
-  
+
   let nextBirthday = new Date(today.getFullYear(), birthMonth, birthDay);
   if (nextBirthday < today) {
     nextBirthday.setFullYear(today.getFullYear() + 1);

@@ -42,12 +42,15 @@ function ContactCard({
   const getNextCheckinDisplay = () => {
     const isSnoozed = contact.snooze_until && new Date(contact.snooze_until) > new Date();
     if (isSnoozed) {
-      return new Date(contact.snooze_until).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      // TIMEZONE FIX: Create a date from the snooze string and adjust for the local timezone offset.
+      const snoozeDateUTC = new Date(contact.snooze_until);
+      const localSnoozeDate = new Date(snoozeDateUTC.valueOf() + snoozeDateUTC.getTimezoneOffset() * 60000);
+      return localSnoozeDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     }
-    const lastCheckinDate = new Date(contact.lastCheckin);
-    const localLastCheckin = new Date(lastCheckinDate.valueOf() + lastCheckinDate.getTimezoneOffset() * 60 * 1000);
-    const nextCheckinDate = new Date(localLastCheckin);
-    nextCheckinDate.setDate(localLastCheckin.getDate() + contact.checkinFrequency);
+    if (!contact.last_checkin) return 'N/A';
+    const lastCheckinDate = new Date(contact.last_checkin);
+    const nextCheckinDate = new Date(lastCheckinDate);
+    nextCheckinDate.setDate(lastCheckinDate.getDate() + contact.checkin_frequency);
     const today = new Date();
     if (nextCheckinDate.getFullYear() === today.getFullYear() &&
         nextCheckinDate.getMonth() === today.getMonth() &&
@@ -69,7 +72,16 @@ function ContactCard({
   
   const onUpdateContactSubmit = (e) => {
       e.preventDefault();
-      handleUpdateContact(editingContactState);
+      // Map the snake_case state back to camelCase for the Zod schema on the backend
+      const contactToUpdate = {
+        ...editingContactState,
+        firstName: editingContactState.name,
+        checkinFrequency: editingContactState.checkin_frequency,
+        howWeMet: editingContactState.how_we_met,
+        keyFacts: editingContactState.key_facts,
+        lastCheckin: editingContactState.last_checkin
+      };
+      handleUpdateContact(contactToUpdate);
   };
 
   const startEditingNote = (note) => {
@@ -106,7 +118,7 @@ function ContactCard({
             <button className="pin-button grid-pin-button" onClick={(e) => { e.stopPropagation(); handleTogglePin(contact.id); }} disabled={selectionMode}>
               {contact.is_pinned ? '★' : '☆'}
             </button>
-            <h3>{contact.firstName}</h3>
+            <h3>{contact.name}</h3>
             <p>Next check-in:</p>
             <strong>{nextCheckinDisplay}</strong>
             {contact.birthday && <p className="grid-birthday">🎂 {formatBirthday(contact.birthday)}</p>}
@@ -120,21 +132,21 @@ function ContactCard({
     >
       {isEditingThisContact ? (
         <form onSubmit={onUpdateContactSubmit} className="contact-edit-form">
-          <input name="firstName" value={editingContactState.firstName} onChange={onEditingContactChange} />
-          <input name="howWeMet" value={editingContactState.howWeMet} onChange={onEditingContactChange} placeholder="How we met" />
+          <input name="name" value={editingContactState.name} onChange={onEditingContactChange} />
+          <input name="how_we_met" value={editingContactState.how_we_met} onChange={onEditingContactChange} placeholder="How we met" />
           <input type="date" name="birthday" value={editingContactState.birthday ? editingContactState.birthday.split('T')[0] : ''} onChange={onEditingContactChange} />
-          <textarea name="keyFacts" value={editingContactState.keyFacts} onChange={onEditingContactChange} placeholder="Key facts" />
+          <textarea name="key_facts" value={editingContactState.key_facts} onChange={onEditingContactChange} placeholder="Key facts" />
           <div>
             <label>Remind every</label>
-            <input type="number" name="checkinFrequency" value={editingContactState.checkinFrequency} onChange={onEditingContactChange} min="1"/>
+            <input type="number" name="checkin_frequency" value={editingContactState.checkin_frequency} onChange={onEditingContactChange} min="1"/>
             <label>days</label>
           </div>
           <div>
             <label>Starting from</label>
             <input 
               type="date" 
-              name="lastCheckin" 
-              value={new Date(editingContactState.lastCheckin).toISOString().split('T')[0]} 
+              name="last_checkin" 
+              value={new Date(editingContactState.last_checkin).toISOString().split('T')[0]} 
               onChange={onEditingContactChange} 
             />
           </div>
@@ -153,7 +165,7 @@ function ContactCard({
               <button className="pin-button" onClick={(e) => { e.stopPropagation(); handleTogglePin(contact.id); }} disabled={selectionMode}>
                 {contact.is_pinned ? '★' : '☆'}
               </button>
-              <h3>{contact.firstName}</h3>
+              <h3>{contact.name}</h3>
             </div>
             <div className="contact-header-actions">
               {overdue && (
@@ -180,7 +192,7 @@ function ContactCard({
           
           <div className="checkin-status-line">
             <p>
-              Last checked in: <strong>{daysSince(contact.lastCheckin)} day(s) ago</strong> · Next: <strong>{nextCheckinDisplay}</strong>
+              Last checked in: <strong>{daysSince(contact.last_checkin)} day(s) ago</strong> · Next: <strong>{nextCheckinDisplay}</strong>
             </p>
           </div>
 
@@ -188,9 +200,9 @@ function ContactCard({
             <div className="contact-details-expanded">
               <div className="contact-details">
                 {contact.birthday && <p><strong>Birthday:</strong> {formatBirthday(contact.birthday)}</p>}
-                {contact.howWeMet && <p><strong>How we met:</strong> {contact.howWeMet}</p>}
-                {contact.keyFacts && <p><strong>Key facts:</strong> {contact.keyFacts}</p>}
-                <p className="frequency-detail"><strong>Check-in frequency:</strong> Every {contact.checkinFrequency} days</p>
+                {contact.how_we_met && <p><strong>How we met:</strong> {contact.how_we_met}</p>}
+                {contact.key_facts && <p><strong>Key facts:</strong> {contact.key_facts}</p>}
+                <p className="frequency-detail"><strong>Check-in frequency:</strong> Every {contact.checkin_frequency} days</p>
               </div>
               <div className="tags-container">
                 {contact.tags && contact.tags.map(tag => (
@@ -227,8 +239,8 @@ function ContactCard({
                           <p>{note.content}</p>
                           <div className="note-footer">
                             <small>
-                              Created: {new Date(note.createdAt).toLocaleString()}
-                              {note.modifiedAt && <span className="modified-date">&nbsp;· Edited: {new Date(note.modifiedAt).toLocaleString()}</span>}
+                              Created: {new Date(note.created_at).toLocaleString()}
+                              {note.modified_at && <span className="modified-date">&nbsp;· Edited: {new Date(note.modified_at).toLocaleString()}</span>}
                             </small>
                             <button className="edit-button" onClick={() => startEditingNote(note)}>Edit</button>
                           </div>
@@ -245,8 +257,8 @@ function ContactCard({
           <div className="contact-footer">
             <button className="archive-button" onClick={(e) => { e.stopPropagation(); handleArchiveContact(contact.id); }} disabled={selectionMode}>Archive</button>
             <div className="footer-right-actions">
-                <button className="edit-contact-button" onClick={(e) => { e.stopPropagation(); startEditingContact(); }} disabled={selectionMode}>Edit Contact</button>
-                <button className="add-note-button" onClick={(e) => { e.stopPropagation(); handleToggleAddNoteForm(contact.id === addingNoteToContactId ? null : contact.id); }} disabled={selectionMode}>Add Note</button>
+              <button className="edit-contact-button" onClick={(e) => { e.stopPropagation(); startEditingContact(); }} disabled={selectionMode}>Edit Contact</button>
+              <button className="add-note-button" onClick={(e) => { e.stopPropagation(); handleToggleAddNoteForm(contact.id === addingNoteToContactId ? null : contact.id); }} disabled={selectionMode}>Add Note</button>
             </div>
           </div>
         </>

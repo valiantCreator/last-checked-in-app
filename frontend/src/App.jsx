@@ -1,11 +1,10 @@
-// --- NEW: Import components from react-router-dom for navigation ---
+// --- NEW: Router and Context Imports ---
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-// --- NEW: Import the AuthProvider to give the app authentication context ---
 import { AuthProvider } from './context/AuthContext';
+import AuthContext from './context/AuthContext'; // Import the context itself
 
-// --- Original Imports ---
-import { useState, useEffect, useMemo } from 'react';
-// import axios from 'axios'; // We no longer use raw axios, we use our configured instance.
+// --- Original Imports (with useContext added) ---
+import { useState, useEffect, useMemo, useContext } from 'react';
 import { useDebounce } from 'use-debounce';
 import { Toaster, toast } from 'react-hot-toast';
 import { requestForToken } from './firebase';
@@ -17,22 +16,25 @@ import ExportCalendarModal from './components/ExportCalendarModal.jsx';
 import BatchActionsToolbar from './components/BatchActionsToolbar.jsx';
 import SnoozeModal from './components/SnoozeModal.jsx';
 import AgendaView from './components/AgendaView.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx'; // Import the guard
 import { isOverdue, generateAgendaViewData, calculateNextUpcomingCheckinDate, formatToICSDate, getNextBirthday } from './utils.js';
 // --- UPDATED: Import our configured 'api' instance ---
 import api from './apiConfig.js'; 
 
-// --- NEW: Import the new Login and Signup page components ---
+// --- NEW: Page Component Imports ---
 import LoginPage from './pages/LoginPage.jsx';
 import SignupPage from './pages/SignupPage.jsx';
 
 
 // =================================================================
 // --- Main Application Component ---
-// All of your original App component's logic, state, and JSX
-// has been moved into this new component. This now represents the
-// core, protected part of your application.
+// All of your original App component's logic is now inside here.
 // =================================================================
 function MainApplication() {
+  // NEW: Get the token from our AuthContext. This is the fix for the ReferenceError.
+  const { token } = useContext(AuthContext);
+
+  // Your existing state...
   const [contacts, setContacts] = useState([]);
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem('theme-preference');
@@ -69,26 +71,27 @@ function MainApplication() {
 
   const fetchContacts = async () => {
     try {
-      // UPDATED: Now uses our 'api' instance. It will automatically have the auth header.
       const res = await api.get('/contacts');
       setContacts(res.data.contacts.map(c => ({ ...c, notes: [], tags: c.tags || [] })));
     } catch (error) {
       console.error("Failed to fetch contacts", error);
-      toast.error("Could not load contacts. Your session may have expired.");
+      toast.error("Could not load contacts.");
     }
   };
 
+  // NEW/FIXED: This effect now depends on the token. It will only run
+  // once the user is logged in and a token is available.
   useEffect(() => {
-    requestForToken();
-    fetchContacts();
-    // UPDATED: These calls now use the 'api' instance as well.
-    api.get('/tags').then(res => setAllTags(res.data.tags || []));
-    api.get('/contacts/archived/count').then(res => setArchivedCount(res.data.count));
-  }, []);
+    if (token) {
+      requestForToken();
+      fetchContacts();
+      api.get('/tags').then(res => setAllTags(res.data.tags || []));
+      api.get('/contacts/archived/count').then(res => setArchivedCount(res.data.count));
+    }
+  }, [token]);
 
   useEffect(() => {
     if (debouncedGlobalSearch) {
-      // UPDATED: Using 'api' instance
       api.get(`/search?q=${debouncedGlobalSearch}`)
         .then(res => setSearchResults(res.data.results));
     } else {
@@ -98,6 +101,7 @@ function MainApplication() {
   
   const agendaData = useMemo(() => generateAgendaViewData(contacts), [contacts]);
 
+  // ALL API CALLS BELOW HAVE BEEN SWITCHED FROM 'axios' TO 'api'
   const processedContacts = useMemo(() => {
     let displayedContacts = [...contacts];
     if (activeSearchFilter && searchResults) {
@@ -123,7 +127,8 @@ function MainApplication() {
     switch (sortBy) {
       case 'closestCheckin': unpinned.sort((a, b) => getDaysSinceDue(a) - getDaysSinceDue(b)); break;
       case 'mostOverdue': unpinned.sort((a, b) => getDaysSinceDue(b) - getDaysSinceDue(a)); break;
-      case 'nameAZ': unpinned.sort((a, b) => a.firstName.localeCompare(b.firstName)); break;
+      // FIX: Sort by the 'name' property, not 'firstName'
+      case 'nameAZ': unpinned.sort((a, b) => a.name.localeCompare(b.name)); break;
       case 'newestFirst': unpinned.sort((a, b) => b.id - a.id); break;
       default: break;
     }
@@ -134,8 +139,36 @@ function MainApplication() {
 
   const handleSearchSubmit = (e) => { e.preventDefault(); setActiveSearchFilter(globalSearchTerm); setIsSearchFocused(false); };
   const handleClearSearch = () => { setGlobalSearchTerm(''); setActiveSearchFilter(''); setSearchResults(null); };
-  const handleAddContact = (newContactData) => { setContacts(c => [...c, newContactData]); toast.success(`${newContactData.firstName} added!`); };
-  const handleCheckIn = (id) => { api.post(`/contacts/${id}/checkin`).then(() => fetchContacts()).then(() => toast.success("Checked in!")); };
+  // Replace your existing handleAddContact function with this one.
+  const handleAddContact = () => {
+    // We no longer need to accept the new contact data as an argument.
+    // We'll just refetch the whole list to ensure perfect data consistency.
+    toast.success("Contact added!");
+    fetchContacts(); // This will get the new, complete list from the server.
+  };  
+  const handleCheckIn = (id) => {
+    const originalContacts = [...contacts];
+    const checkinTime = new Date().toISOString();
+
+    // Optimistic Update: Update the UI immediately.
+    setContacts(currentContacts =>
+      currentContacts.map(c =>
+        c.id === id
+          ? { ...c, last_checkin: checkinTime, snooze_until: null }
+          : c
+      )
+    );
+    toast.success("Checked in!");
+
+    // Make the API call in the background.
+    api.post(`/contacts/${id}/checkin`)
+      .catch(error => {
+        // If it fails, revert the change and show an error.
+        console.error("Failed to check in", error);
+        toast.error("Could not save check-in. Reverting.");
+        setContacts(originalContacts);
+      });
+  };
   const handleUpdateContact = (updatedContact) => { api.put(`/contacts/${updatedContact.id}`, updatedContact).then(() => { setEditingContact(null); fetchContacts(); toast.success("Contact updated!"); }); };
   const handleToggleDetails = (contactId) => {
     const newId = detailedContactId === contactId ? null : contactId;
@@ -210,7 +243,20 @@ function MainApplication() {
       toast.success("Contact permanently deleted.");
     });
   };
-  const handleSnooze = (contactId, days) => { api.put(`/contacts/${contactId}/snooze`, { snooze_days: days }).then(() => { setSnoozingContact(null); fetchContacts(); toast.success("Snoozed!"); }); };
+  // For snoozing a single contact
+  const handleSnooze = (contactId, days) => {
+    // UPDATED: Using 'api.put' which is authenticated
+    api.put(`/contacts/${contactId}/snooze`, { snooze_days: days })
+      .then(() => {
+        setSnoozingContact(null);
+        fetchContacts(); // This will now run successfully
+        toast.success("Snoozed!");
+      })
+      .catch(err => {
+        console.error("Snooze failed", err);
+        toast.error("Could not snooze contact.");
+      });
+  };
   const handleTogglePin = (contactId) => {
     const originalContacts = [...contacts];
     setContacts(currentContacts => currentContacts.map(c => c.id === contactId ? { ...c, is_pinned: !c.is_pinned } : c));
@@ -228,7 +274,21 @@ function MainApplication() {
   };
   const handleClearSelection = () => { setSelectedContactIds([]); };
   const handleBatchArchive = () => { api.post(`/contacts/batch-archive`, { contactIds: selectedContactIds }).then(() => { toast.success(`${selectedContactIds.length} contacts archived.`); setArchivedCount(prev => prev + selectedContactIds.length); setContacts(contacts.filter(c => !selectedContactIds.includes(c.id))); setSelectedContactIds([]); }).catch(err => { console.error("Batch archive failed", err); toast.error("Could not archive contacts."); }); };
-  const handleBatchSnooze = (days) => { api.post(`/contacts/batch-snooze`, { contactIds: selectedContactIds, snooze_days: days }).then(() => { toast.success(`${selectedContactIds.length} contacts snoozed.`); fetchContacts(); setSelectedContactIds([]); setIsBatchSnoozing(false); }).catch(err => { console.error("Batch snooze failed", err); toast.error("Could not snooze contacts."); }); };
+  // For snoozing multiple contacts from the toolbar
+  const handleBatchSnooze = (days) => {
+    // UPDATED: Using 'api.post' which is authenticated
+    api.post(`/contacts/batch-snooze`, { contactIds: selectedContactIds, snooze_days: days })
+      .then(() => {
+        toast.success(`${selectedContactIds.length} contacts snoozed.`);
+        fetchContacts(); // This will now run successfully
+        setSelectedContactIds([]);
+        setIsBatchSnoozing(false); 
+      })
+      .catch(err => {
+        console.error("Batch snooze failed", err);
+        toast.error("Could not snooze contacts.");
+      });
+  };
   const handleBatchCheckIn = () => { api.post(`/contacts/batch-checkin`, { contactIds: selectedContactIds }).then(() => { toast.success(`${selectedContactIds.length} contacts checked in.`); fetchContacts(); setSelectedContactIds([]); }).catch(err => { console.error("Batch check-in failed", err); toast.error("Could not check in contacts."); }); };
   const handleOpenBatchSnoozeModal = () => { setIsBatchSnoozing(true); };
   const handleToggleArchivedSelection = (contactId) => { setSelectedArchivedIds(prev => prev.includes(contactId) ? prev.filter(id => id !== contactId) : [...prev, contactId]); };
@@ -245,13 +305,22 @@ function MainApplication() {
   const generateCalendarFiles = ({ exportBirthdays, exportCheckins, timeWindow }) => {
     let birthdayICS = ''; let checkinICS = ''; const today = new Date(); today.setHours(0, 0, 0, 0); const timeWindowLimit = new Date(today); if (timeWindow !== 'all') { timeWindowLimit.setDate(timeWindowLimit.getDate() + parseInt(timeWindow)); } contacts.forEach(contact => { const fullName = contact.lastName ? `${contact.firstName} ${contact.lastName}` : contact.firstName; if (exportCheckins) { let nextCheckinDate = (contact.snooze_until && new Date(contact.snooze_until) > today) ? new Date(contact.snooze_until) : calculateNextUpcomingCheckinDate(contact.lastCheckin, contact.checkinFrequency); while (timeWindow === 'all' || nextCheckinDate <= timeWindowLimit) { const formattedCheckinDate = formatToICSDate(nextCheckinDate); const checkinUID = `checkin-${contact.id}-${formattedCheckinDate}@lastchecked.in`; checkinICS += `BEGIN:VEVENT\nUID:${checkinUID}\nDTSTAMP:${formatToICSDate(new Date())}\nDTSTART;VALUE=DATE:${formattedCheckinDate}\nSUMMARY:Check in with ${fullName}\nDESCRIPTION:Time to reconnect with ${fullName}!\nEND:VEVENT\n`; if (timeWindow === 'all' && contact.checkinFrequency <= 0) { break; } if (contact.checkinFrequency <= 0) { break; } nextCheckinDate.setDate(nextCheckinDate.getDate() + contact.checkinFrequency); } } if (exportBirthdays && contact.birthday) { const nextBirthdayDate = getNextBirthday(contact.birthday); if (nextBirthdayDate) { const formattedBirthday = formatToICSDate(nextBirthdayDate); const birthdayUID = `birthday-${contact.id}@lastchecked.in`; birthdayICS += `BEGIN:VEVENT\nUID:${birthdayUID}\nDTSTAMP:${formatToICSDate(new Date())}\nDTSTART;VALUE=DATE:${formattedBirthday}\nSUMMARY:🎂 ${fullName}'s Birthday\nDESCRIPTION:Wish ${fullName} a happy birthday!\nRRULE:FREQ=YEARLY\nEND:VEVENT\n`; } } }); const createFullICS = (content) => { if (!content) return null; return `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//LastCheckedIn//NONSGML v1.0//EN\nCALSCALE:GREGORIAN\n${content}END:VCALENDAR`; }; const timeWindowMap = { '7': 'next_7_days', '30': 'next_30_days', '365': 'next_year', 'all': 'all_upcoming' }; const checkinFilename = `checkins_${timeWindowMap[timeWindow]}.ics`; return { birthdays: exportBirthdays ? { content: createFullICS(birthdayICS), filename: 'birthdays.ics' } : null, checkins: exportCheckins ? { content: createFullICS(checkinICS), filename: checkinFilename } : null };
   };
-  const handlers = { handleCheckIn, handleToggleDetails, handleTagAdded, handleRemoveTag, handleEditContactClick: setEditingContact, handleArchiveContact, handleToggleAddNoteForm: setAddingNoteToContactId, handleSaveNote, handleUpdateNote, handleEditNoteClick: setEditingNote, handleCancelEditNote: () => setEditingNote(null), handleSnooze, handleUpdateContact, handleCancelEditContact: () => setEditingContact(null), handleTogglePin, handleOpenSnoozeModal: setSnoozingContact };
+  const handlers = { handleCheckIn, handleToggleDetails, handleTagAdded, handleRemoveTag, handleEditContactClick: setEditingContact, handleArchiveContact, handleToggleAddNoteForm: setAddingNoteToContactId, handleSaveNote, handleUpdateNote, handleEditNoteClick: setEditingNote, handleCancelEditNote: () => setEditingNote(null), handleSnooze, handleUpdateContact, handleCancelEditContact: () => setEditingContact(null), handleTogglePin, handleOpenSnoozeModal: setSnoozingContact, };
   const uiState = { editingContact, detailedContactId, addingNoteToContactId, editingNote, isOverdue };
   const selectionMode = selectedContactIds.length > 0;
 
   return (
     <div className={`app-container ${selectionMode ? 'selection-mode-active' : ''}`}>
-      <Toaster position="top-center" toastOptions={{ duration: 3000, style: { background: 'var(--card-bg)', color: 'var(--text-color)' } }} />
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: 'var(--card-bg)',
+            color: 'var(--text-color)',
+          },
+        }}
+      />
       <Header
         view={view}
         archivedCount={archivedCount}
@@ -358,19 +427,23 @@ function MainApplication() {
   );
 }
 
+
 // =================================================================
-// --- NEW: App Component is now the Router ---
-// The App component's only job is to define the routes for your application.
+// --- App Component is the Top-Level Router ---
 // =================================================================
 function App() {
   return (
-    // CORRECTED ORDER: The Router must be the top-level component,
-    // so that its context is available to everything inside, including our AuthProvider.
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* The MainApplication is now the protected home route */}
-          <Route path="/" element={<MainApplication />} />
+          <Route 
+            path="/" 
+            element={
+              <ProtectedRoute>
+                <MainApplication />
+              </ProtectedRoute>
+            } 
+          />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
         </Routes>

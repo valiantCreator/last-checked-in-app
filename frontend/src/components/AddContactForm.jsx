@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-import { API_URL } from '../apiConfig.js';
+import api from '../apiConfig';
+import { toast } from 'react-hot-toast';
 
 function AddContactForm({ onContactAdded }) {
   const [firstName, setFirstName] = useState('');
@@ -9,46 +9,55 @@ function AddContactForm({ onContactAdded }) {
   const [howWeMet, setHowWeMet] = useState('');
   const [keyFacts, setKeyFacts] = useState('');
   const [birthday, setBirthday] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!firstName.trim() || !checkinFrequency) return;
 
-    // --- FIX: Convert the date string to a full ISO string for backend validation ---
-    // The date input gives us 'YYYY-MM-DD'. We convert it to a Date object,
-    // then to a full ISO string (e.g., "2025-08-11T12:00:00.000Z") which Zod expects.
-    const fullIsoDate = new Date(startDate).toISOString();
+    setIsLoading(true);
+
+    // --- TIMEZONE FIX ---
+    // The date from the input is a string like "2025-08-17". new Date() treats this as midnight UTC.
+    // We must adjust it to be midnight in the user's local timezone.
+    const dateFromInput = new Date(startDate);
+    const userTimezoneOffset = dateFromInput.getTimezoneOffset() * 60000; // Offset in milliseconds
+    const localDate = new Date(dateFromInput.getTime() + userTimezoneOffset);
+    const fullIsoDate = localDate.toISOString();
+    // --- END FIX ---
 
     const newContact = {
+      // The backend expects camelCase from Zod, let's send that
       firstName: firstName.trim(),
       checkinFrequency: parseInt(checkinFrequency, 10),
-      lastCheckin: fullIsoDate, // Use the corrected full ISO date
+      lastCheckin: fullIsoDate, // Use the corrected local date
       howWeMet: howWeMet.trim(),
       keyFacts: keyFacts.trim(),
-      birthday: birthday || null, // Send null if the birthday is empty
+      birthday: birthday || null,
     };
 
-    axios.post(`${API_URL}/contacts`, newContact)
-      .then(res => {
-        onContactAdded(res.data);
-        // Reset all fields after submission
-        setFirstName('');
-        setCheckinFrequency(7);
-        setStartDate(new Date().toISOString().split('T')[0]);
-        setHowWeMet('');
-        setKeyFacts('');
-        setBirthday('');
-      })
-      .catch(err => {
-        console.error("Error adding contact:", err);
-        // --- IMPROVEMENT: Give user feedback on validation error ---
-        if (err.response && err.response.status === 400) {
-          toast.error("Please make sure all required fields are filled out correctly.");
-        } else {
-          toast.error("Could not add contact.");
-        }
-      });
+    try {
+      // We don't need the response data because we are refetching
+      await api.post('/contacts', newContact);
+      onContactAdded(); // This now just triggers a refetch in App.jsx
+      
+      // Reset all fields after submission
+      setFirstName('');
+      setCheckinFrequency(7);
+      setStartDate(new Date().toISOString().split('T')[0]);
+      setHowWeMet('');
+      setKeyFacts('');
+      setBirthday('');
+    } catch (err) {
+      console.error("Error adding contact:", err);
+      if (err.response && err.response.status === 400) {
+        toast.error("Please make sure all fields are filled out correctly.");
+      } else {
+        toast.error(err.response?.data?.error || "Could not add contact.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -82,7 +91,6 @@ function AddContactForm({ onContactAdded }) {
             rows="3"
             className="full-width-field"
           ></textarea>
-
           <div className="remind-me-container">
             <label>Remind every</label>
             <input
@@ -104,7 +112,9 @@ function AddContactForm({ onContactAdded }) {
             />
           </div>
         </div>
-        <button type="submit" className="button-primary">Add Person</button>
+        <button type="submit" className="button-primary" disabled={isLoading}>
+          {isLoading ? 'Adding...' : 'Add Person'}
+        </button>
       </form>
     </div>
   );

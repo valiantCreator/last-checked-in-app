@@ -1,8 +1,8 @@
 // frontend/src/firebase.js
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken } from "firebase/messaging";
-import axios from 'axios';
-import { API_URL } from './apiConfig.js'; // <-- Import the dynamic URL
+// UPDATED: Replaced 'axios' and 'API_URL' with our pre-configured 'api' instance
+import api from './apiConfig.js'; 
 
 // --- IMPORTANT ---
 // Paste your own firebaseConfig object here from the Firebase console.
@@ -32,8 +32,9 @@ export const requestForToken = async () => {
     const currentToken = await getToken(messaging, { vapidKey: VAPID_KEY });
 
     if (currentToken) {
-      // Use the dynamic API_URL here
-      await axios.post(`${API_URL}/devices/token`, { token: currentToken });
+      // UPDATED: This now uses our 'api' instance, which will automatically
+      // include the Authorization header if the user is logged in.
+      await api.post('/devices/token', { token: currentToken });
       console.log('FCM Token successfully sent to server.');
       return currentToken; // <-- Explicitly return the token on success
     } else {

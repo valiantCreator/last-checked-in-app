@@ -37,7 +37,7 @@ app.use(express.json());
 // --- NEW: Rate Limiting Middleware ---
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per window
+    max: 200, // Limit each IP to 100 requests per window
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: 'Too many API requests from this IP, please try again after 15 minutes.' },
@@ -69,13 +69,15 @@ const tagSchema = z.object({
     tagName: z.string().min(1, { message: "Tag name is required" }),
 });
 
+// UPDATED: Zod schema now expects a date string instead of a number of days.
 const snoozeSchema = z.object({
-    snooze_days: z.number().int().positive({ message: "Snooze days must be a positive number" }),
+  snooze_date: z.string().datetime({ message: "Invalid date format for snooze" }),
 });
 
 const batchActionSchema = z.object({
-    contactIds: z.array(z.number().int().positive()).min(1, { message: "At least one contact ID is required." }),
-    snooze_days: z.number().int().positive().optional(),
+  contactIds: z.array(z.number().int().positive()).min(1, { message: "At least one contact ID is required." }),
+  // UPDATED: snooze_date is now an optional date string for batch actions.
+  snooze_date: z.string().datetime().optional(), 
 });
 
 const tokenSchema = z.object({
@@ -199,16 +201,14 @@ app.post('/api/contacts/batch-delete', authMiddleware, validate(batchActionSchem
     }
 });
 
-app.post('/api/contacts/batch-snooze', authMiddleware, validate(batchActionSchema), async (req, res) => { // PROTECTED
-    const { contactIds, snooze_days } = req.body;
-    if (!snooze_days) {
-        return res.status(400).json({ error: "snooze_days is required for batch snooze." });
+// UPDATED: Batch snooze endpoint now also accepts a final date.
+app.post('/api/contacts/batch-snooze', authMiddleware, validate(batchActionSchema), async (req, res) => {
+    const { contactIds, snooze_date } = req.body; // Expecting a date
+    if (!snooze_date) {
+        return res.status(400).json({ error: "snooze_date is required for batch snooze." });
     }
-    const snoozeUntil = new Date();
-    snoozeUntil.setDate(snoozeUntil.getDate() + snooze_days);
     try {
-        // SCOPED: Add "AND user_id = $3" to ensure users can only snooze their own contacts.
-        await pool.query('UPDATE contacts SET snooze_until = $1 WHERE id = ANY($2::int[]) AND user_id = $3', [snoozeUntil, contactIds, req.userId]);
+        await pool.query('UPDATE contacts SET snooze_until = $1 WHERE id = ANY($2::int[]) AND user_id = $3', [snooze_date, contactIds, req.userId]);
         res.json({ message: `${contactIds.length} contacts snoozed successfully.` });
     } catch (err) {
         console.error('Error batch snoozing contacts:', err);
@@ -400,14 +400,16 @@ app.delete('/api/contacts/:id', authMiddleware, async (req, res) => { // PROTECT
     }
 });
 
-app.put('/api/contacts/:id/snooze', authMiddleware, validate(snoozeSchema), async (req, res) => { // PROTECTED
-    const { snooze_days } = req.body;
-    const snoozeUntil = new Date();
-    snoozeUntil.setDate(snoozeUntil.getDate() + parseInt(snooze_days, 10));
+app.put('/api/contacts/:id/snooze', authMiddleware, validate(snoozeSchema), async (req, res) => {
+    const { snooze_date } = req.body; // Expecting a full date string now
     try {
-        // SCOPED: Add "AND user_id = $3" to the WHERE clause.
-        await pool.query('UPDATE contacts SET snooze_until = $1 WHERE id = $2 AND user_id = $3', [snoozeUntil, req.params.id, req.userId]);
-        res.json({ message: 'Contact snoozed successfully', snooze_until: snoozeUntil.toISOString() });
+        // The logic is now much simpler: just save the date provided by the client.
+        const query = 'UPDATE contacts SET snooze_until = $1 WHERE id = $2 AND user_id = $3 RETURNING snooze_until';
+        const result = await pool.query(query, [snooze_date, req.params.id, req.userId]);
+        res.json({ 
+            message: 'Contact snoozed successfully', 
+            snooze_until: result.rows[0].snooze_until 
+        });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: err.message });

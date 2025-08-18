@@ -4,12 +4,11 @@ import AuthContext from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 
 function SignupPage() {
-  // Get the signup function from our AuthContext
   const { signup } = useContext(AuthContext);
-
-  // State for form fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  // NEW: Loading state
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,13 +16,14 @@ function SignupPage() {
       toast.error('Please enter both email and password.');
       return;
     }
+    setIsLoading(true); // Disable button
     try {
-      // Call the signup function from the context
       await signup(email, password);
       toast.success('Account created successfully!');
-      // Navigation to home page happens automatically after login, which is called by signup
     } catch (error) {
       toast.error(error.response?.data?.error || 'Failed to create account.');
+    } finally {
+      setIsLoading(false); // Re-enable button
     }
   };
 
@@ -39,7 +39,9 @@ function SignupPage() {
           <label htmlFor="password">Password</label>
           <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '0.5rem' }} />
         </div>
-        <button type="submit" style={{ width: '100%', padding: '0.75rem' }}>Sign Up</button>
+        <button type="submit" disabled={isLoading} style={{ width: '100%', padding: '0.75rem' }}>
+          {isLoading ? 'Creating Account...' : 'Sign Up'}
+        </button>
       </form>
       <p style={{ textAlign: 'center', marginTop: '1rem' }}>
         Already have an account? <Link to="/login">Login</Link>

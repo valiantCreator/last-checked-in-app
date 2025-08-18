@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { API_URL } from '../apiConfig.js';
+// UPDATED: Replaced old imports with our new pre-configured api instance
+import api from '../apiConfig';
 
 // --- TagInput Component ---
 // This component provides an input field for adding tags to a contact.
@@ -14,7 +14,8 @@ function TagInput({ contact, onTagAdded }) {
   // --- Effect ---
   // Fetch all existing tags from the system once when the component first loads.
   useEffect(() => {
-    axios.get(`${API_URL}/tags`).then(res => {
+    // UPDATED: Using 'api.get' which will be authenticated
+    api.get('/tags').then(res => {
       if (res.data.tags) setAllTags(res.data.tags);
     });
   }, []);
@@ -29,7 +30,7 @@ function TagInput({ contact, onTagAdded }) {
       const existingContactTagIds = contact.tags.map(t => t.id);
       const filtered = allTags.filter(tag => 
         tag.name.toLowerCase().includes(value.toLowerCase()) &&
-        !existingContactTagIds.includes(tag.id)
+        !existingContactTagDds.includes(tag.id)
       );
       setSuggestions(filtered);
     } else {
@@ -40,7 +41,8 @@ function TagInput({ contact, onTagAdded }) {
   // Add a tag to the contact, either from a suggestion click or form submission.
   const handleAddTag = (tagName) => {
     if (!tagName) return;
-    axios.post(`${API_URL}/contacts/${contact.id}/tags`, { tagName })
+    // UPDATED: Using 'api.post' which will be authenticated
+    api.post(`/contacts/${contact.id}/tags`, { tagName })
       .then(res => {
         onTagAdded(res.data); // Callback to parent to update the contact's tags
         setInputValue('');    // Clear the input
@@ -57,7 +59,6 @@ function TagInput({ contact, onTagAdded }) {
   // --- JSX Rendering ---
   return (
     <div className="tag-input-container">
-      {/* The onSubmit handler is added here */}
       <form onSubmit={handleFormSubmit}>
         <input 
           type="text" 

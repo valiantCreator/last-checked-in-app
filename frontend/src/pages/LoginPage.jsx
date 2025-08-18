@@ -4,12 +4,11 @@ import AuthContext from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 
 function LoginPage() {
-  // Get the login function from our AuthContext
   const { login } = useContext(AuthContext);
-
-  // State for form fields and errors
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  // NEW: Loading state to prevent double submission
+  const [isLoading, setIsLoading] = useState(false);
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,13 +16,14 @@ function LoginPage() {
       toast.error('Please enter both email and password.');
       return;
     }
+    setIsLoading(true); // Disable button
     try {
-      // Call the login function from the context
       await login(email, password);
       toast.success('Logged in successfully!');
-      // Navigation happens inside the login function on success
     } catch (error) {
       toast.error(error.response?.data?.error || 'Failed to login.');
+    } finally {
+      setIsLoading(false); // Re-enable button
     }
   };
 
@@ -39,7 +39,9 @@ function LoginPage() {
           <label htmlFor="password">Password</label>
           <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '0.5rem' }} />
         </div>
-        <button type="submit" style={{ width: '100%', padding: '0.75rem' }}>Login</button>
+        <button type="submit" disabled={isLoading} style={{ width: '100%', padding: '0.75rem' }}>
+          {isLoading ? 'Logging in...' : 'Login'}
+        </button>
       </form>
       <p style={{ textAlign: 'center', marginTop: '1rem' }}>
         Don't have an account? <Link to="/signup">Sign Up</Link>
