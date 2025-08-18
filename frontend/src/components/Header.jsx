@@ -1,16 +1,23 @@
-import React from 'react';
+// frontend/src/components/Header.jsx
+
+// FIX: Import useContext and AuthContext to access the logout function directly.
+import React, { useContext } from 'react';
+import AuthContext from '../context/AuthContext';
 import ThemeToggleButton from './ThemeToggleButton';
 
 function Header({
   view,
   // --- UPDATED: Receive archivedCount (a number) instead of the full array ---
-  archivedCount, 
+  archivedCount,
   onToggleTheme,
   onViewArchived,
   onViewActive,
   onExportToCalendar,
-  theme 
+  theme
 }) {
+  // FIX: Get the logout function from our global authentication context.
+  const { logout } = useContext(AuthContext);
+
   return (
     <div className="app-header">
       <div className="logo-title-container">
@@ -37,6 +44,11 @@ function Header({
         )}
 
         <ThemeToggleButton theme={theme} onToggleTheme={onToggleTheme} />
+
+        {/* FIX: Add the Logout button. It calls the logout function from the context. */}
+        <button className="button-secondary" onClick={logout}>
+          Logout
+        </button>
       </div>
     </div>
   );
