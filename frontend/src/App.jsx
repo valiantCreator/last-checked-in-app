@@ -13,7 +13,6 @@ import ContactCard from "./components/ContactCard.jsx";
 import ArchivedView from "./components/ArchivedView.jsx";
 import ExportCalendarModal from "./components/ExportCalendarModal.jsx";
 import BatchActionsToolbar from "./components/BatchActionsToolbar.jsx";
-// FIX: Import the ArchivedActionsToolbar as well
 import ArchivedActionsToolbar from "./components/ArchivedActionsToolbar.jsx";
 import SnoozeModal from "./components/SnoozeModal.jsx";
 import AgendaView from "./components/AgendaView.jsx";
@@ -173,6 +172,14 @@ function MainApplication() {
     sortDirection,
   ]);
 
+  // FIX: New handler to manage changes in the live edit form
+  const handleEditingContactChange = (e) => {
+    setEditingContact((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     setActiveSearchFilter(globalSearchTerm);
@@ -204,13 +211,28 @@ function MainApplication() {
       setContacts(originalContacts);
     });
   };
-  const handleUpdateContact = (updatedContact) => {
-    api.put(`/contacts/${updatedContact.id}`, updatedContact).then(() => {
+
+  // FIX: This function no longer needs an argument. It uses the `editingContact` state.
+  const handleUpdateContact = () => {
+    if (!editingContact) return;
+
+    // Create the payload for the API from the state object
+    const contactToUpdate = {
+      ...editingContact,
+      firstName: editingContact.name,
+      checkinFrequency: parseInt(editingContact.checkin_frequency, 10),
+      howWeMet: editingContact.how_we_met,
+      keyFacts: editingContact.key_facts,
+      lastCheckin: editingContact.last_checkin,
+    };
+
+    api.put(`/contacts/${editingContact.id}`, contactToUpdate).then(() => {
       setEditingContact(null);
       fetchContacts();
       toast.success("Contact updated!");
     });
   };
+
   const handleToggleDetails = (contactId) => {
     const newId = detailedContactId === contactId ? null : contactId;
     setDetailedContactId(newId);
@@ -587,12 +609,15 @@ function MainApplication() {
         : null,
     };
   };
+
+  // FIX: Pass the new `handleEditingContactChange` handler down to child components.
   const handlers = {
     handleCheckIn,
     handleToggleDetails,
     handleTagAdded,
     handleRemoveTag,
     handleEditContactClick: setEditingContact,
+    handleEditingContactChange, // Add new handler here
     handleArchiveContact,
     handleToggleAddNoteForm: setAddingNoteToContactId,
     handleSaveNote,
@@ -605,6 +630,7 @@ function MainApplication() {
     handleTogglePin,
     handleOpenSnoozeModal: setSnoozingContact,
   };
+
   const uiState = {
     editingContact,
     detailedContactId,
