@@ -1,8 +1,10 @@
+// frontend/src/components/ContactCard.jsx
+
 import React, { useState } from 'react';
 import { isOverdue, formatBirthday, daysSince } from '../utils.js';
 import TagInput from './TagInput.jsx';
 
-function ContactCard({ 
+function ContactCard({
   contact,
   handlers,
   uiState,
@@ -33,7 +35,7 @@ function ContactCard({
   const [newNoteContent, setNewNoteContent] = useState('');
   const [editingNoteContent, setEditingNoteContent] = useState('');
   const [editingContactState, setEditingContactState] = useState(null);
-  
+
   const overdue = isOverdue(contact);
   const isEditingThisContact = editingContact && editingContact.id === contact.id;
   const isExpanded = detailedContactId === contact.id;
@@ -61,6 +63,20 @@ function ContactCard({
   };
   const nextCheckinDisplay = getNextCheckinDisplay();
 
+  // FIX: This new logic block correctly formats the "Last checked in" text.
+  // It checks if the last_checkin date is in the future and changes the display message accordingly.
+  const lastCheckinDate = new Date(contact.last_checkin);
+  const now = new Date();
+  let lastCheckinDisplay;
+
+  if (lastCheckinDate > now) {
+    // If the date is in the future, show "Starting on..."
+    lastCheckinDisplay = `Starting ${lastCheckinDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`;
+  } else {
+    // Otherwise, show the normal "... day(s) ago" text.
+    lastCheckinDisplay = `${daysSince(contact.last_checkin)} day(s) ago`;
+  }
+
   const startEditingContact = () => {
     setEditingContactState({ ...contact });
     handleEditContactClick(contact);
@@ -69,7 +85,7 @@ function ContactCard({
   const onEditingContactChange = (e) => {
     setEditingContactState(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
-  
+
   const onUpdateContactSubmit = (e) => {
       e.preventDefault();
       // Map the snake_case state back to camelCase for the Zod schema on the backend
@@ -108,7 +124,7 @@ function ContactCard({
 
   if (displayMode === 'grid') {
     return (
-        <div 
+        <div
           className={`card contact-item-grid ${overdue ? 'overdue' : ''} ${isSelected ? 'selected' : ''}`}
           onClick={handleCardClick}
         >
@@ -127,7 +143,7 @@ function ContactCard({
   }
 
   return (
-    <div 
+    <div
       className={`card contact-item ${overdue ? 'overdue' : ''} ${isSelected ? 'selected' : ''}`}
     >
       {isEditingThisContact ? (
@@ -143,11 +159,11 @@ function ContactCard({
           </div>
           <div>
             <label>Starting from</label>
-            <input 
-              type="date" 
-              name="last_checkin" 
-              value={new Date(editingContactState.last_checkin).toISOString().split('T')[0]} 
-              onChange={onEditingContactChange} 
+            <input
+              type="date"
+              name="last_checkin"
+              value={new Date(editingContactState.last_checkin).toISOString().split('T')[0]}
+              onChange={onEditingContactChange}
             />
           </div>
           <div className="form-actions">
@@ -189,10 +205,11 @@ function ContactCard({
               </div>
             </div>
           </div>
-          
+
           <div className="checkin-status-line">
             <p>
-              Last checked in: <strong>{daysSince(contact.last_checkin)} day(s) ago</strong> · Next: <strong>{nextCheckinDisplay}</strong>
+              {/* FIX: Use the new display variable here. */}
+              Last checked in: <strong>{lastCheckinDisplay}</strong> · Next: <strong>{nextCheckinDisplay}</strong>
             </p>
           </div>
 
