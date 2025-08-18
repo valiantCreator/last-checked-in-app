@@ -1,3 +1,5 @@
+// frontend/src/components/ArchivedActionsToolbar.jsx
+
 import React from 'react';
 
 function ArchivedActionsToolbar({
@@ -23,7 +25,8 @@ function ArchivedActionsToolbar({
         </button>
       </div>
       <div className="actions">
-        <button onClick={onRestore} className="button-secondary">Restore</button>
+        {/* FIX: Changed to button-primary for better UX distinction */}
+        <button onClick={onRestore} className="button-primary">Restore</button>
         <button onClick={onDelete} className="button-danger">Delete Permanently</button>
       </div>
     </div>

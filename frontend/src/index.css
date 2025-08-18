@@ -1124,3 +1124,25 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
   border-radius: 8px;
   margin: 1rem 0;
 }
+
+* Button style for destructive actions */
+.button-danger {
+  background-color: var(--danger-color);
+  color: #ffffff;
+  border: 1px solid var(--danger-color);
+}
+
+.button-danger:hover {
+  background-color: var(--danger-color-dark);
+  border-color: var(--danger-color-dark);
+}
+
+:root {
+  --danger-color: #d9534f;
+  --danger-color-dark: #c9302c;
+}
+
+[data-theme="dark"] {
+  --danger-color: #e57373;
+  --danger-color-dark: #ef5350;
+}
