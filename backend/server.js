@@ -1,3 +1,5 @@
+// backend/server.js
+
 // This line loads the secret database URL from the .env file
 require('dotenv').config();
 
@@ -69,15 +71,15 @@ const tagSchema = z.object({
     tagName: z.string().min(1, { message: "Tag name is required" }),
 });
 
-// UPDATED: Zod schema now expects a date string instead of a number of days.
-const snoozeSchema = z.object({
-  snooze_date: z.string().datetime({ message: "Invalid date format for snooze" }),
+// FIX: Renamed snoozeSchema to reflect that it now expects a duration in days.
+const snoozeDurationSchema = z.object({
+    snooze_days: z.number().int().positive({ message: "Snooze duration must be a positive number of days." }),
 });
 
 const batchActionSchema = z.object({
-  contactIds: z.array(z.number().int().positive()).min(1, { message: "At least one contact ID is required." }),
-  // UPDATED: snooze_date is now an optional date string for batch actions.
-  snooze_date: z.string().datetime().optional(), 
+    contactIds: z.array(z.number().int().positive()).min(1, { message: "At least one contact ID is required." }),
+    // FIX: Changed snooze_date to snooze_days to accept a duration instead of a final date.
+    snooze_days: z.number().int().positive().optional(),
 });
 
 const tokenSchema = z.object({
@@ -201,14 +203,28 @@ app.post('/api/contacts/batch-delete', authMiddleware, validate(batchActionSchem
     }
 });
 
-// UPDATED: Batch snooze endpoint now also accepts a final date.
+// FIX: Batch snooze endpoint completely rewritten to use server-side date calculation.
 app.post('/api/contacts/batch-snooze', authMiddleware, validate(batchActionSchema), async (req, res) => {
-    const { contactIds, snooze_date } = req.body; // Expecting a date
-    if (!snooze_date) {
-        return res.status(400).json({ error: "snooze_date is required for batch snooze." });
+    const { contactIds, snooze_days } = req.body;
+    if (!snooze_days) {
+        return res.status(400).json({ error: "snooze_days is required for batch snooze." });
     }
     try {
-        await pool.query('UPDATE contacts SET snooze_until = $1 WHERE id = ANY($2::int[]) AND user_id = $3', [snooze_date, contactIds, req.userId]);
+        // This query is the core of the fix.
+        // 1. It calculates the base due date: either the existing snooze_until or the calculated next_due_date.
+        // 2. It takes the LATER of that base date or NOW(), to handle overdue contacts correctly.
+        // 3. It adds the snooze_days interval to that final base date.
+        const query = `
+            UPDATE contacts
+            SET snooze_until = (
+                GREATEST(
+                    NOW(),
+                    COALESCE(snooze_until, last_checkin + (checkin_frequency * INTERVAL '1 day'))
+                ) + ($1 * INTERVAL '1 day')
+            )
+            WHERE id = ANY($2::int[]) AND user_id = $3;
+        `;
+        await pool.query(query, [snooze_days, contactIds, req.userId]);
         res.json({ message: `${contactIds.length} contacts snoozed successfully.` });
     } catch (err) {
         console.error('Error batch snoozing contacts:', err);
@@ -400,21 +416,33 @@ app.delete('/api/contacts/:id', authMiddleware, async (req, res) => { // PROTECT
     }
 });
 
-app.put('/api/contacts/:id/snooze', authMiddleware, validate(snoozeSchema), async (req, res) => {
-    const { snooze_date } = req.body; // Expecting a full date string now
+// FIX: Single snooze endpoint completely rewritten to use server-side date calculation.
+app.put('/api/contacts/:id/snooze', authMiddleware, validate(snoozeDurationSchema), async (req, res) => {
+    const { snooze_days } = req.body;
     try {
-        // The logic is now much simpler: just save the date provided by the client.
-        const query = 'UPDATE contacts SET snooze_until = $1 WHERE id = $2 AND user_id = $3 RETURNING snooze_until';
-        const result = await pool.query(query, [snooze_date, req.params.id, req.userId]);
-        res.json({ 
-            message: 'Contact snoozed successfully', 
-            snooze_until: result.rows[0].snooze_until 
+        // This query uses the same robust logic as the batch endpoint.
+        const query = `
+            UPDATE contacts
+            SET snooze_until = (
+                GREATEST(
+                    NOW(),
+                    COALESCE(snooze_until, last_checkin + (checkin_frequency * INTERVAL '1 day'))
+                ) + ($1 * INTERVAL '1 day')
+            )
+            WHERE id = $2 AND user_id = $3
+            RETURNING snooze_until;
+        `;
+        const result = await pool.query(query, [snooze_days, req.params.id, req.userId]);
+        res.json({
+            message: 'Contact snoozed successfully',
+            snooze_until: result.rows[0].snooze_until
         });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: err.message });
     }
 });
+
 
 app.get('/api/tags', authMiddleware, async (req, res) => { // PROTECTED
     try {
@@ -441,7 +469,7 @@ app.post('/api/contacts/:id/tags', authMiddleware, validate(tagSchema), async (r
         }
         // SCOPED: Insert tag for the current user. ON CONFLICT now uses the composite key (user_id, name).
         const tagRes = await client.query(
-            'INSERT INTO tags (name, user_id) VALUES ($1, $2) ON CONFLICT (user_id, name) DO UPDATE SET name = EXCLUDED.name RETURNING id', 
+            'INSERT INTO tags (name, user_id) VALUES ($1, $2) ON CONFLICT (user_id, name) DO UPDATE SET name = EXCLUDED.name RETURNING id',
             [tagName.trim(), req.userId]
         );
         const tagId = tagRes.rows[0].id;
@@ -512,7 +540,7 @@ app.post('/api/contacts/:id/notes', authMiddleware, validate(noteSchema), async 
     try {
         // SCOPED: Add the user_id when creating a new note.
         const result = await pool.query(
-            'INSERT INTO notes (content, created_at, contact_id, user_id) VALUES ($1, $2, $3, $4) RETURNING *', 
+            'INSERT INTO notes (content, created_at, contact_id, user_id) VALUES ($1, $2, $3, $4) RETURNING *',
             [content, createdAt, req.params.id, req.userId]
         );
         res.status(201).json(result.rows[0]);
