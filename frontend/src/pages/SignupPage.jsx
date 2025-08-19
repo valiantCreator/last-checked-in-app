@@ -1,49 +1,140 @@
-import React, { useState, useContext } from 'react';
-import { Link } from 'react-router-dom';
-import AuthContext from '../context/AuthContext';
-import { toast } from 'react-hot-toast';
+import React, { useState, useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import AuthContext from "../context/AuthContext";
+import { toast } from "react-hot-toast";
 
 function SignupPage() {
   const { signup } = useContext(AuthContext);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  // NEW: Loading state
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast.error('Please enter both email and password.');
+
+    // Validation Step 1: Check for empty fields
+    if (!email || !password || !confirmPassword) {
+      toast.error("Please fill out all fields.");
       return;
     }
-    setIsLoading(true); // Disable button
+
+    // NEW: Client-side validation to match the backend schema
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters long.");
+      return;
+    }
+
+    // Validation Step 3: Check if passwords match
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match.");
+      return;
+    }
+
+    setIsLoading(true);
     try {
       await signup(email, password);
-      toast.success('Account created successfully!');
+      // No toast here on success, because the login() call inside signup() will navigate away.
+      // A success toast would be immediately dismissed.
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Failed to create account.');
+      // REVISED: The catch block now uses error.message, which is the clean
+      // error string we created in the updated AuthContext.
+      toast.error(error.message || "Failed to create account.");
     } finally {
-      setIsLoading(false); // Re-enable button
+      setIsLoading(false);
     }
   };
 
+  const eyeIcon = (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      fill="currentColor"
+      viewBox="0 0 16 16"
+    >
+      <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
+      <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
+    </svg>
+  );
+
+  const eyeSlashIcon = (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      fill="currentColor"
+      viewBox="0 0 16 16"
+    >
+      <path d="m10.79 12.912-1.614-1.615a3.5 3.5 0 0 1-4.474-4.474l-2.06-2.06C.938 6.278 0 8 0 8s3 5.5 8 5.5a7.029 7.029 0 0 0 2.79-.588zM5.21 3.088A7.028 7.028 0 0 1 8 2.5c5 0 8 5.5 8 5.5s-.939 1.721-2.641 3.238l-2.062-2.062a3.5 3.5 0 0 0-4.474-4.474L5.21 3.089z" />
+      <path d="M5.525 7.646a2.5 2.5 0 0 0 2.829 2.829l-2.83-2.829zm4.95.708-2.829-2.83a2.5 2.5 0 0 1 2.829 2.829zm3.171 6-12-12 .708-.708 12 12-.708.708z" />
+    </svg>
+  );
+
   return (
-    <div style={{ padding: '2rem', maxWidth: '400px', margin: 'auto' }}>
+    <div className="auth-container">
       <h1>Create Account</h1>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '1rem' }}>
+      <form onSubmit={handleSubmit} className="auth-form" noValidate>
+        <div className="input-group">
           <label htmlFor="email">Email</label>
-          <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: '0.5rem' }} />
+          <input
+            type="email"
+            id="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+          />
         </div>
-        <div style={{ marginBottom: '1rem' }}>
+        <div className="input-group">
           <label htmlFor="password">Password</label>
-          <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '0.5rem' }} />
+          <div className="input-wrapper">
+            <input
+              type={showPassword ? "text" : "password"}
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="new-password"
+            />
+            <button
+              type="button"
+              className="password-toggle-btn"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? eyeSlashIcon : eyeIcon}
+            </button>
+          </div>
         </div>
-        <button type="submit" disabled={isLoading} style={{ width: '100%', padding: '0.75rem' }}>
-          {isLoading ? 'Creating Account...' : 'Sign Up'}
+        <div className="input-group">
+          <label htmlFor="confirmPassword">Confirm Password</label>
+          <div className="input-wrapper">
+            <input
+              type={showPassword ? "text" : "password"}
+              id="confirmPassword"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              autoComplete="new-password"
+            />
+            <button
+              type="button"
+              className="password-toggle-btn"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? eyeSlashIcon : eyeIcon}
+            </button>
+          </div>
+        </div>
+        <button type="submit" disabled={isLoading} className="button-primary">
+          {isLoading ? "Creating Account..." : "Sign Up"}
         </button>
       </form>
-      <p style={{ textAlign: 'center', marginTop: '1rem' }}>
+      <p className="auth-form-footer">
         Already have an account? <Link to="/login">Login</Link>
       </p>
     </div>

@@ -172,7 +172,6 @@ function MainApplication() {
     sortDirection,
   ]);
 
-  // FIX: New handler to manage changes in the live edit form
   const handleEditingContactChange = (e) => {
     setEditingContact((prev) => ({
       ...prev,
@@ -212,11 +211,9 @@ function MainApplication() {
     });
   };
 
-  // FIX: This function no longer needs an argument. It uses the `editingContact` state.
   const handleUpdateContact = () => {
     if (!editingContact) return;
 
-    // Create the payload for the API from the state object
     const contactToUpdate = {
       ...editingContact,
       firstName: editingContact.name,
@@ -610,14 +607,13 @@ function MainApplication() {
     };
   };
 
-  // FIX: Pass the new `handleEditingContactChange` handler down to child components.
   const handlers = {
     handleCheckIn,
     handleToggleDetails,
     handleTagAdded,
     handleRemoveTag,
     handleEditContactClick: setEditingContact,
-    handleEditingContactChange, // Add new handler here
+    handleEditingContactChange,
     handleArchiveContact,
     handleToggleAddNoteForm: setAddingNoteToContactId,
     handleSaveNote,
@@ -649,13 +645,7 @@ function MainApplication() {
           : ""
       }`}
     >
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          duration: 3000,
-          style: { background: "var(--card-bg)", color: "var(--text-color)" },
-        }}
-      />
+      {/* REMOVED: Toaster was moved from here... */}
       <Header
         view={view}
         archivedCount={archivedCount}
@@ -920,6 +910,18 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        {/* NEW: Toaster is placed here, so it is available on all routes (Login, Signup, and the main app) */}
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: "var(--card-bg)",
+              color: "var(--text-color)",
+              border: "1px solid var(--border-color)",
+            },
+          }}
+        />
         <Routes>
           <Route
             path="/"

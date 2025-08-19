@@ -35,7 +35,7 @@
 }
 
 /* Define color variables for the dark theme */
-[data-theme='dark'] {
+[data-theme="dark"] {
   --background-color: #121212;
   --text-color: #e0e0e0;
   --text-color-rgb: 224, 224, 224;
@@ -53,7 +53,8 @@
 
 /* General body styles */
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
   background-color: var(--background-color);
   color: var(--text-color);
   margin: 0;
@@ -154,7 +155,6 @@ body {
   border-color: var(--primary-color);
 }
 
-
 /* --- START: Final Adaptive Grid & List View Styles --- */
 
 /* For LIST VIEW, keep the container narrow and centered. */
@@ -222,7 +222,6 @@ body {
 }
 
 /* --- END: Final Adaptive Grid & List View Styles --- */
-
 
 /* --- Responsive Contact Header Styles --- */
 .contact-item {
@@ -330,19 +329,23 @@ body {
   margin: 0 0 0.5rem 0;
   white-space: pre-wrap;
 }
-.note small { opacity: 0.7; }
+.note small {
+  opacity: 0.7;
+}
 .note-edit-view textarea {
   width: 100%;
   min-height: 80px;
   margin-bottom: 0.5rem;
 }
-.note-footer, .note-actions {
+.note-footer,
+.note-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 0.5rem;
 }
-.edit-button, .cancel-button {
+.edit-button,
+.cancel-button {
   background: none;
   border: none;
   color: var(--text-color);
@@ -350,8 +353,13 @@ body {
   cursor: pointer;
   font-size: 0.8rem;
 }
-.edit-button:hover, .cancel-button:hover { opacity: 1; }
-.cancel-button { color: var(--overdue-border); }
+.edit-button:hover,
+.cancel-button:hover {
+  opacity: 1;
+}
+.cancel-button {
+  color: var(--overdue-border);
+}
 .modified-date {
   font-style: italic;
   opacity: 0.8;
@@ -370,16 +378,24 @@ body {
   align-items: center;
   gap: 0.5rem;
 }
-.remind-me-container input[type="number"] { width: 80px; }
-.form-card button { margin-top: 1rem; }
+.remind-me-container input[type="number"] {
+  width: 80px;
+}
+.form-card button {
+  margin-top: 1rem;
+}
 
 .contact-details {
   padding: 1rem 0;
   border-top: 1px solid var(--border-color);
   margin-top: 1rem;
 }
-.contact-details p { margin: 0.5rem 0; }
-.contact-details strong { color: var(--primary-color); }
+.contact-details p {
+  margin: 0.5rem 0;
+}
+.contact-details strong {
+  color: var(--primary-color);
+}
 .frequency-detail strong {
   color: var(--overdue-border);
 }
@@ -430,8 +446,12 @@ body {
   opacity: 0.7;
   padding: 0;
 }
-.remove-tag-btn:hover { opacity: 1; }
-.tag-input-container { position: relative; }
+.remove-tag-btn:hover {
+  opacity: 1;
+}
+.tag-input-container {
+  position: relative;
+}
 .tag-input {
   width: 100%;
   padding: 0.75rem;
@@ -454,7 +474,9 @@ body {
   padding: 0.75rem;
   cursor: pointer;
 }
-.suggestions-list li:hover { background-color: var(--background-color); }
+.suggestions-list li:hover {
+  background-color: var(--background-color);
+}
 
 /* Filter and Sort Controls Styles */
 .filter-controls {
@@ -481,7 +503,8 @@ body {
   background-color: var(--background-color);
   color: var(--text-color);
 }
-.sort-dropdown, .tag-filter-dropdown {
+.sort-dropdown,
+.tag-filter-dropdown {
   padding: 0.75rem;
   font-size: 1rem;
   border: 1px solid var(--border-color);
@@ -504,7 +527,12 @@ body {
 }
 
 /* Archive Styles */
-.archived-list { margin-top: 2rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+.archived-list {
+  margin-top: 2rem;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
 .archived-item {
   display: flex;
   justify-content: space-between;
@@ -571,13 +599,17 @@ body {
   align-items: center;
   gap: 0.5rem;
 }
-.expand-collapse-button:hover { background-color: var(--border-color); }
+.expand-collapse-button:hover {
+  background-color: var(--border-color);
+}
 .expand-collapse-button .arrow {
   font-size: 1rem;
   line-height: 1;
   transition: transform 0.3s ease-in-out;
 }
-.expand-collapse-button .arrow.expanded { transform: rotate(180deg); }
+.expand-collapse-button .arrow.expanded {
+  transform: rotate(180deg);
+}
 
 /* Reusable Button Styles */
 .button-secondary {
@@ -592,7 +624,9 @@ body {
   transition: background-color 0.2s;
   white-space: nowrap;
 }
-.button-secondary:hover { background-color: var(--border-color); }
+.button-secondary:hover {
+  background-color: var(--border-color);
+}
 .button-primary {
   padding: 0.5rem 1rem;
   border-radius: 8px;
@@ -605,17 +639,28 @@ body {
   transition: opacity 0.2s;
   white-space: nowrap;
 }
-.button-primary:hover { opacity: 0.9; }
+.button-primary:hover {
+  opacity: 0.9;
+}
 .button-danger {
   color: var(--overdue-border);
   border-color: var(--overdue-border);
 }
 
 /* Theme-aware Date Picker */
-input[type="date"] { color-scheme: light; }
-[data-theme='dark'] input[type="date"] { color-scheme: dark; }
-input[type="date"]:invalid { color: rgba(var(--text-color-rgb), 0.6); }
-input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
+input[type="date"] {
+  color-scheme: light;
+}
+[data-theme="dark"] input[type="date"] {
+  color-scheme: dark;
+}
+input[type="date"]:invalid {
+  color: rgba(var(--text-color-rgb), 0.6);
+}
+input[type="date"]:focus,
+input[type="date"]:valid {
+  color: var(--text-color);
+}
 
 .header-buttons {
   display: flex;
@@ -695,7 +740,9 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
   padding: 0.75rem 1rem;
   cursor: pointer;
 }
-.search-results li:hover { background-color: var(--background-color); }
+.search-results li:hover {
+  background-color: var(--background-color);
+}
 .note-contact-name {
   font-style: italic;
   opacity: 0.7;
@@ -889,7 +936,7 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
   -webkit-tap-highlight-color: transparent;
   outline-offset: 5px;
   color: var(--text-color);
-  transition: color .5s ease-out;
+  transition: color 0.5s ease-out;
 }
 
 .theme-toggle:hover {
@@ -914,55 +961,55 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
 
 .sun-and-moon {
   transform-origin: center center;
-  transition: transform .5s ease-out;
+  transition: transform 0.5s ease-out;
 }
 
 .sun-and-moon > .sun {
   transform-origin: center center;
-  transition: transform .5s ease-out;
+  transition: transform 0.5s ease-out;
 }
 
 .sun-and-moon > .sun-beams {
   transform-origin: center center;
-  transition: transform .5s ease-out, opacity .5s ease-out;
+  transition: transform 0.5s ease-out, opacity 0.5s ease-out;
 }
 
 .sun-and-moon > .moon > circle {
   transform-origin: center center;
-  transition: transform .25s ease-out;
+  transition: transform 0.25s ease-out;
 }
 
 /* LIGHT THEME: Icon should be a MOON */
-[data-theme='light'] .sun-and-moon {
+[data-theme="light"] .sun-and-moon {
   transform: rotate(20deg);
 }
 
-[data-theme='light'] .sun-and-moon > .sun {
-  transform: scale(1.50);
+[data-theme="light"] .sun-and-moon > .sun {
+  transform: scale(1.5);
 }
 
-[data-theme='light'] .sun-and-moon > .sun-beams {
+[data-theme="light"] .sun-and-moon > .sun-beams {
   opacity: 0;
 }
 
-[data-theme='light'] .sun-and-moon > .moon > circle {
+[data-theme="light"] .sun-and-moon > .moon > circle {
   transform: translateX(-9px);
 }
 
 /* DARK THEME: Icon should be a SUN */
-[data-theme='dark'] .sun-and-moon {
+[data-theme="dark"] .sun-and-moon {
   transform: rotate(0deg);
 }
 
-[data-theme='dark'] .sun-and-moon > .sun {
+[data-theme="dark"] .sun-and-moon > .sun {
   transform: scale(1);
 }
 
-[data-theme='dark'] .sun-and-moon > .sun-beams {
+[data-theme="dark"] .sun-and-moon > .sun-beams {
   opacity: 1;
 }
 
-[data-theme='dark'] .sun-and-moon > .moon > circle {
+[data-theme="dark"] .sun-and-moon > .moon > circle {
   transform: translateX(0);
 }
 
@@ -997,7 +1044,7 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
 
 /* The checkmark pseudo-element */
 .checkbox.checked::after {
-  content: '✓';
+  content: "✓";
   color: var(--primary-text);
   font-size: 14px;
 }
@@ -1125,8 +1172,7 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
   margin: 1rem 0;
 }
 
-* Button style for destructive actions */
-.button-danger {
+* Button style for destructive actions */ .button-danger {
   background-color: var(--danger-color);
   color: #ffffff;
   border: 1px solid var(--danger-color);
@@ -1145,4 +1191,111 @@ input[type="date"]:focus, input[type="date"]:valid { color: var(--text-color); }
 [data-theme="dark"] {
   --danger-color: #e57373;
   --danger-color-dark: #ef5350;
+}
+
+/* --- (NEW) Authentication Page Styles --- */
+.auth-container {
+  padding: 2rem;
+  max-width: 420px;
+  margin: 2rem auto;
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: 0 4px 8px var(--card-shadow);
+  border: 1px solid var(--border-color);
+}
+
+.auth-container h1 {
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+}
+
+.auth-form .input-group {
+  margin-bottom: 1.25rem;
+}
+
+.auth-form label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+/* This wrapper is crucial for positioning the toggle icon inside the input field */
+.input-wrapper {
+  position: relative;
+}
+
+.auth-form input {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-family: inherit;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Add extra padding to password fields so text doesn't overlap the icon */
+.input-wrapper input {
+  padding-right: 3rem;
+}
+
+.auth-form input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(var(--text-color-rgb), 0.05);
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-color);
+  opacity: 0.6;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+}
+
+.password-toggle-btn:hover {
+  opacity: 1;
+  background-color: rgba(var(--text-color-rgb), 0.1);
+}
+
+.password-toggle-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.auth-form .button-primary {
+  width: 100%;
+  padding: 0.85rem;
+  font-size: 1.1rem;
+  margin-top: 0.5rem;
+}
+
+.auth-form-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+  opacity: 0.9;
+}
+
+.auth-form-footer a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.auth-form-footer a:hover {
+  text-decoration: underline;
 }

@@ -1,51 +1,72 @@
-import React, { createContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import api from '../apiConfig';
+import React, { createContext, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../apiConfig";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(localStorage.getItem("token"));
   const navigate = useNavigate();
 
-  // This effect is now just for cleaning up on logout or token expiry
   useEffect(() => {
     if (!token) {
-      localStorage.removeItem('token');
+      localStorage.removeItem("token");
     }
   }, [token]);
 
   const signup = async (email, password) => {
     try {
-      await api.post('/auth/signup', { email, password });
+      // NOTE: The signup endpoint in this app doesn't automatically log the user in.
+      // It just creates the account. We still need to call login() after.
+      await api.post("/auth/signup", { email, password });
       await login(email, password);
     } catch (error) {
-      console.error('Signup failed:', error.response?.data?.error || error.message);
-      throw error;
+      // REVISED: Improved error handling to be more specific.
+      // It now checks for the 'details' array that our Zod middleware provides.
+      if (error.response?.data?.details) {
+        const firstError = error.response.data.details[0].message;
+        console.error("Signup validation failed:", firstError);
+        // Throw a new, cleaner error that the UI can display directly.
+        throw new Error(firstError);
+      } else {
+        // Fallback for other errors (e.g., user already exists, server down).
+        const errorMessage =
+          error.response?.data?.error ||
+          "An unknown error occurred during signup.";
+        console.error("Signup failed:", errorMessage);
+        throw new Error(errorMessage);
+      }
     }
   };
 
   const login = async (email, password) => {
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const response = await api.post("/auth/login", { email, password });
       const newToken = response.data.token;
       if (newToken) {
-        // FIX: Write to localStorage immediately.
-        localStorage.setItem('token', newToken);
-        // Then update the state.
+        localStorage.setItem("token", newToken);
         setToken(newToken);
-        // Then navigate.
-        navigate('/');
+        navigate("/");
       }
     } catch (error) {
-      console.error('Login failed:', error.response?.data?.error || error.message);
-      throw error;
+      // REVISED: Similar improved error handling for the login function.
+      if (error.response?.data?.details) {
+        const firstError = error.response.data.details[0].message;
+        console.error("Login validation failed:", firstError);
+        throw new Error(firstError);
+      } else {
+        const errorMessage =
+          error.response?.data?.error ||
+          "An unknown error occurred during login.";
+        console.error("Login failed:", errorMessage);
+        throw new Error(errorMessage);
+      }
     }
   };
 
   const logout = () => {
     setToken(null);
-    navigate('/login');
+    navigate("/login");
   };
 
   return (
