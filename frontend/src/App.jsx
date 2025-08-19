@@ -214,12 +214,24 @@ function MainApplication() {
   const handleUpdateContact = () => {
     if (!editingContact) return;
 
-    // FIX: To prevent timezone issues, we append 'T00:00:00' to the date string.
-    // This forces the new Date() constructor to parse it as a local date,
-    // rather than assuming UTC, which correctly preserves the calendar day the user selected.
-    const formattedLastCheckin = editingContact.last_checkin
-      ? new Date(`${editingContact.last_checkin}T00:00:00`).toISOString()
-      : null;
+    // FINAL FIX for date handling to prevent crash
+    let formattedLastCheckin = null;
+    const lastCheckinValue = editingContact.last_checkin;
+
+    if (lastCheckinValue) {
+      // This logic now handles both possible date string formats:
+      // 1. Full ISO string from the database (e.g., "...T04:00:00.000Z")
+      // 2. Simple YYYY-MM-DD string from the date picker input
+      if (lastCheckinValue.includes("T")) {
+        // Case 1: It's already an ISO string. We can safely parse and re-format it to prevent invalid dates.
+        formattedLastCheckin = new Date(lastCheckinValue).toISOString();
+      } else {
+        // Case 2: It's a YYYY-MM-DD string. Apply the timezone-correcting fix from before.
+        formattedLastCheckin = new Date(
+          `${lastCheckinValue}T00:00:00`
+        ).toISOString();
+      }
+    }
 
     const contactToUpdate = {
       ...editingContact,
