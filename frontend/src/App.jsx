@@ -214,20 +214,38 @@ function MainApplication() {
   const handleUpdateContact = () => {
     if (!editingContact) return;
 
+    // FIX: To prevent timezone issues, we append 'T00:00:00' to the date string.
+    // This forces the new Date() constructor to parse it as a local date,
+    // rather than assuming UTC, which correctly preserves the calendar day the user selected.
+    const formattedLastCheckin = editingContact.last_checkin
+      ? new Date(`${editingContact.last_checkin}T00:00:00`).toISOString()
+      : null;
+
     const contactToUpdate = {
       ...editingContact,
       firstName: editingContact.name,
       checkinFrequency: parseInt(editingContact.checkin_frequency, 10),
       howWeMet: editingContact.how_we_met,
       keyFacts: editingContact.key_facts,
-      lastCheckin: editingContact.last_checkin,
+      lastCheckin: formattedLastCheckin,
     };
 
-    api.put(`/contacts/${editingContact.id}`, contactToUpdate).then(() => {
-      setEditingContact(null);
-      fetchContacts();
-      toast.success("Contact updated!");
-    });
+    api
+      .put(`/contacts/${editingContact.id}`, contactToUpdate)
+      .then(() => {
+        setEditingContact(null);
+        fetchContacts();
+        toast.success("Contact updated!");
+      })
+      .catch((error) => {
+        if (error.response?.data?.details) {
+          const firstError = error.response.data.details[0].message;
+          toast.error(`Update failed: ${firstError}`);
+        } else {
+          toast.error("Failed to update contact.");
+        }
+        console.error("Update contact failed:", error);
+      });
   };
 
   const handleToggleDetails = (contactId) => {
@@ -645,7 +663,6 @@ function MainApplication() {
           : ""
       }`}
     >
-      {/* REMOVED: Toaster was moved from here... */}
       <Header
         view={view}
         archivedCount={archivedCount}
@@ -910,7 +927,6 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        {/* NEW: Toaster is placed here, so it is available on all routes (Login, Signup, and the main app) */}
         <Toaster
           position="top-center"
           toastOptions={{

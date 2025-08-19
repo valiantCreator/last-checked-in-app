@@ -1,7 +1,13 @@
 // frontend/src/components/ContactCard.jsx
 
 import React, { useState } from "react";
-import { isOverdue, formatBirthday, daysSince } from "../utils.js";
+// FIX: Import the new timezone-safe date parsing function
+import {
+  isOverdue,
+  formatBirthday,
+  daysSince,
+  parseAsLocalDate,
+} from "../utils.js";
 import TagInput from "./TagInput.jsx";
 
 function ContactCard({
@@ -25,7 +31,7 @@ function ContactCard({
     handleTagAdded,
     handleRemoveTag,
     handleEditContactClick,
-    handleEditingContactChange, // Get the new handler
+    handleEditingContactChange,
     handleArchiveContact,
     handleToggleAddNoteForm,
     handleSaveNote,
@@ -40,10 +46,7 @@ function ContactCard({
 
   const [newNoteContent, setNewNoteContent] = useState("");
   const [editingNoteContent, setEditingNoteContent] = useState("");
-  // FIX: Remove the local editing state. The `editingContact` prop is now the source of truth.
-  // const [editingContactState, setEditingContactState] = useState(null);
 
-  // Add a guard clause for a null contact prop to prevent crashes.
   if (!contact) {
     return null;
   }
@@ -56,12 +59,11 @@ function ContactCard({
 
   const getNextCheckinDisplay = () => {
     const isSnoozed =
-      contact.snooze_until && new Date(contact.snooze_until) > new Date();
+      contact.snooze_until &&
+      parseAsLocalDate(contact.snooze_until) >= new Date();
     if (isSnoozed) {
-      const snoozeDateUTC = new Date(contact.snooze_until);
-      const localSnoozeDate = new Date(
-        snoozeDateUTC.valueOf() + snoozeDateUTC.getTimezoneOffset() * 60000
-      );
+      // FIX: Use timezone-safe parser for snoozed date display
+      const localSnoozeDate = parseAsLocalDate(contact.snooze_until);
       return localSnoozeDate.toLocaleDateString("en-US", {
         month: "long",
         day: "numeric",
@@ -69,11 +71,15 @@ function ContactCard({
       });
     }
     if (!contact.last_checkin) return "N/A";
-    const lastCheckinDate = new Date(contact.last_checkin);
+    // FIX: Use timezone-safe parser for calculation
+    const lastCheckinDate = parseAsLocalDate(contact.last_checkin);
+    if (!lastCheckinDate) return "N/A";
+
     const nextCheckinDate = new Date(lastCheckinDate);
     nextCheckinDate.setDate(
       lastCheckinDate.getDate() + contact.checkin_frequency
     );
+
     const today = new Date();
     if (
       nextCheckinDate.getFullYear() === today.getFullYear() &&
@@ -90,11 +96,12 @@ function ContactCard({
   };
   const nextCheckinDisplay = getNextCheckinDisplay();
 
-  const lastCheckinDate = new Date(contact.last_checkin);
+  // FIX: Use timezone-safe parser to display the correct starting date
+  const lastCheckinDate = parseAsLocalDate(contact.last_checkin);
   const now = new Date();
   let lastCheckinDisplay;
 
-  if (lastCheckinDate > now) {
+  if (lastCheckinDate && lastCheckinDate > now) {
     lastCheckinDisplay = `Starting on ${lastCheckinDate.toLocaleDateString(
       "en-US",
       { month: "long", day: "numeric" }
@@ -105,7 +112,6 @@ function ContactCard({
 
   const onUpdateContactSubmit = (e) => {
     e.preventDefault();
-    // FIX: This now calls the simplified handler in App.jsx
     handleUpdateContact();
   };
 
@@ -175,8 +181,6 @@ function ContactCard({
       }`}
     >
       {isEditingThisContact ? (
-        // FIX: The form now binds directly to the `editingContact` prop from App.jsx
-        // and uses the `handleEditingContactChange` handler.
         <form onSubmit={onUpdateContactSubmit} className="contact-edit-form">
           <input
             name="name"
@@ -185,7 +189,7 @@ function ContactCard({
           />
           <input
             name="how_we_met"
-            value={editingContact.how_we_met}
+            value={editingContact.how_we_met || ""}
             onChange={handleEditingContactChange}
             placeholder="How we met"
           />
@@ -201,7 +205,7 @@ function ContactCard({
           />
           <textarea
             name="key_facts"
-            value={editingContact.key_facts}
+            value={editingContact.key_facts || ""}
             onChange={handleEditingContactChange}
             placeholder="Key facts"
           />
@@ -222,9 +226,9 @@ function ContactCard({
               type="date"
               name="last_checkin"
               value={
-                new Date(editingContact.last_checkin)
-                  .toISOString()
-                  .split("T")[0]
+                editingContact.last_checkin
+                  ? editingContact.last_checkin.split("T")[0]
+                  : ""
               }
               onChange={handleEditingContactChange}
             />
