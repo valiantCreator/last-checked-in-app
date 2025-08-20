@@ -18,6 +18,8 @@ function ContactCard({
   selectionMode,
   isSelected,
   onToggleSelection,
+  // DEV COMMENT: New prop passed from AgendaView to specify if THIS item is overdue.
+  isAgendaItemOverdue,
 }) {
   const {
     editingContact,
@@ -51,7 +53,13 @@ function ContactCard({
     return null;
   }
 
-  const overdue = isOverdue(contact);
+  // DEV COMMENT: Determine the final overdue status. Prioritize the specific status
+  // passed from AgendaView. If that's not available (e.g., in the main list),
+  // fall back to the general contact overdue status. This fixes the bug.
+  const isCardOverdue =
+    typeof isAgendaItemOverdue === "boolean"
+      ? isAgendaItemOverdue
+      : isOverdue(contact);
   const isEditingThisContact =
     editingContact && editingContact.id === contact.id;
   const isExpanded = detailedContactId === contact.id;
@@ -140,7 +148,7 @@ function ContactCard({
   if (displayMode === "grid") {
     return (
       <div
-        className={`card contact-item-grid ${overdue ? "overdue" : ""} ${
+        className={`card contact-item-grid ${isCardOverdue ? "overdue" : ""} ${
           isSelected ? "selected" : ""
         }`}
         onClick={handleCardClick}
@@ -176,7 +184,7 @@ function ContactCard({
 
   return (
     <div
-      className={`card contact-item ${overdue ? "overdue" : ""} ${
+      className={`card contact-item ${isCardOverdue ? "overdue" : ""} ${
         isSelected ? "selected" : ""
       }`}
     >
@@ -274,7 +282,7 @@ function ContactCard({
               <h3>{contact.name}</h3>
             </div>
             <div className="contact-header-actions">
-              {overdue && (
+              {isCardOverdue && (
                 <button
                   className="button-secondary"
                   onClick={(e) => {
