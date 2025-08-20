@@ -1299,3 +1299,64 @@ input[type="date"]:valid {
 .auth-form-footer a:hover {
   text-decoration: underline;
 }
+
+/* Dropdown Menu Styles */
+.dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-trigger {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 12px;
+  font-size: 1.5rem; /* Makes the kebab icon larger */
+  line-height: 1;
+  color: var(--text-color);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropdown-trigger:hover {
+  background-color: var(--hover-bg);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 8px 0;
+  z-index: 1000;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown-menu .button-secondary {
+  width: 100%;
+  text-align: left;
+  justify-content: flex-start; /* Aligns content to the left */
+  padding: 10px 16px;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  white-space: nowrap;
+  /* DEV COMMENT: Crucial for aligning text with emojis */
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Adds space between emoji and text */
+}
+
+.dropdown-menu .button-secondary:hover {
+  background-color: var(--hover-bg);
+}
