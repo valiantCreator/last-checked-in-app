@@ -39,13 +39,23 @@ function AgendaView({
                 // purposes only if its calendar date is on or before today.
                 const isItemOverdue = day.date <= today;
 
+                // DEV COMMENT: Create a unique key for this specific agenda item to distinguish
+                // it from other recurring instances of the same contact.
+                const uniqueAgendaKey = `${day.date.toString()}-${contact.id}`;
+
                 return (
                   <ContactCard
                     // FIX: The key must be unique among siblings. A contact can appear on multiple
                     // days, so contact.id is not unique. A combination of the day and contact ID is unique.
-                    key={`${day.date.toString()}-${contact.id}`}
+                    key={uniqueAgendaKey}
                     contact={contact}
-                    handlers={handlers}
+                    // DEV COMMENT: Override the generic handleToggleDetails handler to pass our
+                    // unique key instead of just the contact ID. This is critical for the fix.
+                    handlers={{
+                      ...handlers,
+                      handleToggleDetails: () =>
+                        handlers.handleToggleDetails(uniqueAgendaKey),
+                    }}
                     uiState={uiState}
                     displayMode="list" // Agenda view should always be a list
                     selectionMode={selectionMode}
@@ -54,6 +64,9 @@ function AgendaView({
                     // DEV COMMENT: Pass down the calculated overdue status for this specific
                     // agenda date. This overrides the contact's general overdue status for UI purposes.
                     isAgendaItemOverdue={isItemOverdue}
+                    // DEV COMMENT: Pass the unique key down as a prop so the ContactCard
+                    // knows its specific identity to check against the global "detailedItemId" state.
+                    uniqueAgendaKey={uniqueAgendaKey}
                   />
                 );
               })}

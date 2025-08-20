@@ -20,10 +20,13 @@ function ContactCard({
   onToggleSelection,
   // DEV COMMENT: New prop passed from AgendaView to specify if THIS item is overdue.
   isAgendaItemOverdue,
+  // DEV COMMENT: New prop from AgendaView providing a unique key for recurring events.
+  uniqueAgendaKey,
 }) {
   const {
     editingContact,
-    detailedContactId,
+    // DEV COMMENT: The detailed ID from state is now generic to handle numbers or strings.
+    detailedItemId,
     addingNoteToContactId,
     editingNote,
   } = uiState;
@@ -60,9 +63,15 @@ function ContactCard({
     typeof isAgendaItemOverdue === "boolean"
       ? isAgendaItemOverdue
       : isOverdue(contact);
+
   const isEditingThisContact =
     editingContact && editingContact.id === contact.id;
-  const isExpanded = detailedContactId === contact.id;
+
+  // DEV COMMENT: FIX for "expand all" bug. Determine the unique ID for THIS card instance.
+  // If it's in the Agenda view, a unique key is passed. Otherwise, fall back to the contact's ID.
+  const cardKey = uniqueAgendaKey || contact.id;
+  const isExpanded = detailedItemId === cardKey;
+
   const isAddingNote = addingNoteToContactId === contact.id;
 
   const getNextCheckinDisplay = () => {

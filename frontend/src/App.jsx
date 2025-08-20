@@ -3,7 +3,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import AuthContext from "./context/AuthContext";
-import { useState, useEffect, useMemo, useContext } from "react";
+// DEV COMMENT: Import useCallback to memoize functions.
+import { useState, useEffect, useMemo, useContext, useCallback } from "react";
 import { useDebounce } from "use-debounce";
 import { Toaster, toast } from "react-hot-toast";
 import { requestForToken } from "./firebase";
@@ -49,7 +50,9 @@ function MainApplication() {
   const [displayMode, setDisplayMode] = useState("list");
   const [archivedContacts, setArchivedContacts] = useState([]);
   const [archivedCount, setArchivedCount] = useState(0);
-  const [detailedContactId, setDetailedContactId] = useState(null);
+  // DEV COMMENT: Rename state to be more generic, as it will now hold either a contact ID (number)
+  // or a unique agenda item key (string) to fix the "expand all" bug.
+  const [detailedItemId, setDetailedItemId] = useState(null);
   const [editingContact, setEditingContact] = useState(null);
   const [addingNoteToContactId, setAddingNoteToContactId] = useState(null);
   const [editingNote, setEditingNote] = useState(null);
@@ -69,13 +72,18 @@ function MainApplication() {
     message: "",
     onConfirm: () => {},
   });
+  // DEV COMMENT: State to track in-flight note fetches to prevent race conditions.
+  const [fetchingNotesFor, setFetchingNotesFor] = useState(new Set());
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("theme-preference", theme);
   }, [theme]);
 
-  const fetchContacts = async () => {
+  // DEV COMMENT: Wrap fetchContacts in useCallback with an empty dependency array.
+  // This memoizes the function, ensuring it has a stable reference across re-renders.
+  // This is the fix for the infinite loop/rate-limiting issue on page load.
+  const fetchContacts = useCallback(async () => {
     try {
       const res = await api.get("/contacts");
       setContacts(
@@ -85,7 +93,7 @@ function MainApplication() {
       console.error("Failed to fetch contacts", error);
       toast.error("Could not load contacts.");
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (token) {
@@ -96,7 +104,9 @@ function MainApplication() {
         .get("/contacts/archived/count")
         .then((res) => setArchivedCount(res.data.count));
     }
-  }, [token]);
+    // DEV COMMENT: Add the now-stable fetchContacts to the dependency array.
+    // This correctly follows the rules of hooks and prevents re-fetching on every render.
+  }, [token, fetchContacts]);
 
   useEffect(() => {
     if (debouncedGlobalSearch) {
@@ -260,13 +270,28 @@ function MainApplication() {
       });
   };
 
-  const handleToggleDetails = (contactId) => {
-    const newId = detailedContactId === contactId ? null : contactId;
-    setDetailedContactId(newId);
+  const handleToggleDetails = (itemId) => {
+    const newId = detailedItemId === itemId ? null : itemId;
+    setDetailedItemId(newId);
     if (newId === null) setAddingNoteToContactId(null);
+
     if (newId !== null) {
+      // DEV COMMENT: The itemId can be a number (contactId) or a string (agenda key).
+      // We must parse the actual contactId from it for the API call.
+      const contactId =
+        typeof itemId === "string"
+          ? parseInt(itemId.split("-").pop(), 10)
+          : itemId;
+
       const contact = contacts.find((c) => c.id === contactId);
-      if (contact && contact.notes.length === 0) {
+      // DEV COMMENT: FIX for race condition. Check if notes are empty AND not already being fetched.
+      if (
+        contact &&
+        contact.notes.length === 0 &&
+        !fetchingNotesFor.has(contactId)
+      ) {
+        // DEV COMMENT: Add contactId to the fetching set to "lock" it.
+        setFetchingNotesFor((prev) => new Set(prev).add(contactId));
         api
           .get(`/contacts/${contactId}/notes`)
           .then((res) =>
@@ -275,10 +300,19 @@ function MainApplication() {
                 c.id === contactId ? { ...c, notes: res.data.notes } : c
               )
             )
-          );
+          )
+          .finally(() => {
+            // DEV COMMENT: Always remove the contactId from the fetching set, even on error.
+            setFetchingNotesFor((prev) => {
+              const newSet = new Set(prev);
+              newSet.delete(contactId);
+              return newSet;
+            });
+          });
       }
     }
   };
+
   const handleSaveNote = (contactId, newNoteContent) => {
     if (!newNoteContent.trim()) return;
     api
@@ -659,7 +693,8 @@ function MainApplication() {
 
   const uiState = {
     editingContact,
-    detailedContactId,
+    // DEV COMMENT: Pass the renamed state down.
+    detailedItemId,
     addingNoteToContactId,
     editingNote,
     isOverdue,
