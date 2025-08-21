@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 // NEW: The modal is now smarter and can handle single or batch operations.
 function SnoozeModal({
-  contact,      // The contact object (for single snooze)
-  isBatchMode,  // A boolean to indicate if we're snoozing a batch
-  count,        // The number of contacts in the batch
+  contact, // The contact object (for single snooze)
+  isBatchMode, // A boolean to indicate if we're snoozing a batch
+  count, // The number of contacts in the batch
   onClose,
-  onSnooze
+  onSnooze,
 }) {
   // State to hold the number of days to snooze for. Default to 1.
   const [days, setDays] = useState(1);
@@ -25,18 +25,19 @@ function SnoozeModal({
       }
     }
   };
-  
-  // Determine the title based on whether it's a single contact or a batch.
+
+  // DEV COMMENT: FIX - The contact object uses the 'name' property, not 'firstName'.
+  // This change corrects the "Snooze undefined" bug.
   const title = isBatchMode
     ? `Snooze ${count} contacts`
-    : `Snooze ${contact?.firstName}`;
+    : `Snooze ${contact?.name}`;
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <h2>{title}</h2>
         <p>Select how many days from now you'd like to be reminded.</p>
-        
+
         <div className="modal-input-group">
           <input
             type="number"

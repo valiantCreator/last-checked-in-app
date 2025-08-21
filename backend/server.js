@@ -82,12 +82,9 @@ const tagSchema = z.object({
 
 // FIX: Renamed snoozeSchema to reflect that it now expects a duration in days.
 const snoozeDurationSchema = z.object({
-  snooze_days: z
-    .number()
-    .int()
-    .positive({
-      message: "Snooze duration must be a positive number of days.",
-    }),
+  snooze_days: z.number().int().positive({
+    message: "Snooze duration must be a positive number of days.",
+  }),
 });
 
 const batchActionSchema = z.object({
@@ -270,15 +267,15 @@ app.post(
       // 2. It takes the LATER of that base date or NOW(), to handle overdue contacts correctly.
       // 3. It adds the snooze_days interval to that final base date.
       const query = `
-            UPDATE contacts
-            SET snooze_until = (
-                GREATEST(
-                    NOW(),
-                    COALESCE(snooze_until, last_checkin + (checkin_frequency * INTERVAL '1 day'))
-                ) + ($1 * INTERVAL '1 day')
-            )
-            WHERE id = ANY($2::int[]) AND user_id = $3;
-        `;
+          UPDATE contacts
+          SET snooze_until = (
+              GREATEST(
+                  NOW(),
+                  COALESCE(snooze_until, last_checkin + (checkin_frequency * INTERVAL '1 day'))
+              ) + ($1 * INTERVAL '1 day')
+          )
+          WHERE id = ANY($2::int[]) AND user_id = $3;
+      `;
       await pool.query(query, [snooze_days, contactIds, req.userId]);
       res.json({
         message: `${contactIds.length} contacts snoozed successfully.`,
@@ -353,11 +350,11 @@ app.get("/api/search", authMiddleware, async (req, res) => {
     // SCOPED: Search only notes belonging to the current user.
     const notesResult = await pool.query(
       `
-            SELECT n.*, c.name as "contactFirstName"
-            FROM notes n
-            JOIN contacts c ON n.contact_id = c.id
-            WHERE n.content ILIKE $1 AND c.is_archived = FALSE AND n.user_id = $2
-        `,
+          SELECT n.*, c.name as "contactFirstName"
+          FROM notes n
+          JOIN contacts c ON n.contact_id = c.id
+          WHERE n.content ILIKE $1 AND c.is_archived = FALSE AND n.user_id = $2
+      `,
       [searchTerm, req.userId]
     );
     res.json({
@@ -443,7 +440,7 @@ app.post(
       // SCOPED: Add the "user_id" column to the INSERT statement.
       const result = await pool.query(
         `INSERT INTO contacts (name, checkin_frequency, last_checkin, how_we_met, key_facts, birthday, user_id)
-             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
         [
           name,
           checkinFrequency,
@@ -477,21 +474,31 @@ app.put(
       lastCheckin,
     } = req.body;
     try {
-      // SCOPED: Add "AND user_id = $8" to the WHERE clause.
-      await pool.query(
-        `UPDATE contacts SET name = $1, checkin_frequency = $2, how_we_met = $3, key_facts = $4, birthday = $5, last_checkin = $6
-             WHERE id = $7 AND user_id = $8`,
-        [
-          name,
-          checkinFrequency,
-          howWeMet,
-          keyFacts,
-          birthday,
-          lastCheckin,
-          req.params.id,
-          req.userId,
-        ]
-      );
+      // DEV COMMENT: The logic is now simplified. Any update to the contact's core details
+      // via this endpoint will automatically clear the snooze_until date.
+      // This ensures that a manual edit always overrides a temporary snooze.
+      const updateQuery = `
+        UPDATE contacts 
+        SET 
+          name = $1, 
+          checkin_frequency = $2, 
+          how_we_met = $3, 
+          key_facts = $4, 
+          birthday = $5, 
+          last_checkin = $6,
+          snooze_until = NULL
+        WHERE id = $7 AND user_id = $8
+      `;
+      await pool.query(updateQuery, [
+        name,
+        checkinFrequency,
+        howWeMet,
+        keyFacts,
+        birthday,
+        lastCheckin,
+        req.params.id,
+        req.userId,
+      ]);
       res.json({ message: "Contact updated successfully" });
     } catch (err) {
       console.error(err);
@@ -589,16 +596,16 @@ app.put(
     try {
       // This query uses the same robust logic as the batch endpoint.
       const query = `
-            UPDATE contacts
-            SET snooze_until = (
-                GREATEST(
-                    NOW(),
-                    COALESCE(snooze_until, last_checkin + (checkin_frequency * INTERVAL '1 day'))
-                ) + ($1 * INTERVAL '1 day')
-            )
-            WHERE id = $2 AND user_id = $3
-            RETURNING snooze_until;
-        `;
+          UPDATE contacts
+          SET snooze_until = (
+              GREATEST(
+                  NOW(),
+                  COALESCE(snooze_until, last_checkin + (checkin_frequency * INTERVAL '1 day'))
+              ) + ($1 * INTERVAL '1 day')
+          )
+          WHERE id = $2 AND user_id = $3
+          RETURNING snooze_until;
+      `;
       const result = await pool.query(query, [
         snooze_days,
         req.params.id,
@@ -685,13 +692,13 @@ app.delete(
       await client.query("BEGIN");
       // SCOPED: Join against contacts to ensure we're only deleting a tag from a contact the user owns.
       const deleteQuery = `
-            DELETE FROM contact_tags
-            USING contacts
-            WHERE contact_tags.contact_id = contacts.id
-            AND contact_tags.contact_id = $1
-            AND contact_tags.tag_id = $2
-            AND contacts.user_id = $3
-        `;
+          DELETE FROM contact_tags
+          USING contacts
+          WHERE contact_tags.contact_id = contacts.id
+          AND contact_tags.contact_id = $1
+          AND contact_tags.tag_id = $2
+          AND contacts.user_id = $3
+      `;
       await client.query(deleteQuery, [contactId, tagId, req.userId]);
       // Check if the tag is still used by ANY of the current user's contacts.
       const usageResult = await client.query(
@@ -722,11 +729,11 @@ app.get("/api/contacts/:id/notes", authMiddleware, async (req, res) => {
   try {
     // SCOPED: Join against contacts to ensure we only get notes for a contact the user owns.
     const query = `
-            SELECT n.* FROM notes n
-            JOIN contacts c ON n.contact_id = c.id
-            WHERE n.contact_id = $1 AND c.user_id = $2
-            ORDER BY n.created_at DESC
-        `;
+          SELECT n.* FROM notes n
+          JOIN contacts c ON n.contact_id = c.id
+          WHERE n.contact_id = $1 AND c.user_id = $2
+          ORDER BY n.created_at DESC
+      `;
     const result = await pool.query(query, [req.params.id, req.userId]);
     res.json({ notes: result.rows });
   } catch (err) {
@@ -793,9 +800,9 @@ app.post(
     try {
       // SCOPED: Associate the device token with the current user.
       const query = `
-            INSERT INTO devices (user_id, token) VALUES ($1, $2) 
-            ON CONFLICT (token) DO UPDATE SET user_id = EXCLUDED.user_id;
-        `;
+          INSERT INTO devices (user_id, token) VALUES ($1, $2) 
+          ON CONFLICT (token) DO UPDATE SET user_id = EXCLUDED.user_id;
+      `;
       await pool.query(query, [userId, token]);
       res.status(201).json({ message: "Token saved successfully" });
     } catch (err) {
@@ -831,12 +838,12 @@ cron.schedule("0 9 * * *", async () => {
       // Step 2a: Get this specific user's overdue contacts.
       const overdueResult = await client.query(
         `
-                SELECT id, name FROM contacts
-                WHERE user_id = $1
-                  AND is_archived = FALSE
-                  AND (snooze_until IS NULL OR CAST(snooze_until AS DATE) < CURRENT_DATE)
-                  AND CAST((last_checkin + checkin_frequency * INTERVAL '1 day') AS DATE) <= CURRENT_DATE
-            `,
+            SELECT id, name FROM contacts
+            WHERE user_id = $1
+              AND is_archived = FALSE
+              AND (snooze_until IS NULL OR CAST(snooze_until AS DATE) < CURRENT_DATE)
+              AND CAST((last_checkin + checkin_frequency * INTERVAL '1 day') AS DATE) <= CURRENT_DATE
+        `,
         [userId]
       );
       const overdueContacts = overdueResult.rows;
