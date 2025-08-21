@@ -43,6 +43,12 @@ function AgendaView({
                 // it from other recurring instances of the same contact.
                 const uniqueAgendaKey = `${day.date.toString()}-${contact.id}`;
 
+                // DEV COMMENT: Calculate the date of the next check-in after this one.
+                const futureDate = new Date(day.date);
+                futureDate.setDate(
+                  futureDate.getDate() + contact.checkin_frequency
+                );
+
                 return (
                   <ContactCard
                     // FIX: The key must be unique among siblings. A contact can appear on multiple
@@ -67,6 +73,10 @@ function AgendaView({
                     // DEV COMMENT: Pass the unique key down as a prop so the ContactCard
                     // knows its specific identity to check against the global "detailedItemId" state.
                     uniqueAgendaKey={uniqueAgendaKey}
+                    // DEV COMMENT: Pass the specific dates for this agenda instance to the card
+                    // so it can display them in the new status bar.
+                    agendaDueDate={day.date}
+                    agendaNextDate={futureDate}
                   />
                 );
               })}

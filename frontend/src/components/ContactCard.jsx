@@ -1,7 +1,6 @@
 // frontend/src/components/ContactCard.jsx
 
 import React, { useState } from "react";
-// FIX: Import the new timezone-safe date parsing function
 import {
   isOverdue,
   formatBirthday,
@@ -9,6 +8,25 @@ import {
   parseAsLocalDate,
 } from "../utils.js";
 import TagInput from "./TagInput.jsx";
+
+// DEV COMMENT: New helper function to format dates into readable strings like "Today", "Tomorrow", or "Sun, Aug 24".
+const formatDateDisplay = (date) => {
+  if (!date) return null;
+  const localDate = parseAsLocalDate(date);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  if (localDate.getTime() === today.getTime()) return "Today";
+  if (localDate.getTime() === tomorrow.getTime()) return "Tomorrow";
+
+  return localDate.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+};
 
 function ContactCard({
   contact,
@@ -18,18 +36,14 @@ function ContactCard({
   selectionMode,
   isSelected,
   onToggleSelection,
-  // DEV COMMENT: New prop passed from AgendaView to specify if THIS item is overdue.
   isAgendaItemOverdue,
-  // DEV COMMENT: New prop from AgendaView providing a unique key for recurring events.
   uniqueAgendaKey,
+  // DEV COMMENT: New props from AgendaView to override the date display.
+  agendaDueDate,
+  agendaNextDate,
 }) {
-  const {
-    editingContact,
-    // DEV COMMENT: The detailed ID from state is now generic to handle numbers or strings.
-    detailedItemId,
-    addingNoteToContactId,
-    editingNote,
-  } = uiState;
+  const { editingContact, detailedItemId, addingNoteToContactId, editingNote } =
+    uiState;
   const {
     handleCheckIn,
     handleToggleDetails,
@@ -56,9 +70,6 @@ function ContactCard({
     return null;
   }
 
-  // DEV COMMENT: Determine the final overdue status. Prioritize the specific status
-  // passed from AgendaView. If that's not available (e.g., in the main list),
-  // fall back to the general contact overdue status. This fixes the bug.
   const isCardOverdue =
     typeof isAgendaItemOverdue === "boolean"
       ? isAgendaItemOverdue
@@ -67,65 +78,45 @@ function ContactCard({
   const isEditingThisContact =
     editingContact && editingContact.id === contact.id;
 
-  // DEV COMMENT: FIX for "expand all" bug. Determine the unique ID for THIS card instance.
-  // If it's in the Agenda view, a unique key is passed. Otherwise, fall back to the contact's ID.
   const cardKey = uniqueAgendaKey || contact.id;
   const isExpanded = detailedItemId === cardKey;
 
   const isAddingNote = addingNoteToContactId === contact.id;
 
-  const getNextCheckinDisplay = () => {
-    const isSnoozed =
-      contact.snooze_until &&
-      parseAsLocalDate(contact.snooze_until) >= new Date();
-    if (isSnoozed) {
-      // FIX: Use timezone-safe parser for snoozed date display
-      const localSnoozeDate = parseAsLocalDate(contact.snooze_until);
-      return localSnoozeDate.toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      });
-    }
-    if (!contact.last_checkin) return "N/A";
-    // FIX: Use timezone-safe parser for calculation
-    const lastCheckinDate = parseAsLocalDate(contact.last_checkin);
-    if (!lastCheckinDate) return "N/A";
+  // DEV COMMENT: New date display logic for the status bar.
+  // It prioritizes dates passed from AgendaView but falls back to the contact's global status.
 
-    const nextCheckinDate = new Date(lastCheckinDate);
-    nextCheckinDate.setDate(
-      lastCheckinDate.getDate() + contact.checkin_frequency
-    );
-
-    const today = new Date();
-    if (
-      nextCheckinDate.getFullYear() === today.getFullYear() &&
-      nextCheckinDate.getMonth() === today.getMonth() &&
-      nextCheckinDate.getDate() === today.getDate()
-    ) {
-      return "Today";
-    }
-    return nextCheckinDate.toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-  const nextCheckinDisplay = getNextCheckinDisplay();
-
-  // FIX: Use timezone-safe parser to display the correct starting date
+  // --- "Last" display ---
   const lastCheckinDate = parseAsLocalDate(contact.last_checkin);
   const now = new Date();
-  let lastCheckinDisplay;
-
+  let lastDisplay;
   if (lastCheckinDate && lastCheckinDate > now) {
-    lastCheckinDisplay = `Starting on ${lastCheckinDate.toLocaleDateString(
-      "en-US",
-      { month: "long", day: "numeric" }
-    )}`;
+    lastDisplay = `Starting on ${formatDateDisplay(lastCheckinDate)}`;
   } else {
-    lastCheckinDisplay = `${daysSince(contact.last_checkin)} day(s) ago`;
+    lastDisplay = `${daysSince(contact.last_checkin)} day(s) ago`;
   }
+
+  // --- "Due" display ---
+  let dueDisplay;
+  if (agendaDueDate) {
+    dueDisplay = formatDateDisplay(agendaDueDate);
+  } else {
+    // Fallback logic for List/Grid view
+    const isSnoozed =
+      contact.snooze_until && parseAsLocalDate(contact.snooze_until) >= now;
+    if (isSnoozed) {
+      dueDisplay = formatDateDisplay(contact.snooze_until);
+    } else if (contact.last_checkin) {
+      const nextDate = new Date(parseAsLocalDate(contact.last_checkin));
+      nextDate.setDate(nextDate.getDate() + contact.checkin_frequency);
+      dueDisplay = formatDateDisplay(nextDate);
+    } else {
+      dueDisplay = "N/A";
+    }
+  }
+
+  // --- "Next" display (only for Agenda View) ---
+  const nextDisplay = agendaNextDate ? formatDateDisplay(agendaNextDate) : null;
 
   const onUpdateContactSubmit = (e) => {
     e.preventDefault();
@@ -146,7 +137,10 @@ function ContactCard({
     handleUpdateNote(contact.id, noteId, editingNoteContent);
   };
 
-  const handleCardClick = () => {
+  const handleCardClick = (e) => {
+    // DEV COMMENT: Prevent card click from toggling details if a button was clicked.
+    if (e.target.closest("button")) return;
+
     if (selectionMode) {
       onToggleSelection(contact.id);
     } else if (!isEditingThisContact) {
@@ -154,36 +148,46 @@ function ContactCard({
     }
   };
 
+  // DEV COMMENT: Grid view has its own unique, simplified layout and is preserved.
   if (displayMode === "grid") {
     return (
       <div
         className={`card contact-item-grid ${isCardOverdue ? "overdue" : ""} ${
           isSelected ? "selected" : ""
         }`}
-        onClick={handleCardClick}
-      >
-        <div
-          className="selection-checkbox-container grid-checkbox"
-          onClick={(e) => {
-            e.stopPropagation();
+        onClick={() => {
+          if (selectionMode) {
             onToggleSelection(contact.id);
-          }}
-        >
-          <div className={`checkbox ${isSelected ? "checked" : ""}`}></div>
+          }
+        }}
+      >
+        {/* DEV COMMENT: FIX - The identity block is now a flex container to correctly position the pin. */}
+        <div className="contact-card-identity">
+          <div
+            className="selection-checkbox-container grid-checkbox"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSelection(contact.id);
+            }}
+          >
+            <div className={`checkbox ${isSelected ? "checked" : ""}`}></div>
+          </div>
+          <button
+            className={`pin-button grid-pin-button ${
+              contact.is_pinned ? "pinned" : ""
+            }`}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleTogglePin(contact.id);
+            }}
+            disabled={selectionMode}
+          >
+            {contact.is_pinned ? "★" : "☆"}
+          </button>
         </div>
-        <button
-          className="pin-button grid-pin-button"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleTogglePin(contact.id);
-          }}
-          disabled={selectionMode}
-        >
-          {contact.is_pinned ? "★" : "☆"}
-        </button>
         <h3>{contact.name}</h3>
         <p>Next check-in:</p>
-        <strong>{nextCheckinDisplay}</strong>
+        <strong>{dueDisplay}</strong>
         {contact.birthday && (
           <p className="grid-birthday">🎂 {formatBirthday(contact.birthday)}</p>
         )}
@@ -191,6 +195,7 @@ function ContactCard({
     );
   }
 
+  // DEV COMMENT: This is the new, refactored layout for the List and Agenda views.
   return (
     <div
       className={`card contact-item ${isCardOverdue ? "overdue" : ""} ${
@@ -199,6 +204,7 @@ function ContactCard({
     >
       {isEditingThisContact ? (
         <form onSubmit={onUpdateContactSubmit} className="contact-edit-form">
+          {/* The edit form remains unchanged */}
           <input
             name="name"
             value={editingContact.name}
@@ -265,8 +271,9 @@ function ContactCard({
         </form>
       ) : (
         <>
-          <div className="contact-header" onClick={handleCardClick}>
-            <div className="contact-title-wrapper">
+          {/* ZONE 1: HEADER (IDENTIFICATION & STATE) */}
+          <div className="contact-card-header">
+            <div className="contact-card-identity" onClick={handleCardClick}>
               <div
                 className="selection-checkbox-container"
                 onClick={(e) => {
@@ -279,7 +286,7 @@ function ContactCard({
                 ></div>
               </div>
               <button
-                className="pin-button"
+                className={`pin-button ${contact.is_pinned ? "pinned" : ""}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleTogglePin(contact.id);
@@ -290,53 +297,36 @@ function ContactCard({
               </button>
               <h3>{contact.name}</h3>
             </div>
-            <div className="contact-header-actions">
-              {isCardOverdue && (
-                <button
-                  className="button-secondary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenSnoozeModal(contact);
-                  }}
-                  disabled={selectionMode}
-                >
-                  Snooze
-                </button>
-              )}
-              <div className="header-buttons">
-                <button
-                  className="button-primary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCheckIn(contact.id);
-                  }}
-                  disabled={selectionMode}
-                >
-                  Just Checked In!
-                </button>
-                <button
-                  className="expand-collapse-button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleToggleDetails(contact.id);
-                  }}
-                  aria-expanded={isExpanded}
-                  disabled={selectionMode}
-                >
-                  {isExpanded ? "Hide Details" : "Show Details"}
-                  <span className={`arrow ${isExpanded ? "expanded" : ""}`}>
-                    ▼
-                  </span>
-                </button>
-              </div>
-            </div>
+            <button
+              className="expand-collapse-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleToggleDetails(contact.id);
+              }}
+              aria-expanded={isExpanded}
+              disabled={selectionMode}
+            >
+              {isExpanded ? "Hide Details" : "Show Details"}
+              <span className={`arrow ${isExpanded ? "expanded" : ""}`}>▼</span>
+            </button>
           </div>
 
-          <div className="checkin-status-line">
-            <p>
-              Last checked in: <strong>{lastCheckinDisplay}</strong> · Next:{" "}
-              <strong>{nextCheckinDisplay}</strong>
-            </p>
+          {/* ZONE 2: STATUS BAR (THE "WHEN") */}
+          <div className="contact-card-status-bar">
+            <div className="status-item">
+              <span className="status-label">Last:</span>
+              <span className="status-value">{lastDisplay}</span>
+            </div>
+            <div className="status-item">
+              <span className="status-label">Due:</span>
+              <span className="status-value">{dueDisplay}</span>
+            </div>
+            {nextDisplay && (
+              <div className="status-item">
+                <span className="status-label">Next:</span>
+                <span className="status-value">{nextDisplay}</span>
+              </div>
+            )}
           </div>
 
           {isExpanded && (
@@ -464,32 +454,54 @@ function ContactCard({
             </div>
           )}
 
-          <div className="contact-footer">
-            <button
-              className="archive-button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleArchiveContact(contact.id);
-              }}
-              disabled={selectionMode}
-            >
-              Archive
-            </button>
-            <div className="footer-right-actions">
+          {/* ZONE 3: FOOTER (THE "WHAT") */}
+          <div className="contact-card-footer">
+            <div className="footer-actions-left">
               <button
-                className="edit-contact-button"
+                className="button-secondary button-danger"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleArchiveContact(contact.id);
+                }}
+                disabled={selectionMode}
+              >
+                Archive
+              </button>
+            </div>
+            <div className="footer-actions-right">
+              {isCardOverdue && (
+                <button
+                  className="button-secondary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenSnoozeModal(contact);
+                  }}
+                  disabled={selectionMode}
+                >
+                  Snooze
+                </button>
+              )}
+              <button
+                className="button-secondary"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleEditContactClick(contact);
                 }}
                 disabled={selectionMode}
               >
-                Edit Contact
+                Edit
               </button>
+              {/* DEV COMMENT: FIX - The 'Add Note' button is no longer disabled when the card is collapsed.
+                        Instead, clicking it will now automatically expand the details to show the note form. */}
               <button
-                className="add-note-button"
+                className="button-secondary"
                 onClick={(e) => {
                   e.stopPropagation();
+                  // If not expanded, expand the card first.
+                  if (!isExpanded) {
+                    handleToggleDetails(contact.id);
+                  }
+                  // Then toggle the note form.
                   handleToggleAddNoteForm(
                     contact.id === addingNoteToContactId ? null : contact.id
                   );
@@ -497,6 +509,16 @@ function ContactCard({
                 disabled={selectionMode}
               >
                 Add Note
+              </button>
+              <button
+                className="button-primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCheckIn(contact.id);
+                }}
+                disabled={selectionMode}
+              >
+                Checked In!
               </button>
             </div>
           </div>
