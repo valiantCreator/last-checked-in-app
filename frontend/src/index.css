@@ -32,6 +32,10 @@
   --pin-color: #ffc107;
   --accent-color: #1a73e8;
   --toolbar-bg: hsl(0 0% 100% / 0.7); /* Slightly transparent for backdrop */
+  --status-bar-bg: #f0f0f5;
+  --text-color-secondary: #606060;
+  --danger-color: #d9534f;
+  --danger-color-dark: #c9302c;
 }
 
 /* Define color variables for the dark theme */
@@ -49,6 +53,10 @@
   --pin-color: #ffd600;
   --accent-color: #8ab4f8;
   --toolbar-bg: hsl(0 0% 12% / 0.7); /* Slightly transparent for backdrop */
+  --status-bar-bg: #282828;
+  --text-color-secondary: #a0a0a0;
+  --danger-color: #e57373;
+  --danger-color-dark: #ef5350;
 }
 
 /* General body styles */
@@ -202,7 +210,7 @@ body {
 }
 
 .contact-item-grid h3 {
-  margin: 0 0 1rem 0;
+  margin: 0.5rem 0 1rem 0;
 }
 
 .contact-item-grid p {
@@ -223,55 +231,44 @@ body {
 
 /* --- END: Final Adaptive Grid & List View Styles --- */
 
-/* --- Responsive Contact Header Styles --- */
+/* --- NEW: Contact Card Refactor Styles (List/Agenda) --- */
 .contact-item {
-  border-left: 6px solid var(--primary-color);
-}
-.contact-header {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  padding: 1rem;
+  border-left: 6px solid var(--primary-color);
+  transition: border-color 0.3s;
 }
-.contact-header h3 {
-  margin: 0;
-  line-height: 1.2;
-  word-break: break-word;
-}
-.contact-header-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-.overdue {
+
+.contact-item.overdue {
   border-left-color: var(--overdue-border);
   background-color: var(--overdue-bg);
 }
 
-@media (min-width: 600px) {
-  .contact-header {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-  .contact-header-actions {
-    flex-shrink: 0;
-  }
-}
-
-/* --- NEW: Pinned Section Styles --- */
-.pinned-section h2 {
-  margin-top: 2rem;
-  margin-bottom: 0;
-  font-size: 1.2rem;
-  color: var(--pin-color);
-}
-.contact-title-wrapper {
+.contact-card-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
+
+.contact-card-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-grow: 1;
+  cursor: pointer;
+}
+
+.contact-card-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+/* DEV COMMENT: FIX #1 - Restore pin button style (borderless star). */
 .pin-button {
   background: none;
   border: none;
@@ -279,29 +276,136 @@ body {
   font-size: 1.5rem;
   color: var(--text-color);
   opacity: 0.5;
-  padding: 0 0.5rem;
+  padding: 0;
   line-height: 1;
 }
 .pin-button:hover {
   opacity: 1;
-}
-.pin-button:active {
-  transform: scale(0.9);
 }
 .pin-button.pinned {
   color: var(--pin-color);
   opacity: 1;
 }
 .grid-pin-button {
+  position: static; /* Removed absolute positioning */
+  order: -1; /* Use flexbox order to place it before the name */
+}
+/* DEV COMMENT: FIX #1 - New identity block for Grid view to align checkbox and pin correctly. */
+.contact-item-grid .contact-card-identity {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
   position: absolute;
   top: 0.5rem;
+  left: 0.5rem;
   right: 0.5rem;
+  padding: 0 0.5rem;
+}
+.contact-item-grid .grid-checkbox {
+  position: static;
+}
+.contact-item-grid .grid-pin-button {
+  position: static;
+}
+
+/* DEV COMMENT: FIX #3 - Restore the animated details button and arrow. */
+.expand-collapse-button {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+  color: var(--text-color);
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0; /* Prevent button from squishing */
+}
+.expand-collapse-button:hover {
+  background-color: var(--border-color);
+}
+.expand-collapse-button .arrow {
+  font-size: 1rem;
+  line-height: 1;
+  transition: transform 0.3s ease-in-out;
+}
+.expand-collapse-button .arrow.expanded {
+  transform: rotate(180deg);
+}
+
+.contact-card-status-bar {
+  display: flex;
+  justify-content: space-between;
+  background-color: var(--status-bar-bg);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.9em;
+  margin-bottom: 1rem;
+}
+
+.status-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  text-align: center;
+}
+
+.status-label {
+  font-weight: 300;
+  font-size: 0.8em;
+  color: var(--text-color-secondary);
+}
+
+.status-value {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.contact-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Specific button grouping for the footer */
+.footer-actions-left,
+.footer-actions-right {
+  display: flex;
+  flex-wrap: wrap; /* Allow buttons inside the group to wrap */
+  gap: 8px;
+  align-items: center;
+}
+
+/* DEV COMMENT: FIX #5 - This media query prevents button squishing on small screens by stacking them. */
+@media (max-width: 500px) {
+  .contact-card-footer {
+    flex-direction: column;
+    align-items: stretch; /* Make groups take full width */
+    gap: 12px;
+  }
+  .footer-actions-left,
+  .footer-actions-right {
+    justify-content: center;
+    width: 100%;
+  }
+  .footer-actions-left > button,
+  .footer-actions-right > button {
+    flex-grow: 1; /* Allow buttons to grow and fill space */
+  }
 }
 
 /* Note Section Styles */
 .notes-section {
   margin-top: 1rem;
-  border-top: 1px solid var(--border-color);
   padding-top: 1rem;
 }
 .add-note-form {
@@ -462,7 +566,7 @@ body {
   position: absolute;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 0 0 12px 12px;
   list-style-type: none;
   padding: 0;
   margin: 0.25rem 0 0 0;
@@ -477,23 +581,35 @@ body {
 .suggestions-list li:hover {
   background-color: var(--background-color);
 }
+.note-contact-name {
+  font-style: italic;
+  opacity: 0.7;
+  margin-left: 0.5rem;
+}
+.no-results {
+  padding: 0.75rem 1rem;
+  opacity: 0.7;
+}
 
-/* Filter and Sort Controls Styles */
+/* --- Filter and Sort Controls Styles --- */
 .filter-controls {
   display: flex;
   flex-direction: column;
   padding: 1rem 1.5rem;
   gap: 1rem;
 }
+
 .filter-controls .sort-controls {
   display: flex;
   width: 100%;
   gap: 0.5rem;
 }
+
 .filter-controls .sort-dropdown,
 .filter-controls .tag-filter-dropdown {
   flex-grow: 1;
 }
+
 .search-input {
   width: 100%;
   padding: 0.75rem;
@@ -503,6 +619,7 @@ body {
   background-color: var(--background-color);
   color: var(--text-color);
 }
+
 .sort-dropdown,
 .tag-filter-dropdown {
   padding: 0.75rem;
@@ -514,6 +631,7 @@ body {
   cursor: pointer;
   min-width: 180px;
 }
+
 .sort-direction-button {
   padding: 0.75rem;
   font-size: 1rem;
@@ -526,163 +644,7 @@ body {
   line-height: 1;
 }
 
-/* Archive Styles */
-.archived-list {
-  margin-top: 2rem;
-  max-width: 700px;
-  margin-left: auto;
-  margin-right: auto;
-}
-.archived-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.archived-actions {
-  display: flex;
-  gap: 1rem;
-}
-
-/* Dynamic Footer Layout */
-.contact-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-color);
-  flex-wrap: wrap;
-}
-.contact-footer .tag-input-container {
-  flex-grow: 1;
-  margin-top: 0;
-  padding-top: 0;
-  border-top: none;
-  min-width: 150px;
-}
-.footer-right-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-.contact-footer button {
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background-color: transparent;
-  color: var(--text-color);
-  cursor: pointer;
-  font-weight: 500;
-}
-.contact-footer .add-note-button {
-  background-color: var(--primary-color);
-  color: var(--primary-text);
-  border-color: var(--primary-color);
-}
-.contact-footer .archive-button {
-  color: var(--overdue-border);
-  border-color: var(--overdue-border);
-}
-
-/* Expand/Collapse Button */
-.expand-collapse-button {
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background-color: transparent;
-  color: var(--text-color);
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.expand-collapse-button:hover {
-  background-color: var(--border-color);
-}
-.expand-collapse-button .arrow {
-  font-size: 1rem;
-  line-height: 1;
-  transition: transform 0.3s ease-in-out;
-}
-.expand-collapse-button .arrow.expanded {
-  transform: rotate(180deg);
-}
-
-/* Reusable Button Styles */
-.button-secondary {
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background-color: transparent;
-  color: var(--text-color);
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
-  white-space: nowrap;
-}
-.button-secondary:hover {
-  background-color: var(--border-color);
-}
-.button-primary {
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--primary-color);
-  background-color: var(--primary-color);
-  color: var(--primary-text);
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 0.9rem;
-  transition: opacity 0.2s;
-  white-space: nowrap;
-}
-.button-primary:hover {
-  opacity: 0.9;
-}
-.button-danger {
-  color: var(--overdue-border);
-  border-color: var(--overdue-border);
-}
-
-/* Theme-aware Date Picker */
-input[type="date"] {
-  color-scheme: light;
-}
-[data-theme="dark"] input[type="date"] {
-  color-scheme: dark;
-}
-input[type="date"]:invalid {
-  color: rgba(var(--text-color-rgb), 0.6);
-}
-input[type="date"]:focus,
-input[type="date"]:valid {
-  color: var(--text-color);
-}
-
-.header-buttons {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.dev-button {
-  font-size: 0.75rem;
-  opacity: 0.5;
-  margin-left: 1rem;
-  background: none;
-  border: none;
-  color: var(--text-color);
-  cursor: pointer;
-}
-.snooze-info {
-  font-style: italic;
-  opacity: 0.8;
-}
-
-/* Global Search Bar Styles (now inside filter card) */
+/* --- Global Search Bar Styles --- */
 .filter-controls .search-container {
   position: relative;
   width: 100%;
@@ -764,21 +726,6 @@ input[type="date"]:valid {
   .form-grid .start-date-container {
     grid-column: 1 / -1;
   }
-}
-
-.checkin-status-line {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  margin-top: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.checkin-status-line p {
-  margin: 0;
-  opacity: 0.9;
 }
 
 .contact-details-expanded {
@@ -1172,7 +1119,49 @@ input[type="date"]:valid {
   margin: 1rem 0;
 }
 
-* Button style for destructive actions */ .button-danger {
+/* Reusable Button Styles */
+.button-secondary {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+  color: var(--text-color);
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+.button-secondary:hover {
+  background-color: var(--border-color);
+}
+.button-primary {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--primary-color);
+  background-color: var(--primary-color);
+  color: var(--primary-text);
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+.button-primary:hover {
+  opacity: 0.9;
+}
+/* DEV COMMENT: FIX #2 - Define specific styling for danger outline buttons. */
+.button-secondary.button-danger {
+  color: var(--overdue-border);
+  border-color: var(--overdue-border);
+  background-color: transparent;
+}
+.button-secondary.button-danger:hover {
+  background-color: rgba(var(--text-color-rgb), 0.05);
+}
+
+/* DEV COMMENT: This is for the filled danger button in the archived view. */
+.button-danger {
   background-color: var(--danger-color);
   color: #ffffff;
   border: 1px solid var(--danger-color);
