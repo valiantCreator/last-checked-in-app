@@ -2,6 +2,8 @@ import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthContext from "../context/AuthContext";
 import { toast } from "react-hot-toast";
+// DEV COMMENT: Import the new shared CSS module for auth forms.
+import styles from "./AuthForm.module.css";
 
 function SignupPage() {
   const { signup } = useContext(AuthContext);
@@ -15,19 +17,14 @@ function SignupPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation Step 1: Check for empty fields
     if (!email || !password || !confirmPassword) {
       toast.error("Please fill out all fields.");
       return;
     }
-
-    // NEW: Client-side validation to match the backend schema
     if (password.length < 6) {
       toast.error("Password must be at least 6 characters long.");
       return;
     }
-
-    // Validation Step 3: Check if passwords match
     if (password !== confirmPassword) {
       toast.error("Passwords do not match.");
       return;
@@ -36,11 +33,7 @@ function SignupPage() {
     setIsLoading(true);
     try {
       await signup(email, password);
-      // No toast here on success, because the login() call inside signup() will navigate away.
-      // A success toast would be immediately dismissed.
     } catch (error) {
-      // REVISED: The catch block now uses error.message, which is the clean
-      // error string we created in the updated AuthContext.
       toast.error(error.message || "Failed to create account.");
     } finally {
       setIsLoading(false);
@@ -74,10 +67,11 @@ function SignupPage() {
   );
 
   return (
-    <div className="auth-container">
+    // DEV COMMENT: All classNames now use the imported 'styles' object.
+    <div className={styles.authContainer}>
       <h1>Create Account</h1>
-      <form onSubmit={handleSubmit} className="auth-form" noValidate>
-        <div className="input-group">
+      <form onSubmit={handleSubmit} className={styles.authForm} noValidate>
+        <div className={styles.inputGroup}>
           <label htmlFor="email">Email</label>
           <input
             type="email"
@@ -88,9 +82,9 @@ function SignupPage() {
             autoComplete="email"
           />
         </div>
-        <div className="input-group">
+        <div className={styles.inputGroup}>
           <label htmlFor="password">Password</label>
-          <div className="input-wrapper">
+          <div className={styles.inputWrapper}>
             <input
               type={showPassword ? "text" : "password"}
               id="password"
@@ -101,7 +95,7 @@ function SignupPage() {
             />
             <button
               type="button"
-              className="password-toggle-btn"
+              className={styles.passwordToggleBtn}
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
@@ -109,9 +103,9 @@ function SignupPage() {
             </button>
           </div>
         </div>
-        <div className="input-group">
+        <div className={styles.inputGroup}>
           <label htmlFor="confirmPassword">Confirm Password</label>
-          <div className="input-wrapper">
+          <div className={styles.inputWrapper}>
             <input
               type={showPassword ? "text" : "password"}
               id="confirmPassword"
@@ -122,7 +116,7 @@ function SignupPage() {
             />
             <button
               type="button"
-              className="password-toggle-btn"
+              className={styles.passwordToggleBtn}
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
@@ -134,7 +128,7 @@ function SignupPage() {
           {isLoading ? "Creating Account..." : "Sign Up"}
         </button>
       </form>
-      <p className="auth-form-footer">
+      <p className={styles.authFormFooter}>
         Already have an account? <Link to="/login">Login</Link>
       </p>
     </div>
