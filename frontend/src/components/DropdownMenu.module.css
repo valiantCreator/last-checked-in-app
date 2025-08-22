@@ -1,0 +1,58 @@
+/* src/components/DropdownMenu.module.css */
+
+/* The main container needs a relative position to act as an anchor for the menu. */
+.dropdownContainer {
+  position: relative;
+  display: inline-block;
+}
+
+/* The button that WRAPS the trigger icon should be functionally invisible. */
+.dropdownTrigger {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  /* This is important for SVG alignment */
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+/* This is the menu panel itself. It's positioned absolutely relative to the container. */
+.dropdownMenu {
+  position: absolute;
+  /* Position it below the trigger, with a small gap for aesthetics. */
+  top: calc(100% + 8px);
+  right: 0;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px var(--card-shadow);
+  padding: 8px 0;
+  z-index: 1000;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Use :global() to apply specific styles to the global .button-secondary class 
+  ONLY when it appears as a direct child inside our dropdown menu. This correctly
+  styles the buttons passed in as children.
+*/
+.dropdownMenu > :global(.button-secondary) {
+  width: 100%;
+  text-align: left;
+  justify-content: flex-start;
+  padding: 10px 16px;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Adds space between emoji and text */
+}
+
+.dropdownMenu > :global(.button-secondary:hover) {
+  background-color: var(--hover-bg);
+}

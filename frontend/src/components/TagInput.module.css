@@ -1,0 +1,40 @@
+/* DEV COMMENT: Styles for the TagInput component and its suggestions dropdown. */
+
+.tagInputContainer {
+  position: relative;
+  /* DEV COMMENT: Allows the input to grow and fill available space in the flex container. */
+  flex-grow: 1;
+}
+
+.tagInput {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+.suggestionsList {
+  position: absolute;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 0 0 12px 12px;
+  list-style-type: none;
+  padding: 0;
+  margin: 0.25rem 0 0 0;
+  width: 100%;
+  box-shadow: 0 4px 8px var(--card-shadow);
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.suggestionsList li {
+  padding: 0.75rem;
+  cursor: pointer;
+}
+
+.suggestionsList li:hover {
+  background-color: var(--hover-bg);
+}

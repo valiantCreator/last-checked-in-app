@@ -1,0 +1,96 @@
+/* DEV COMMENT: Styles for the animated ThemeToggleButton, now locally scoped. */
+.themeToggle {
+  --size: 2rem;
+  --sun-color: #ffc107;
+  --moon-color: #a9a9a9;
+
+  background: none;
+  border: none;
+  padding: 0;
+  inline-size: var(--size);
+  block-size: var(--size);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  outline-offset: 5px;
+  color: var(--text-color);
+  transition: color 0.5s ease-out;
+}
+
+.themeToggle:hover {
+  color: var(--primary-color);
+}
+
+.themeToggle > svg {
+  inline-size: 100%;
+  block-size: 100%;
+  stroke-linecap: round;
+}
+
+/* DEV COMMENT: We use :global() here to allow our scoped class to be styled
+  based on the [data-theme] attribute on the root <html> element, which is
+  outside the component's direct scope. This is a key pattern for theming
+  with CSS Modules.
+*/
+:global([data-theme="light"]) .themeToggle {
+  color: var(--moon-color);
+}
+
+:global([data-theme="dark"]) .themeToggle {
+  color: var(--sun-color);
+}
+
+.sunAndMoon {
+  transform-origin: center center;
+  transition: transform 0.5s ease-out;
+}
+
+.sunAndMoon > .sun {
+  transform-origin: center center;
+  transition: transform 0.5s ease-out;
+}
+
+.sunAndMoon > .sunBeams {
+  transform-origin: center center;
+  transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+}
+
+.sunAndMoon > .moon > circle {
+  transform-origin: center center;
+  transition: transform 0.25s ease-out;
+}
+
+/* Animation states based on the global theme attribute */
+:global([data-theme="light"]) .sunAndMoon {
+  transform: rotate(20deg);
+}
+
+:global([data-theme="light"]) .sunAndMoon > .sun {
+  transform: scale(1.5);
+}
+
+:global([data-theme="light"]) .sunAndMoon > .sunBeams {
+  opacity: 0;
+}
+
+:global([data-theme="light"]) .sunAndMoon > .moon > circle {
+  transform: translateX(-9px);
+}
+
+:global([data-theme="dark"]) .sunAndMoon {
+  transform: rotate(0deg);
+}
+
+:global([data-theme="dark"]) .sunAndMoon > .sun {
+  transform: scale(1);
+}
+
+:global([data-theme="dark"]) .sunAndMoon > .sunBeams {
+  opacity: 1;
+}
+
+:global([data-theme="dark"]) .sunAndMoon > .moon > circle {
+  transform: translateX(0);
+}

@@ -1,0 +1,75 @@
+/* DEV COMMENT: Styles for the ArchivedView component list. */
+
+.archivedList {
+  max-width: 700px;
+  margin: 0 auto; /* Center the list in the viewport */
+}
+
+.archivedList h2 {
+  margin-top: 1rem;
+}
+
+.archivedItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+}
+
+.archivedContactInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-grow: 1; /* Allow this to take up available space */
+  min-width: 0; /* Prevents text overflow issues in flex containers */
+}
+
+.archivedContactName {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.archivedActions {
+  display: flex;
+  gap: 0.75rem;
+  flex-shrink: 0; /* Prevent buttons from shrinking or wrapping */
+}
+
+/* DEV COMMENT: These checkbox styles are duplicated from other components.
+   In a future refactor, they should be extracted to a shared UI module. */
+
+.selectionCheckboxContainer {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  opacity: 1; /* Checkbox is always visible in this view */
+  transition: opacity 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.checkbox.checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.checkbox.checked::after {
+  content: "✓";
+  color: var(--primary-text);
+  font-size: 14px;
+}

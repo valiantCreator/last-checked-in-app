@@ -5,6 +5,7 @@ import AuthContext from "../context/AuthContext";
 import ThemeToggleButton from "./ThemeToggleButton";
 import useMediaQuery from "../hooks/useMediaQuery";
 import DropdownMenu from "./DropdownMenu";
+import styles from "./Header.module.css";
 
 function Header({
   view,
@@ -50,29 +51,48 @@ function Header({
     </button>
   );
 
-  // DEV COMMENT: Create an array of actions for the mobile dropdown.
-  // Using .filter(Boolean) is a concise way to remove any "falsy" values
-  // (like the null `exportButton` in the archived view), which fixes the crash.
   const mobileDropdownActions = [viewButton, exportButton, logoutButton].filter(
     Boolean
   );
 
+  // DEV COMMENT: Define the new SVG icon to be used as the trigger.
+  const kebabIcon = (
+    <div className={styles.dropdownTrigger}>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="12" cy="12" r="1"></circle>
+        <circle cx="12" cy="5" r="1"></circle>
+        <circle cx="12" cy="19" r="1"></circle>
+      </svg>
+    </div>
+  );
+
   return (
-    <div className="app-header">
-      <div className="logo-title-container">
+    <div className={styles.appHeader}>
+      <div className={styles.logoTitleContainer}>
         <img
           src="/LogoV1.png"
           alt="Last Checked In Logo"
-          className="app-logo"
+          className={styles.appLogo}
         />
         <h1>Last Checked In</h1>
       </div>
 
-      <div className="header-actions">
+      <div className={styles.headerActions}>
         {isMobile ? (
           <>
             <ThemeToggleButton theme={theme} onToggleTheme={onToggleTheme} />
-            <DropdownMenu trigger={<span className="kebab-icon">⋮</span>}>
+            {/* DEV COMMENT: Pass the new SVG icon component to the DropdownMenu's trigger prop. */}
+            <DropdownMenu trigger={kebabIcon}>
               {mobileDropdownActions}
             </DropdownMenu>
           </>

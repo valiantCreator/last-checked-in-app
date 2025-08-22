@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+// DEV COMMENT: Import the new CSS Module for the modal.
+import styles from "./SnoozeModal.module.css";
 
 // NEW: The modal is now smarter and can handle single or batch operations.
 function SnoozeModal({
@@ -33,24 +35,25 @@ function SnoozeModal({
     : `Snooze ${contact?.name}`;
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    // DEV COMMENT: All classNames now use the imported 'styles' object.
+    <div className={styles.modalBackdrop} onClick={onClose}>
+      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <h2>{title}</h2>
         <p>Select how many days from now you'd like to be reminded.</p>
 
-        <div className="modal-input-group">
+        <div className={styles.modalInputGroup}>
           <input
             type="number"
             value={days}
             onChange={(e) => setDays(e.target.value)}
-            className="modal-input"
+            className={styles.modalInput}
             min="1"
             autoFocus
           />
           <label>day(s)</label>
         </div>
 
-        <div className="modal-actions">
+        <div className={styles.modalActions}>
           <button onClick={handleSnoozeClick} className="button-primary">
             Snooze
           </button>

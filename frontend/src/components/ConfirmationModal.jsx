@@ -1,6 +1,6 @@
-// frontend/src/components/ConfirmationModal.jsx
-
-import React from 'react';
+import React from "react";
+// DEV COMMENT: Import the CSS Module for the modal styles.
+import styles from "./ConfirmationModal.module.css";
 
 function ConfirmationModal({ isOpen, onClose, onConfirm, title, children }) {
   if (!isOpen) {
@@ -8,11 +8,13 @@ function ConfirmationModal({ isOpen, onClose, onConfirm, title, children }) {
   }
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    // DEV COMMENT: All classNames now use the imported 'styles' object.
+    <div className={styles.modalBackdrop} onClick={onClose}>
+      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <h2>{title}</h2>
         <p>{children}</p>
-        <div className="modal-actions">
+        <div className={styles.modalActions}>
+          {/* DEV COMMENT: Button classes are global and remain as strings. */}
           <button onClick={onConfirm} className="button-danger">
             Confirm
           </button>
