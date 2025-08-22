@@ -1,0 +1,35 @@
+/* DEV COMMENT: Styles for the AgendaView component. */
+
+.agendaViewContainer {
+  width: 100%;
+}
+
+.agendaDayHeading {
+  font-size: 1.25rem;
+  margin: 2rem auto 1rem auto;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  max-width: 700px; /* Keep headings aligned with cards */
+}
+
+.agendaDayHeading.today {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.noCheckinsMessage {
+  color: var(--text-color);
+  opacity: 0.6;
+  text-align: center;
+  padding: 2rem;
+  background-color: rgba(var(--text-color-rgb), 0.03);
+  border-radius: 8px;
+  margin: 1rem auto;
+  max-width: 700px;
+}
+
+/* This class is used by AgendaView to wrap the ContactCards in a list format. */
+.contactsContainer {
+  max-width: 700px;
+  margin: 0 auto;
+}

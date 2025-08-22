@@ -1,0 +1,76 @@
+/* DEV COMMENT: Layout styles used by the MainApplication component in App.jsx. */
+
+.contentWrapper {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.viewControls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1rem 0;
+}
+
+.viewToggleButtons button {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+.viewToggleButtons button:first-child {
+  border-radius: 8px 0 0 8px;
+  border-right: none;
+}
+
+.viewToggleButtons button:last-child {
+  border-radius: 0 8px 8px 0;
+}
+
+.viewToggleButtons button.active {
+  background-color: var(--primary-color);
+  color: var(--primary-text);
+  border-color: var(--primary-color);
+}
+
+.pinnedSection h2 {
+  margin-top: 1rem;
+  margin-bottom: 0;
+}
+
+/* --- Adaptive Grid & List View Container Styles --- */
+
+/* For LIST VIEW, keep the container narrow and centered. */
+.contactsContainer.list {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* For GRID VIEW, default to a 2-column layout (mobile-first). */
+.contactsContainer.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* On medium screens (tablets), switch to 3 columns. */
+@media (min-width: 768px) {
+  .contactsContainer.grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+/* On large screens (desktops), switch to 4 columns. */
+@media (min-width: 1024px) {
+  .contactsContainer.grid {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
+}
+
+/* Removes default margin from .card elements ONLY when they are in a grid. */
+.contactsContainer.grid > :global(.card) {
+  margin: 0;
+}

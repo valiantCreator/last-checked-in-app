@@ -1,4 +1,6 @@
-import React from 'react';
+import React from "react";
+// DEV COMMENT: Import the new CSS Module.
+import styles from "./ThemeToggleButton.module.css";
 
 // --- ThemeToggleButton Component ---
 // This is a presentational component that displays an animated SVG icon
@@ -6,25 +8,32 @@ import React from 'react';
 function ThemeToggleButton({ theme, onToggleTheme }) {
   // The `aria-label` provides an accessible name for the button for screen readers.
   // It dynamically changes based on the current theme.
-  const label = `Switch to ${theme === 'light' ? 'dark' : 'light'} mode`;
+  const label = `Switch to ${theme === "light" ? "dark" : "light"} mode`;
 
   return (
     <button
-      className="theme-toggle"
+      // DEV COMMENT: All classNames are now scoped by the CSS module.
+      className={styles.themeToggle}
       id="theme-toggle"
       title={label}
       aria-label={label}
       onClick={onToggleTheme}
     >
-      <svg className="sun-and-moon" aria-hidden="true" width="24" height="24" viewBox="0 0 24 24">
+      <svg
+        className={styles.sunAndMoon}
+        aria-hidden="true"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+      >
         {/* The moon shape */}
-        <mask className="moon" id="moon-mask">
+        <mask className={styles.moon} id="moon-mask">
           <rect x="0" y="0" width="100%" height="100%" fill="white" />
           <circle cx="24" cy="10" r="6" fill="black" />
         </mask>
         {/* The main circle for the sun/moon body */}
         <circle
-          className="sun"
+          className={styles.sun}
           cx="12"
           cy="12"
           r="6"
@@ -32,7 +41,7 @@ function ThemeToggleButton({ theme, onToggleTheme }) {
           fill="currentColor"
         />
         {/* The sunbeams, which will animate */}
-        <g className="sun-beams" stroke="currentColor">
+        <g className={styles.sunBeams} stroke="currentColor">
           <line x1="12" y1="1" x2="12" y2="3" />
           <line x1="12" y1="21" x2="12" y2="23" />
           <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />

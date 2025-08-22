@@ -1,8 +1,6 @@
-// frontend/src/components/ArchivedView.jsx
-
-import React from 'react';
-// FIX: The toolbar is no longer imported or rendered here.
-// import ArchivedActionsToolbar from './ArchivedActionsToolbar';
+import React from "react";
+// DEV COMMENT: Import the new CSS module.
+import styles from "./ArchivedView.module.css";
 
 function ArchivedView({
   archivedContacts,
@@ -10,39 +8,60 @@ function ArchivedView({
   onDeletePermanently,
   selectedArchivedIds,
   onToggleArchivedSelection,
-  // FIX: The batch action handlers are no longer needed as props here.
-  // onSelectAllArchived,
-  // onClearArchivedSelection,
-  // onBatchRestore,
-  // onBatchDelete,
 }) {
   return (
-    <div className="archived-list">
+    <div className={styles.archivedList}>
       <h2>Archived Contacts</h2>
 
-      {archivedContacts.map(contact => {
+      {archivedContacts.map((contact) => {
         const isSelected = selectedArchivedIds.includes(contact.id);
+        // DEV COMMENT: Dynamically build the class string for the card.
+        const cardClasses = `card ${styles.archivedItem} ${
+          isSelected ? "selected" : ""
+        }`;
+
         return (
           <div
             key={contact.id}
-            className={`card archived-item ${isSelected ? 'selected' : ''}`}
+            className={cardClasses}
             onClick={() => onToggleArchivedSelection(contact.id)}
           >
-            <div className="selection-checkbox-container">
-              <div className={`checkbox ${isSelected ? 'checked' : ''}`}></div>
+            {/* DEV COMMENT: Grouped checkbox and name for better layout control. */}
+            <div className={styles.archivedContactInfo}>
+              <div className={styles.selectionCheckboxContainer}>
+                <div
+                  className={`${styles.checkbox} ${
+                    isSelected ? styles.checked : ""
+                  }`}
+                ></div>
+              </div>
+              <span className={styles.archivedContactName}>{contact.name}</span>
             </div>
-            <span className="archived-contact-name">{contact.name}</span>
-            <div className="archived-actions">
-                <button className="button-secondary" onClick={(e) => { e.stopPropagation(); onRestore(contact.id); }}>Restore</button>
-                <button className="button-danger" onClick={(e) => { e.stopPropagation(); onDeletePermanently(contact.id); }}>Delete Permanently</button>
+            <div className={styles.archivedActions}>
+              <button
+                className="button-secondary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRestore(contact.id);
+                }}
+              >
+                Restore
+              </button>
+              <button
+                className="button-danger"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeletePermanently(contact.id);
+                }}
+              >
+                Delete Permanently
+              </button>
             </div>
           </div>
         );
       })}
 
       {archivedContacts.length === 0 && <p>No archived contacts.</p>}
-
-      {/* FIX: The toolbar has been moved to App.jsx to ensure correct CSS positioning. */}
     </div>
   );
 }

@@ -1,7 +1,7 @@
-// frontend/src/components/AgendaView.jsx
-
 import React from "react";
 import ContactCard from "./ContactCard";
+// DEV COMMENT: Import the new CSS Module.
+import styles from "./AgendaView.module.css";
 
 function AgendaView({
   agendaData,
@@ -22,18 +22,18 @@ function AgendaView({
   today.setHours(0, 0, 0, 0);
 
   return (
-    <div className="agenda-view-container">
+    <div className={styles.agendaViewContainer}>
       {agendaData.map((day) => (
-        <div key={day.date.toString()} className="agenda-day-group">
+        <div key={day.date.toString()} className={styles.agendaDayGroup}>
           <h2
-            className={`agenda-day-heading ${
-              day.title === "Today" ? "today" : ""
+            className={`${styles.agendaDayHeading} ${
+              day.title === "Today" ? styles.today : ""
             }`}
           >
             {day.title}
           </h2>
           {day.contacts.length > 0 ? (
-            <div className="contacts-container list">
+            <div className={styles.contactsContainer}>
               {day.contacts.map((contact) => {
                 // DEV COMMENT: A specific agenda item is considered 'overdue' for styling
                 // purposes only if its calendar date is on or before today.
@@ -82,7 +82,7 @@ function AgendaView({
               })}
             </div>
           ) : (
-            <p className="no-checkins-message">
+            <p className={styles.noCheckinsMessage}>
               No check-ins scheduled for this day.
             </p>
           )}

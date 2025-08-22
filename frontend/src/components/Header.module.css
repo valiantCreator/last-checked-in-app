@@ -1,0 +1,59 @@
+/* DEV COMMENT: Styles for the Header component, now locally scoped. */
+
+.appHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+  /* DEV COMMENT: This max-width and margin keep the header aligned with the content below it. */
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.logoTitleContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.appLogo {
+  height: 40px;
+  width: auto;
+}
+
+.appHeader h1 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* DEV COMMENT: New style for the SVG icon trigger. It's a clean, borderless button with a hover state. */
+.dropdownTrigger {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-color);
+  transition: background-color 0.2s;
+}
+
+.dropdownTrigger:hover {
+  background-color: var(--hover-bg);
+}
+
+.dropdownTrigger svg {
+  width: 24px;
+  height: 24px;
+}

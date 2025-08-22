@@ -1,0 +1,62 @@
+/* DEV COMMENT: Styles extracted from index.css, now scoped to AddContactForm. */
+.formCard h2 {
+  margin-top: 0;
+}
+
+.formCard input,
+.formCard textarea {
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-family: inherit;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  width: 100%;
+}
+
+.formCard textarea {
+  resize: vertical;
+}
+
+.formCard input::placeholder,
+.formCard textarea::placeholder {
+  color: var(--text-color);
+  opacity: 0.6;
+}
+
+/* Form Grid Styles (Mobile First) */
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.remindMeContainer,
+.startDateContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.remindMeContainer input[type="number"] {
+  width: 80px;
+}
+
+.formCard button {
+  margin-top: 1rem;
+}
+
+/* Media Query for Desktop */
+@media (min-width: 768px) {
+  .formGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .formGrid .fullWidthField,
+  .formGrid textarea,
+  .formGrid .remindMeContainer,
+  .formGrid .startDateContainer {
+    grid-column: 1 / -1;
+  }
+}

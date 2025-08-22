@@ -1,6 +1,7 @@
-// frontend/src/components/ArchivedActionsToolbar.jsx
-
-import React from 'react';
+import React from "react";
+// DEV COMMENT: Reuse the existing CSS module from the main batch actions toolbar.
+// This is efficient as the structure and style are identical.
+import styles from "./BatchActionsToolbar.module.css";
 
 function ArchivedActionsToolbar({
   selectedCount,
@@ -8,26 +9,35 @@ function ArchivedActionsToolbar({
   onClear,
   onRestore,
   onDelete,
-  totalContacts
+  totalContacts,
 }) {
   const allSelected = selectedCount > 0 && selectedCount === totalContacts;
 
   return (
-    <div className="batch-actions-toolbar">
-      <div className="selection-info">
+    // DEV COMMENT: All classNames now use the imported 'styles' object.
+    <div className={styles.batchActionsToolbar}>
+      <div className={styles.selectionInfo}>
         <button
-          className="select-all-button"
+          className={styles.selectAllButton}
           onClick={allSelected ? onClear : onSelectAll}
           title={allSelected ? "Deselect All" : "Select All"}
         >
-          <div className={`checkbox ${allSelected ? 'checked' : ''}`}></div>
+          <div
+            className={`${styles.checkbox} ${
+              allSelected ? styles.checked : ""
+            }`}
+          ></div>
           {selectedCount} Selected
         </button>
       </div>
-      <div className="actions">
+      <div className={styles.actions}>
         {/* FIX: Changed to button-primary for better UX distinction */}
-        <button onClick={onRestore} className="button-primary">Restore</button>
-        <button onClick={onDelete} className="button-danger">Delete Permanently</button>
+        <button onClick={onRestore} className="button-primary">
+          Restore
+        </button>
+        <button onClick={onDelete} className="button-danger">
+          Delete Permanently
+        </button>
       </div>
     </div>
   );

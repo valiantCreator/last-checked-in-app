@@ -1,0 +1,36 @@
+/*
+This file contains top-level, application-wide layout styles that do not belong
+in component-specific CSS Modules. It's imported once at the root level.
+*/
+.app-container {
+  width: 100%;
+}
+
+.app-container.selection-mode-active {
+  padding-bottom: 100px; /* Leave space for the toolbar */
+}
+
+/* The new wrapper constrains the width of the form and filters */
+.content-wrapper {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* --- Authentication Page Styles --- */
+.auth-container {
+  padding: 2rem;
+  max-width: 420px;
+  margin: 2rem auto;
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: 0 4px 8px var(--card-shadow);
+  border: 1px solid var(--border-color);
+}
+
+.auth-container h1 {
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+}
+
+/* --- END: Authentication Page Styles --- */

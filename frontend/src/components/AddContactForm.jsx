@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
-import api from '../apiConfig';
-import { toast } from 'react-hot-toast';
+import React, { useState } from "react";
+import api from "../apiConfig";
+import { toast } from "react-hot-toast";
+// DEV COMMENT: Import the new CSS Module. This scopes all class names.
+import styles from "./AddContactForm.module.css";
 
 function AddContactForm({ onContactAdded }) {
-  const [firstName, setFirstName] = useState('');
+  const [firstName, setFirstName] = useState("");
   const [checkinFrequency, setCheckinFrequency] = useState(7);
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [howWeMet, setHowWeMet] = useState('');
-  const [keyFacts, setKeyFacts] = useState('');
-  const [birthday, setBirthday] = useState('');
+  const [startDate, setStartDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+  const [howWeMet, setHowWeMet] = useState("");
+  const [keyFacts, setKeyFacts] = useState("");
+  const [birthday, setBirthday] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -38,16 +42,16 @@ function AddContactForm({ onContactAdded }) {
 
     try {
       // We don't need the response data because we are refetching
-      await api.post('/contacts', newContact);
+      await api.post("/contacts", newContact);
       onContactAdded(); // This now just triggers a refetch in App.jsx
-      
+
       // Reset all fields after submission
-      setFirstName('');
+      setFirstName("");
       setCheckinFrequency(7);
-      setStartDate(new Date().toISOString().split('T')[0]);
-      setHowWeMet('');
-      setKeyFacts('');
-      setBirthday('');
+      setStartDate(new Date().toISOString().split("T")[0]);
+      setHowWeMet("");
+      setKeyFacts("");
+      setBirthday("");
     } catch (err) {
       console.error("Error adding contact:", err);
       if (err.response && err.response.status === 400) {
@@ -61,17 +65,20 @@ function AddContactForm({ onContactAdded }) {
   };
 
   return (
-    <div className="card form-card">
+    // DEV COMMENT: Use template literals to combine the global 'card' class with the module class.
+    <div className={`card ${styles.formCard}`}>
       <h2>Add a New Person</h2>
       <form onSubmit={handleSubmit}>
-        <div className="form-grid">
+        {/* DEV COMMENT: All component-specific classNames are now replaced with the 'styles' object. */}
+        <div className={styles.formGrid}>
           <input
             type="text"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             placeholder="First Name"
             required
-            className="full-width-field"
+            // DEV COMMENT: The 'fullWidthField' class is now scoped via the module.
+            className={styles.fullWidthField}
           />
           <input
             type="text"
@@ -89,9 +96,9 @@ function AddContactForm({ onContactAdded }) {
             onChange={(e) => setKeyFacts(e.target.value)}
             placeholder="Key facts (optional)"
             rows="3"
-            className="full-width-field"
+            className={styles.fullWidthField}
           ></textarea>
-          <div className="remind-me-container">
+          <div className={styles.remindMeContainer}>
             <label>Remind every</label>
             <input
               type="number"
@@ -102,9 +109,9 @@ function AddContactForm({ onContactAdded }) {
             />
             <label>days</label>
           </div>
-          <div className="start-date-container">
+          <div className={styles.startDateContainer}>
             <label>Starting from</label>
-            <input 
+            <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
@@ -112,8 +119,9 @@ function AddContactForm({ onContactAdded }) {
             />
           </div>
         </div>
+        {/* DEV COMMENT: The 'button-primary' class is global and remains a string. */}
         <button type="submit" className="button-primary" disabled={isLoading}>
-          {isLoading ? 'Adding...' : 'Add Person'}
+          {isLoading ? "Adding..." : "Add Person"}
         </button>
       </form>
     </div>

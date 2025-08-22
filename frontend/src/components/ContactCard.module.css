@@ -1,0 +1,367 @@
+/* DEV COMMENT: All styles for the ContactCard, including list, grid, and expanded views. */
+
+/* --- Base Styles for List/Agenda View --- */
+.contactItem {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  border-left: 6px solid var(--primary-color);
+  transition: border-color 0.3s;
+}
+
+.contactItem.overdue {
+  border-left-color: var(--overdue-border);
+  background-color: var(--overdue-bg);
+}
+
+/* --- Grid View Specific Styles --- */
+.contactItemGrid {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 1.5rem 1rem;
+  height: 100%;
+}
+
+.contactItemGrid h3 {
+  margin: 0.5rem 0 1rem 0;
+  font-size: 1.25rem;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.contactItemGrid p {
+  margin: 0.25rem 0;
+  opacity: 0.8;
+}
+
+.contactItemGrid strong {
+  font-size: 1.1rem;
+  font-weight: 500;
+  opacity: 1;
+}
+
+.contactItemGrid .gridBirthday {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+/* --- Zone 1: Header --- */
+.contactCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.contactCardIdentity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-grow: 1;
+  cursor: pointer;
+}
+
+.contactCardHeader h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.pinButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.5rem;
+  color: var(--text-color);
+  opacity: 0.5;
+  padding: 0;
+  line-height: 1;
+}
+.pinButton:hover {
+  opacity: 1;
+}
+.pinButton.pinned {
+  color: var(--pin-color);
+  opacity: 1;
+}
+
+/* Grid view specific identity block */
+.contactItemGrid .contactCardIdentity {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  right: 0.5rem;
+  padding: 0 0.5rem;
+}
+
+.expandCollapseButton {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+  color: var(--text-color);
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+.expandCollapseButton:hover {
+  background-color: var(--hover-bg);
+}
+.expandCollapseButton .arrow {
+  font-size: 1rem;
+  line-height: 1;
+  transition: transform 0.3s ease-in-out;
+}
+.expandCollapseButton .arrow.expanded {
+  transform: rotate(180deg);
+}
+
+/* --- Zone 2: Status Bar --- */
+.contactCardStatusBar {
+  display: flex;
+  justify-content: space-between;
+  background-color: var(--status-bar-bg);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.9em;
+  margin-bottom: 1rem;
+}
+
+.statusItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  text-align: center;
+}
+
+.statusLabel {
+  font-weight: 300;
+  font-size: 0.8em;
+  color: var(--text-color-secondary);
+}
+
+.statusValue {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* --- Zone 3: Footer --- */
+.contactCardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.footerActionsLeft,
+.footerActionsRight {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+@media (max-width: 500px) {
+  .contactCardFooter {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .footerActionsLeft,
+  .footerActionsRight {
+    justify-content: center;
+    width: 100%;
+  }
+  .footerActionsLeft > button,
+  .footerActionsRight > button {
+    flex-grow: 1;
+  }
+}
+
+/* --- Expanded Details Section --- */
+.contactDetailsExpanded {
+  padding-top: 1rem;
+}
+
+.contactDetails p {
+  margin: 0.5rem 0;
+}
+.contactDetails strong {
+  color: var(--text-color);
+  font-weight: 600;
+}
+.frequencyDetail strong {
+  color: var(--text-color);
+}
+
+/* --- Notes Section --- */
+.notesSection {
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.addNoteForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.addNoteForm textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-family: inherit;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  resize: vertical;
+}
+
+.addNoteActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.note {
+  background-color: var(--background-color);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-color);
+}
+
+.note p {
+  margin: 0 0 0.5rem 0;
+  white-space: pre-wrap;
+}
+
+.note small {
+  opacity: 0.7;
+}
+
+.noteEditView textarea {
+  width: 100%;
+  min-height: 80px;
+  margin-bottom: 0.5rem;
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-family: inherit;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+.noteFooter,
+.noteActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.editButton {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  opacity: 0.6;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.editButton:hover {
+  opacity: 1;
+}
+
+.modifiedDate {
+  font-style: italic;
+  opacity: 0.8;
+}
+
+/* --- Edit Contact Form --- */
+.contactEditForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.contactEditForm input,
+.contactEditForm textarea {
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-family: inherit;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  width: 100%;
+}
+
+.contactEditForm .formActions {
+  display: flex;
+  gap: 1rem;
+}
+
+/* --- Checkbox Styles (scoped to this component) --- */
+.checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.checkbox.checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.checkbox.checked::after {
+  content: "✓";
+  color: var(--primary-text);
+  font-size: 14px;
+}
+
+.selectionCheckboxContainer {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  opacity: 0.2;
+  transition: opacity 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+/* Using :global selector to check for a class on the App's root container */
+:global(.selection-mode-active) .selectionCheckboxContainer,
+:global(.card.selected) .selectionCheckboxContainer {
+  opacity: 1;
+}
+
+.card:hover .selectionCheckboxContainer {
+  opacity: 0.6;
+}

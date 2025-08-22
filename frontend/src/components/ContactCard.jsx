@@ -1,5 +1,3 @@
-// frontend/src/components/ContactCard.jsx
-
 import React, { useState } from "react";
 import {
   isOverdue,
@@ -8,6 +6,8 @@ import {
   parseAsLocalDate,
 } from "../utils.js";
 import TagInput from "./TagInput.jsx";
+// DEV COMMENT: Import the new CSS module for the ContactCard.
+import styles from "./ContactCard.module.css";
 
 // DEV COMMENT: New helper function to format dates into readable strings like "Today", "Tomorrow", or "Sun, Aug 24".
 const formatDateDisplay = (date) => {
@@ -144,37 +144,46 @@ function ContactCard({
     if (selectionMode) {
       onToggleSelection(contact.id);
     } else if (!isEditingThisContact) {
-      handleToggleDetails(contact.id);
+      handleToggleDetails(cardKey); // Use the unique card key here
     }
   };
 
   // DEV COMMENT: Grid view has its own unique, simplified layout and is preserved.
   if (displayMode === "grid") {
+    // DEV COMMENT: Dynamically build the class string for the grid card.
+    const gridCardClasses = `
+      card 
+      ${styles.contactItemGrid} 
+      ${isCardOverdue ? styles.overdue : ""} 
+      ${isSelected ? "selected" : ""}
+    `;
+
     return (
       <div
-        className={`card contact-item-grid ${isCardOverdue ? "overdue" : ""} ${
-          isSelected ? "selected" : ""
-        }`}
+        className={gridCardClasses.trim()}
         onClick={() => {
           if (selectionMode) {
             onToggleSelection(contact.id);
           }
         }}
       >
-        {/* DEV COMMENT: FIX - The identity block is now a flex container to correctly position the pin. */}
-        <div className="contact-card-identity">
+        <div className={styles.contactCardIdentity}>
           <div
-            className="selection-checkbox-container grid-checkbox"
+            className={styles.selectionCheckboxContainer}
             onClick={(e) => {
               e.stopPropagation();
               onToggleSelection(contact.id);
             }}
           >
-            <div className={`checkbox ${isSelected ? "checked" : ""}`}></div>
+            <div
+              className={`${styles.checkbox} ${
+                isSelected ? styles.checked : ""
+              }`}
+            ></div>
           </div>
           <button
-            className={`pin-button grid-pin-button ${
-              contact.is_pinned ? "pinned" : ""
+            className={`${styles.pinButton} ${
+              contact.is_pinned ? styles.pinned : ""
             }`}
             onClick={(e) => {
               e.stopPropagation();
@@ -189,21 +198,29 @@ function ContactCard({
         <p>Next check-in:</p>
         <strong>{dueDisplay}</strong>
         {contact.birthday && (
-          <p className="grid-birthday">🎂 {formatBirthday(contact.birthday)}</p>
+          <p className={styles.gridBirthday}>
+            🎂 {formatBirthday(contact.birthday)}
+          </p>
         )}
       </div>
     );
   }
 
-  // DEV COMMENT: This is the new, refactored layout for the List and Agenda views.
+  // DEV COMMENT: This is the refactored layout for List and Agenda views.
+  const listCardClasses = `
+    card 
+    ${styles.contactItem} 
+    ${isCardOverdue ? styles.overdue : ""} 
+    ${isSelected ? "selected" : ""}
+  `;
+
   return (
-    <div
-      className={`card contact-item ${isCardOverdue ? "overdue" : ""} ${
-        isSelected ? "selected" : ""
-      }`}
-    >
+    <div className={listCardClasses.trim()}>
       {isEditingThisContact ? (
-        <form onSubmit={onUpdateContactSubmit} className="contact-edit-form">
+        <form
+          onSubmit={onUpdateContactSubmit}
+          className={styles.contactEditForm}
+        >
           {/* The edit form remains unchanged */}
           <input
             name="name"
@@ -256,7 +273,7 @@ function ContactCard({
               onChange={handleEditingContactChange}
             />
           </div>
-          <div className="form-actions">
+          <div className={styles.formActions}>
             <button type="submit" className="button-primary">
               Save Changes
             </button>
@@ -272,21 +289,28 @@ function ContactCard({
       ) : (
         <>
           {/* ZONE 1: HEADER (IDENTIFICATION & STATE) */}
-          <div className="contact-card-header">
-            <div className="contact-card-identity" onClick={handleCardClick}>
+          <div className={styles.contactCardHeader}>
+            <div
+              className={styles.contactCardIdentity}
+              onClick={handleCardClick}
+            >
               <div
-                className="selection-checkbox-container"
+                className={styles.selectionCheckboxContainer}
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleSelection(contact.id);
                 }}
               >
                 <div
-                  className={`checkbox ${isSelected ? "checked" : ""}`}
+                  className={`${styles.checkbox} ${
+                    isSelected ? styles.checked : ""
+                  }`}
                 ></div>
               </div>
               <button
-                className={`pin-button ${contact.is_pinned ? "pinned" : ""}`}
+                className={`${styles.pinButton} ${
+                  contact.is_pinned ? styles.pinned : ""
+                }`}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleTogglePin(contact.id);
@@ -298,40 +322,46 @@ function ContactCard({
               <h3>{contact.name}</h3>
             </div>
             <button
-              className="expand-collapse-button"
+              className={styles.expandCollapseButton}
               onClick={(e) => {
                 e.stopPropagation();
-                handleToggleDetails(contact.id);
+                handleToggleDetails(cardKey);
               }}
               aria-expanded={isExpanded}
               disabled={selectionMode}
             >
               {isExpanded ? "Hide Details" : "Show Details"}
-              <span className={`arrow ${isExpanded ? "expanded" : ""}`}>▼</span>
+              <span
+                className={`${styles.arrow} ${
+                  isExpanded ? styles.expanded : ""
+                }`}
+              >
+                ▼
+              </span>
             </button>
           </div>
 
           {/* ZONE 2: STATUS BAR (THE "WHEN") */}
-          <div className="contact-card-status-bar">
-            <div className="status-item">
-              <span className="status-label">Last:</span>
-              <span className="status-value">{lastDisplay}</span>
+          <div className={styles.contactCardStatusBar}>
+            <div className={styles.statusItem}>
+              <span className={styles.statusLabel}>Last:</span>
+              <span className={styles.statusValue}>{lastDisplay}</span>
             </div>
-            <div className="status-item">
-              <span className="status-label">Due:</span>
-              <span className="status-value">{dueDisplay}</span>
+            <div className={styles.statusItem}>
+              <span className={styles.statusLabel}>Due:</span>
+              <span className={styles.statusValue}>{dueDisplay}</span>
             </div>
             {nextDisplay && (
-              <div className="status-item">
-                <span className="status-label">Next:</span>
-                <span className="status-value">{nextDisplay}</span>
+              <div className={styles.statusItem}>
+                <span className={styles.statusLabel}>Next:</span>
+                <span className={styles.statusValue}>{nextDisplay}</span>
               </div>
             )}
           </div>
 
           {isExpanded && (
-            <div className="contact-details-expanded">
-              <div className="contact-details">
+            <div className={styles.contactDetailsExpanded}>
+              <div className={styles.contactDetails}>
                 {contact.birthday && (
                   <p>
                     <strong>Birthday:</strong>{" "}
@@ -348,7 +378,7 @@ function ContactCard({
                     <strong>Key facts:</strong> {contact.key_facts}
                   </p>
                 )}
-                <p className="frequency-detail">
+                <p className={styles.frequencyDetail}>
                   <strong>Check-in frequency:</strong> Every{" "}
                   {contact.checkin_frequency} days
                 </p>
@@ -374,15 +404,15 @@ function ContactCard({
                   onTagAdded={(newTag) => handleTagAdded(contact.id, newTag)}
                 />
               </div>
-              <div className="notes-section">
+              <div className={styles.notesSection}>
                 {isAddingNote && (
-                  <div className="add-note-form">
+                  <div className={styles.addNoteForm}>
                     <textarea
                       placeholder="Add a new note..."
                       value={newNoteContent}
                       onChange={(e) => setNewNoteContent(e.target.value)}
                     />
-                    <div className="add-note-actions">
+                    <div className={styles.addNoteActions}>
                       <button className="button-primary" onClick={onSaveNote}>
                         Save Note
                       </button>
@@ -397,16 +427,16 @@ function ContactCard({
                 )}
                 <div className="notes-content">
                   {contact.notes.map((note) => (
-                    <div key={note.id} className="note">
+                    <div key={note.id} className={styles.note}>
                       {editingNote && editingNote.id === note.id ? (
-                        <div className="note-edit-view">
+                        <div className={styles.noteEditView}>
                           <textarea
                             value={editingNoteContent}
                             onChange={(e) =>
                               setEditingNoteContent(e.target.value)
                             }
                           />
-                          <div className="note-actions">
+                          <div className={styles.noteActions}>
                             <button
                               className="button-primary"
                               onClick={() => onUpdateNote(note.id)}
@@ -422,21 +452,21 @@ function ContactCard({
                           </div>
                         </div>
                       ) : (
-                        <div className="note-display-view">
+                        <div className={styles.noteDisplayView}>
                           <p>{note.content}</p>
-                          <div className="note-footer">
+                          <div className={styles.noteFooter}>
                             <small>
                               Created:{" "}
                               {new Date(note.created_at).toLocaleString()}
                               {note.modified_at && (
-                                <span className="modified-date">
+                                <span className={styles.modifiedDate}>
                                   &nbsp;· Edited:{" "}
                                   {new Date(note.modified_at).toLocaleString()}
                                 </span>
                               )}
                             </small>
                             <button
-                              className="edit-button"
+                              className={styles.editButton}
                               onClick={() => startEditingNote(note)}
                             >
                               Edit
@@ -455,8 +485,8 @@ function ContactCard({
           )}
 
           {/* ZONE 3: FOOTER (THE "WHAT") */}
-          <div className="contact-card-footer">
-            <div className="footer-actions-left">
+          <div className={styles.contactCardFooter}>
+            <div className={styles.footerActionsLeft}>
               <button
                 className="button-secondary button-danger"
                 onClick={(e) => {
@@ -468,7 +498,7 @@ function ContactCard({
                 Archive
               </button>
             </div>
-            <div className="footer-actions-right">
+            <div className={styles.footerActionsRight}>
               {isCardOverdue && (
                 <button
                   className="button-secondary"
@@ -491,17 +521,13 @@ function ContactCard({
               >
                 Edit
               </button>
-              {/* DEV COMMENT: FIX - The 'Add Note' button is no longer disabled when the card is collapsed.
-                        Instead, clicking it will now automatically expand the details to show the note form. */}
               <button
                 className="button-secondary"
                 onClick={(e) => {
                   e.stopPropagation();
-                  // If not expanded, expand the card first.
                   if (!isExpanded) {
-                    handleToggleDetails(contact.id);
+                    handleToggleDetails(cardKey);
                   }
-                  // Then toggle the note form.
                   handleToggleAddNoteForm(
                     contact.id === addingNoteToContactId ? null : contact.id
                   );
