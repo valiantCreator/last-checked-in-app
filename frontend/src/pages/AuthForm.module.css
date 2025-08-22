@@ -1,0 +1,105 @@
+/* src/pages/AuthForm.module.css */
+
+.authContainer {
+  padding: 2rem;
+  max-width: 420px;
+  margin: 2rem auto;
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: 0 4px 8px var(--card-shadow);
+  border: 1px solid var(--border-color);
+}
+
+.authContainer h1 {
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+}
+
+.authForm .inputGroup {
+  margin-bottom: 1.25rem;
+}
+
+.authForm label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.inputWrapper {
+  position: relative;
+}
+
+.authForm input {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-family: inherit;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.inputWrapper input {
+  padding-right: 3rem;
+}
+
+.authForm input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(var(--text-color-rgb), 0.05);
+}
+
+.passwordToggleBtn {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-color);
+  opacity: 0.6;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+}
+
+.passwordToggleBtn:hover {
+  opacity: 1;
+  background-color: rgba(var(--text-color-rgb), 0.1);
+}
+
+.passwordToggleBtn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.authForm .button-primary {
+  width: 100%;
+  padding: 0.85rem;
+  font-size: 1.1rem;
+  margin-top: 0.5rem;
+}
+
+.authFormFooter {
+  text-align: center;
+  margin-top: 1.5rem;
+  opacity: 0.9;
+}
+
+.authFormFooter a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.authFormFooter a:hover {
+  text-decoration: underline;
+}
