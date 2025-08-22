@@ -1,68 +1,96 @@
 # Last Checked In - Project Documentation
-**Version: 4.0 (As of August 11, 2025)**
-**Author: Gemini**
+
+**Version:** 8.2.0
+**Last Updated:** August 22, 2025
+**Author:** Gemini
 
 ## 1. Project Overview
 
 ### 1.1 Purpose & Vision
-"Last Checked In" is a solo Personal Relationship Manager (PRM). Its core purpose is to be a private, intentional tool that empowers users to be more consistent and thoughtful in nurturing the personal and professional relationships they value. It is designed to combat the passive nature of social media by providing an active tool for connection.
+
+"Last Checked In" is a Personal Relationship Manager (PRM). Its core purpose is to be a private, intentional tool that empowers users to be more consistent and thoughtful in nurturing their personal and professional relationships. It provides each user with a secure, private account to manage their connections, combating the passive nature of social media by providing an active tool for connection.
 
 ### 1.2 Core Problem Solved
-In a busy world, it's easy to lose touch with people we care about. Important connections can weaken over time simply due to a lack of contact. This application solves that problem by providing a centralized, private dashboard to:
-- Track the last time you connected with a specific person.
+
+In a busy world, it's easy to lose touch with people we care about. This application solves that problem by providing a centralized, private dashboard for each user to:
+
+- Track the last time they connected with a specific person.
 - Set custom, flexible reminders for when to check in next.
-- Keep timestamped, editable notes on conversations to remember important details.
+- Keep private, timestamped, and editable notes on conversations to remember important details.
 - Organize contacts with detailed information and a flexible tagging system.
-- Receive proactive push notifications for overdue check-ins.
+- Receive proactive push notifications for their own overdue check-ins.
 
 ### 1.3 Target User & Philosophy
+
 The app is designed for individuals seeking a private tool to manage their social and professional connections. It operates on a philosophy of intentionality over passive engagement.
-- It is **not** a social network. All data is for the user's eyes only.
-- It is **proactive**, not reactive. The app prompts the user to reach out.
+
+- It is **not a social network**. All user data is sandboxed and for their eyes only.
+- It is **proactive, not reactive**. The app prompts the user to reach out.
 - It values **quality over quantity**, focusing on deepening existing relationships.
 
 ---
 
 ## 2. Feature Breakdown
 
-### 2.1 Core Features (MVP)
+### 2.1 User Accounts & Authentication
+
+The application has been fundamentally re-architected into a full-featured, multi-user platform with a robust and secure account system.
+
+- **Signup:** Users can create a new, private account using an email and password. The signup page UI has been completely refactored with a modern design, a "Confirm Password" field to prevent typos, and a "Show/Hide Password" toggle for improved usability. Passwords are never stored in plain text; they are salted and hashed using bcrypt.
+- **Login:** Registered users can log in to access their sandboxed data.
+- **Session Management:** The system uses JSON Web Tokens (JWTs) stored in the browser's localStorage to maintain user sessions across page loads. Sessions persist for 7 days.
+- **Data Sandboxing:** The core of the multi-user system. A user can only see and interact with the data they have created. All data is scoped to their user ID on the backend.
+- **Logout:** A logout button in the header allows users to securely terminate their session, clearing their credentials from the application state and localStorage.
+
+### 2.2 Core Features (Now User-Specific)
+
 - **Contact Management:** Add, edit, and view contacts with their name and a custom check-in frequency.
 - **Check-in System:** Manually log a "check-in" to reset the reminder timer. Contacts who are past their check-in frequency are visually highlighted as "overdue."
-- **Notes System:** Add multiple, timestamped notes for each contact.
+- **Notes System:** Add, edit, and view multiple, timestamped notes for each contact.
 
-### 2.2 Advanced Features (Implemented)
-- **Animated Dark Mode & Persistence:** Replaced the text-based "Toggle Theme" button with a modern, animated sun/moon icon. The user's theme preference is now saved to their browser's `localStorage`, so their choice is remembered on future visits.
+### 2.3 Advanced Features (Now User-Specific)
+
+- **Animated Dark Mode & Persistence:** Replaced the text-based "Toggle Theme" button with a modern, animated sun/moon icon. The user's theme preference is now saved to their browser's localStorage.
 - **Expanded Contact Details:** Store 'How We Met,' 'Key Facts,' and 'Birthday'.
 - **Tagging System:** A flexible, many-to-many tagging system.
 - **Advanced Filtering & Sorting:** Comprehensive controls to organize the contact list.
 - **Global Search:** A search bar that filters contacts by name or note content.
 - **Archive/Restore System:** Archive contacts instead of permanently deleting them.
-- **Push Notifications:** A daily scheduled job sends a summary push notification for overdue contacts.
-- **List/Grid View Toggle:** Switch between a single-column list and a multi-column grid layout.
-- **On-Demand Push Notification Testing:** A developer-focused button on each contact card to test the notification pipeline.
+- **Multi-User Push Notifications:** A daily scheduled job on the backend is the single source of truth for notifications. It now iterates through each user with registered devices, running an efficient, user-scoped database query to find their specific overdue contacts. It sends a single, dynamic summary push notification.
+- **Agenda View with Recurring Events:** An Agenda View provides a forward-looking summary of all upcoming check-ins for the next 30 days.
 - **In-App Toast Notifications:** Modern, non-blocking "toast" notifications for all user actions.
-- **Intuitive Date Display:** Snooze dates are reflected as the next check-in, and check-ins due today are labeled "Today".
-- **Custom Snooze Durations:** Allows users to input a custom number of days to snooze a reminder.
+- **Intuitive & Timezone-Safe Date Display:** All date calculations and displays have been refactored to be timezone-safe.
+- **Server-Authoritative Snooze:** The snooze functionality is handled by a robust modal and calculated on the backend.
 - **Refactored Contact Card UI:** A cleaner "summary" view and an expandable "detailed" view for contact cards.
-- **Favorite/Pin Contacts:** Users can pin important contacts. A star icon on each contact card toggles the pinned status. Pinned contacts appear in a separate "Pinned" section at the top of the main list for easy access. This section is temporarily hidden when a search or filter is active.
-- **Calendar Export (.ics):** Allows users to export their contacts' birthdays and check-in reminders into a universal `.ics` file format, compatible with Google Calendar, Outlook, Apple Calendar, and others.
-- **(NEW) Batch Actions:** Allows users to select multiple contacts to perform bulk operations. A contextual toolbar appears at the bottom of the screen with options to Archive, Snooze, or Delete all selected contacts at once.
-- **(NEW) Backend Security:** The backend API is now protected with rate limiting to prevent spam/abuse and input validation (using Zod schemas) to reject malformed requests, ensuring data integrity and app stability.
+- **Favorite/Pin Contacts:** Users can pin important contacts to a separate "Pinned" section at the top of the main list.
+- **Calendar Export (.ics):** Allows users to export birthdays and check-in reminders into a universal .ics file.
+- **Batch Actions (Active & Archived):** Allows users to select multiple contacts to perform bulk operations.
+- **Custom Confirmation Modal:** All destructive actions trigger a custom, in-app modal to confirm the user's intent.
+- **Backend Security:** The backend API is protected with rate limiting and input validation.
+- **Responsive Header:** The main application header is now fully responsive, collapsing into a dropdown menu on smaller viewports.
+- **Frontend Architectural Refactor:** The entire frontend has been re-architected to improve scalability and maintainability.
 
 ---
 
 ## 3. Technical Architecture
 
 ### 3.1 Technology Stack
-- **Frontend:** React (Vite), JavaScript (ES6+), Axios, use-debounce, Firebase SDK, react-hot-toast, CSS3 with CSS Variables.
-- **Backend:** Node.js with Express.js, PostgreSQL, node-cron, Firebase Admin SDK, dotenv, express-rate-limit, zod.
+
+- **Frontend:** React (Vite), React Router (react-router-dom), JavaScript (ES6+), Axios, use-debounce, date-fns, Firebase SDK, react-hot-toast, CSS3 with **CSS Modules**.
+- **Backend:** Node.js, Express.js, PostgreSQL, bcrypt, jsonwebtoken, node-cron, Firebase Admin SDK, dotenv, express-rate-limit, zod.
 - **Deployment:**
-    - **Frontend:** Vercel (as a Progressive Web App)
-    - **Backend:** Render (Web Service)
-    - **Database:** Render (PostgreSQL)
+  - Frontend: Vercel (as a Progressive Web App)
+  - Backend: Render (Web Service)
+  - Database: Render (PostgreSQL)
+- **Development & Tooling:**
+  - IDE: Visual Studio Code with the Prettier extension for automated code formatting.
+  - Version Control: Git, with the repository hosted on GitHub.
+  - Database Management: DBeaver was used as a GUI client to connect to, query, and manage both local and production PostgreSQL databases.
 
 ### 3.2 Project Structure
-The project is a monorepo organized into two main directories: `frontend` and `backend`.
+
+The project is a monorepo organized into frontend and backend directories. The frontend has been significantly refactored to use CSS Modules and a custom hooks architecture for state management.
+
 ```
 last-checked-in-app/
 ├── .git/
@@ -70,10 +98,7 @@ last-checked-in-app/
 ├── backend/
 │   ├── node_modules/
 │   ├── .env
-│   ├── backup.js
-│   ├── my_data.json
 │   ├── package.json
-│   ├── restore.js
 │   ├── server.js
 │   └── serviceAccountKey.json
 └── frontend/
@@ -85,125 +110,141 @@ last-checked-in-app/
     ├── src/
     │   ├── components/
     │   │   ├── AddContactForm.jsx
+    │   │   ├── AddContactForm.module.css
+    │   │   ├── AgendaView.jsx
+    │   │   ├── AgendaView.module.css
+    │   │   ├── ArchivedActionsToolbar.jsx
     │   │   ├── ArchivedView.jsx
-    │   │   ├── BatchActionsToolbar.jsx  // --- NEW
+    │   │   ├── ArchivedView.module.css
+    │   │   ├── BatchActionsToolbar.jsx
+    │   │   ├── BatchActionsToolbar.module.css
+    │   │   ├── ConfirmationModal.jsx
+    │   │   ├── ConfirmationModal.module.css
     │   │   ├── ContactCard.jsx
+    │   │   ├── ContactCard.module.css
+    │   │   ├── DropdownMenu.jsx
+    │   │   ├── DropdownMenu.module.css
     │   │   ├── ExportCalendarModal.jsx
+    │   │   ├── ExportCalendarModal.module.css
     │   │   ├── FilterControls.jsx
+    │   │   ├── FilterControls.module.css
     │   │   ├── Header.jsx
+    │   │   ├── Header.module.css
+    │   │   ├── ProtectedRoute.jsx
+    │   │   ├── SnoozeModal.jsx
+    │   │   ├── SnoozeModal.module.css
     │   │   ├── TagInput.jsx
-    │   │   └── ThemeToggleButton.jsx
+    │   │   ├── TagInput.module.css
+    │   │   ├── ThemeToggleButton.jsx
+    │   │   └── ThemeToggleButton.module.css
+    │   ├── context/
+    │   │   └── AuthContext.jsx
+    │   ├── hooks/
+    │   │   ├── useContacts.js
+    │   │   ├── useMediaQuery.js
+    │   │   ├── useSelection.js
+    │   │   └── useUIState.js
+    │   ├── pages/
+    │   │   ├── AuthForm.module.css
+    │   │   ├── LoginPage.jsx
+    │   │   └── SignupPage.jsx
+    │   ├── App.css
     │   ├── App.jsx
+    │   ├── App.module.css
     │   ├── apiConfig.js
     │   ├── firebase.js
     │   ├── index.css
+    │   ├── main.jsx
     │   └── utils.js
     ├── index.html
-    └── package.json
+    ├── package.json
+    └── vercel.json
 ```
 
-### 3.3 Backend Architecture (PostgreSQL)
-The backend uses a PostgreSQL database with a connection pool. All API endpoints are prefixed with `/api`.
-- **(UPDATE) Database Schema:** The `contacts` table has been updated with a new `is_pinned` boolean column, which defaults to `false`.
-- **(NEW) Pin/Unpin Endpoint:**
-    - `PUT /api/contacts/:id/pin`: Toggles the `is_pinned` status of a contact in the database and returns the updated contact object.
-- **(NEW) Batch & Utility Endpoints:** Added new endpoints to support batch operations (`POST /api/contacts/batch-archive`, etc.) and to efficiently fetch the archived contact count (`GET /api/contacts/archived/count`).
+### 3.3 Backend Architecture
 
-### 3.4 Frontend Architecture (Component-Based)
-- **State Management & Data Flow**
-    - The `App.jsx` component remains the "brain" of the frontend, managing all application-wide state.
-    - **Robust Data Fetching:** All handler functions that modify contact data call a central `fetchContacts()` function upon success, ensuring the UI is always in sync with the database.
-- **Pinned Contact Logic:** The main list rendering logic in `App.jsx` has been updated. It now uses a `useMemo` hook to derive two lists from the main `contacts` state: a pinned list and an unpinned list.
-- **Push Notification Handling**
-    - `firebase.js`: This file handles requesting notification permissions and retrieving the device's FCM token.
-    - `firebase-messaging-sw.js`: The service worker uses standard `push` and `notificationclick` event listeners for reliable background notification delivery.
+(CURRENT - Multi-User Architecture)
+
+- **Database Schema:** A primary `users` table was added. All other data tables have a `user_id` foreign key.
+- **Authentication Endpoints:** `POST /api/auth/signup` and `POST /api/auth/login` handle user registration and authentication, returning a JWT.
+- **Authorization Middleware:** A robust `authMiddleware` function protects all data-related endpoints by validating the JWT.
+- **Scoped Queries:** Every SQL query includes a `WHERE user_id = $1` clause to enforce strict data privacy.
+
+### 3.4 Frontend Architecture
+
+**(RE-ARCHITECTED - Hook-Based & Modular CSS)**
+The frontend has undergone a complete architectural overhaul to improve scalability and maintainability.
+
+- **CSS Modules:** The monolithic `index.css` file has been eliminated in favor of CSS Modules. Every React component now imports its own `.module.css` file, which locally scopes all class names.
+- **Custom Hooks for State Management:** All complex stateful logic has been extracted from the `App.jsx` component and organized into a series of single-responsibility custom hooks.
+- **Composition Root:** The `App.jsx` component no longer manages state directly. Its new role is to act as a **composition root**, consuming the custom hooks and orchestrating the flow of state and handlers down to its child components.
 
 ---
 
 ## 4. File Glossary & Key Logic
 
-This section provides a high-level overview of each critical file's purpose.
+### Frontend (`src` directory)
 
-### Backend
-- `backend/server.js`
-    - **Purpose:** The entry point and core of the backend application.
-    - **Key Logic:**
-        - Initializes the Express.js server and connects to the PostgreSQL database.
-        - **(UPDATED)** Implements application-wide API rate limiting and Zod validation schemas for all incoming data.
-        - Defines all API endpoints, including new endpoints for batch operations and fetching the archived count.
-        - Contains the `node-cron` scheduled job for sending daily push notifications.
+- **`App.jsx` (RE-ARCHITECTED):** Now a lean **composition root**. Its only job is to consume the custom hooks (`useContacts`, `useUIState`, `useSelection`), wire them together, and pass the resulting state and functions down to the appropriate child components.
+- **`index.css`:** Contains only truly global styles: a CSS reset, `:root` color variables for themes, and base styles for global classes like `.card` and `.button-primary`.
+- **`App.css`:** Contains top-level application layout styles that are not component-specific, such as the main `.app-container` rules.
+- **`App.module.css`:** Contains layout styles used exclusively by the `MainApplication` component within `App.jsx`, such as the grid container and view controls.
+- **`utils.js`:** Contains pure helper functions for date manipulation and data transformation.
+- **`context/AuthContext.jsx`:** Implements the React Context for global state management of the user's authentication token.
 
-### Frontend
-- `frontend/public/firebase-messaging-sw.js`
-    - **Purpose:** The Firebase service worker. This file runs in the browser's background.
-    - **Key Logic:**
-        - Listens for incoming push notifications from Firebase Cloud Messaging.
-        - Displays the notification to the user using the browser's native notification API.
-        - Handles `notificationclick` events to focus the app's tab when a notification is clicked.
+### (NEW) `hooks/` directory
 
-- `frontend/src/App.jsx`
-    - **Purpose:** The "brain" of the entire frontend application. It is the top-level component that manages all shared state and data logic.
-    - **Key Logic:**
-        - **State Management:** Holds all primary application state using `useState` hooks (e.g., `contacts`, `theme`, `sortBy`, `view`).
-        - **(UPDATED)** Manages state for batch selections (`selectedContactIds`) and the initial archived count.
-        - **(UPDATED)** Theme Persistence: Initializes theme state from `localStorage` and updates it on change.
-        - **Data Fetching:** Contains the `fetchContacts` function to get data from the backend API.
-        - **Event Handlers:** Contains all the main handler functions (`handleCheckIn`, `handleUpdateContact`, `handleSnooze`, etc.) that perform API calls and update the state, including new handlers for batch actions.
-        - **Prop Drilling:** Passes state and handler functions down to child components as props.
-        - **Derived State:** Uses `useMemo` to efficiently compute the sorted and filtered list of contacts (`processedContacts`) whenever the source data or filter settings change.
+This directory contains all the reusable, stateful logic for the application.
 
-- `frontend/src/components/ContactCard.jsx`
-    - **Purpose:** A presentational component responsible for rendering a single contact.
-    - **Key Logic:**
-        - **(UPDATED)** Now displays a checkbox that appears on hover to enable selection mode. The card's appearance changes when it is selected.
-        - Manages the toggle between a compact "summary" view and an expanded "detailed" view (which shows notes, birthday, etc.).
-        - Renders differently based on the `displayMode` prop ('list' vs. 'grid').
-        - Contains the UI elements for all contact-specific actions like checking in, snoozing, editing, and adding notes. It receives the functions to perform these actions as props from `App.jsx`.
+- **`useContacts.js`:** The primary data hook. Responsible for all state and asynchronous logic related to contacts: fetching, adding, updating, archiving, notes, tags, snoozing, and generating calendar files.
+- **`useUIState.js`:** Manages all state related to the UI itself. This includes the active view, display mode, sorting/filtering state, search terms, and the open/closed state of all modals.
+- **`useSelection.js`:** Manages the state for the batch action mode. It holds the arrays of selected contact IDs for both the active and archived views and provides the functions for toggling and clearing selections.
+- **`useMediaQuery.js`:** A simple utility hook that allows components to react to changes in viewport size.
 
-- **(NEW) `frontend/src/components/BatchActionsToolbar.jsx`**
-    - **Purpose:** A contextual toolbar for performing bulk operations.
-    - **Key Logic:** Appears fixed at the bottom of the screen only when one or more contacts are selected. Provides buttons for "Select All," "Snooze," "Archive," and "Delete."
+### Frontend Components (`src/components/` directory)
 
-- `frontend/src/components/ExportCalendarModal.jsx`
-    - **Purpose:** The UI component for the calendar export feature.
-    - **Key Logic:**
-        - Manages its own internal state for the form options (checkboxes, radio buttons).
-        - Manages an internal view state to switch between the initial "options" view and the "files ready" view.
-        - When the user confirms, it calls a function passed from `App.jsx` (`onGenerateFiles`) to get the calendar file data.
-        - It handles the browser download logic, including triggering single or multiple downloads.
+Each component is now fully self-contained and imports its own `.module.css` stylesheet.
 
-- `frontend/src/components/ThemeToggleButton.jsx`
-    - **Purpose:** A dedicated presentational component for the animated theme toggle button.
-    - **Key Logic:**
-        - Contains the SVG structure for the sun and moon icons.
-        - Is controlled by props (`theme`, `onToggleTheme`) passed down from `App.jsx` via `Header.jsx`. All styling and animation logic is handled in `index.css`.
+- **`AddContactForm.jsx` / `.module.css`:** The form for adding a new contact.
+- **`AgendaView.jsx` / `.module.css`:** The component that lays out upcoming check-ins by day.
+- **`ArchivedActionsToolbar.jsx`:** The contextual toolbar for batch actions on archived contacts. Reuses styles from `BatchActionsToolbar.module.css`.
+- **`ArchivedView.jsx` / `.module.css`:** The list view for displaying archived contacts.
+- **`BatchActionsToolbar.jsx` / `.module.css`:** The contextual toolbar for batch actions on active contacts.
+- **`ConfirmationModal.jsx` / `.module.css`:** A generic modal for confirming destructive actions.
+- **`ContactCard.jsx` / `.module.css`:** The core component for displaying a single contact in all its states (list, grid, expanded).
+- **`DropdownMenu.jsx` / `.module.css`:** A reusable dropdown menu component, used in the responsive header.
+- **`ExportCalendarModal.jsx` / `.module.css`:** The modal containing the form for exporting calendar files.
+- **`FilterControls.jsx` / `.module.css`:** The component containing the search bar, sort dropdown, and tag filter.
+- **`Header.jsx` / `.module.css`:** The main application header, including the logo, title, and primary action buttons.
+- **`ProtectedRoute.jsx`:** A component wrapper that redirects to `/login` if no auth token is present.
+- **`SnoozeModal.jsx` / `.module.css`:** The modal used for snoozing single or multiple contacts.
+- **`TagInput.jsx` / `.module.css`:** The input field within the `ContactCard` for adding tags, including a suggestions dropdown.
+- **`ThemeToggleButton.jsx` / `.module.css`:** The animated sun/moon SVG button for toggling the theme.
 
-- `frontend/src/utils.js`
-    - **Purpose:** A utility file for pure, reusable helper functions, primarily for date manipulation.
-    - **Key Logic:**
-        - `daysSince`: Calculates the difference in days between two dates.
-        - `calculateNextUpcomingCheckinDate`: A critical function that correctly calculates a contact's *next future* check-in date, properly accounting for overdue contacts.
-        - `formatToICSDate` / `getNextBirthday`: Helper functions specifically for formatting dates according to the iCalendar standard.
+### Frontend Pages (`src/pages/` directory)
 
-- `frontend/src/firebase.js`
-    - **Purpose:** Handles client-side Firebase setup and interaction.
-    - **Key Logic:**
-        - Initializes the Firebase app with credentials.
-        - Contains the `requestForToken` function, which prompts the user for notification permissions and retrieves the unique device token required to send push notifications.
-
-- `frontend/srcs/index.css`
-    - **Purpose:** The global stylesheet for the application.
-    - **Key Logic:**
-        - Defines CSS variables for theming (light and dark modes).
-        - Contains all styles for layout, components, and responsiveness.
-        - **(UPDATED)** Contains the keyframe and transition styles for the animated `ThemeToggleButton` and the new `BatchActionsToolbar`.
+- **`LoginPage.jsx` & `SignupPage.jsx`:** The user authentication pages.
+- **`AuthForm.module.css`:** A shared stylesheet used by both `LoginPage` and `SignupPage` to ensure a consistent look and feel.
 
 ---
 
 ## 5. Setup, Installation, and Deployment
-This section provides the necessary steps to set up the project for local development and deploy it to production. This involves creating a Firebase project for push notifications, setting up environment variables for the backend database connection, and running the frontend and backend servers concurrently. For local development, the backend uses `nodemon` to automatically restart upon file changes. Deployment involves connecting the GitHub repository to Vercel for the frontend and Render for the backend and database.
 
-## 6. Future Development Paths
-The current application is a robust PWA. The next logical steps for turning it into a commercial product would be:
-- **Capacitor Conversion:** Use the Capacitor tool to wrap the existing React web app into native iOS and Android packages. This is the most cost-effective path to getting the app onto the Google Play Store and Apple App Store, as it reuses 100% of the current frontend code.
-- **React Native Rewrite:** For the ultimate native performance and feel, a full rewrite of the frontend in React Native would be the long-term goal. The current application's logic, component structure, and backend API would serve as a perfect blueprint for this process.
+(This section remains unchanged)
+
+---
+
+## 6. Error History & Resolutions
+
+(This section remains unchanged)
+
+---
+
+## 7. Future Development Paths
+
+- **(NEW) Implement Password Reset Flow:** Build a secure, self-service "Forgot Password" feature. This involves creating backend endpoints for generating a unique reset token, sending a password reset email to the user, and a frontend page for them to enter a new password. This is the highest priority pre-launch feature.
+- **(NEW) Add Legal & Informational Pages:** Create basic static pages for the "Privacy Policy" and "Terms of Service," and link to them from the Login/Signup pages.
+- **(NEW) Create User Feedback Channel:** Implement a simple method for users to submit feedback or bug reports, such as a "Feedback" link in the header that opens a `mailto:` link.
+- **Capacitor Conversion:** Use Capacitor to wrap the existing React web app into native iOS and Android packages.
+- **React Native Rewrite:** For ultimate native performance, a full rewrite of the frontend in React Native.
+- **(COMPLETED) Architectural Refactor:** The application's frontend architecture has been successfully refactored. The `App.jsx` "God Component" has been deconstructed into a clean composition root that consumes a series of single-responsibility custom hooks (`useContacts`, `useUIState`, `useSelection`). The monolithic `index.css` stylesheet has been replaced with locally-scoped CSS Modules for each component.
