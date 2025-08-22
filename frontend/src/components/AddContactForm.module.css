@@ -1,3 +1,5 @@
+/* src/components/AddContactForm.module.css */
+
 /* DEV COMMENT: Styles extracted from index.css, now scoped to AddContactForm. */
 .formCard h2 {
   margin-top: 0;
@@ -48,6 +50,41 @@
   margin-top: 1rem;
 }
 
+/* Styles for creating a custom placeholder on the date input */
+.dateInputWrapper {
+  position: relative;
+}
+
+.dateInputWrapper::before {
+  content: "Birthday";
+  position: absolute;
+  left: 0.75rem; /* Match input padding */
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-color);
+  opacity: 0.6;
+  pointer-events: none; /* Allows clicks to go through to the input */
+}
+
+/* This class is applied when the date input is empty, hiding the browser's "mm/dd/yyyy" text */
+.dateInputEmpty {
+  color: transparent;
+}
+
+/* DEV COMMENT: FIX - These highly specific selectors target the internal text fields
+   in WebKit browsers (Chrome, Safari) to reliably hide the "mm/dd/yyyy" placeholder. */
+.dateInputEmpty::-webkit-datetime-edit-text,
+.dateInputEmpty::-webkit-datetime-edit-month-field,
+.dateInputEmpty::-webkit-datetime-edit-day-field,
+.dateInputEmpty::-webkit-datetime-edit-year-field {
+  color: transparent;
+}
+
+/* When the input is focused, the user is about to type, so hide our fake placeholder */
+.dateInputWrapper:focus-within::before {
+  display: none;
+}
+
 /* Media Query for Desktop */
 @media (min-width: 768px) {
   .formGrid {
@@ -56,7 +93,8 @@
   .formGrid .fullWidthField,
   .formGrid textarea,
   .formGrid .remindMeContainer,
-  .formGrid .startDateContainer {
+  .formGrid .startDateContainer,
+  .formGrid .dateInputWrapper {
     grid-column: 1 / -1;
   }
 }

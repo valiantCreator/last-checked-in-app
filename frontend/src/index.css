@@ -1,3 +1,5 @@
+/* src/index.css */
+
 /* --- Global Reset and Box Sizing --- */
 *,
 *::before,
@@ -15,7 +17,8 @@
   --primary-color: #1a73e8;
   --primary-text: #ffffff;
   --border-color: #e0e0e0;
-  --overdue-bg: #ffebee;
+  /* DEV COMMENT: Changed from #ffebee to a more saturated light red for better visibility. */
+  --overdue-bg: #ffcdd2;
   --overdue-border: #c62828;
   --pin-color: #ffc107;
   --accent-color: #1a73e8;

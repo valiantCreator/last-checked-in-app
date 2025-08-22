@@ -1,4 +1,6 @@
-/* DEV COMMENT: All styles for the ContactCard, including list, grid, and expanded views. */
+/* src/components/ContactCard.module.css */
+
+/* DEV COMMENT: Styles for the ContactCard, including list, grid, and expanded views. */
 
 /* --- Base Styles for List/Agenda View --- */
 .contactItem {
@@ -201,15 +203,22 @@
   padding-top: 1rem;
 }
 
+.contactDetails {
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
+}
+
 .contactDetails p {
   margin: 0.5rem 0;
 }
 .contactDetails strong {
-  color: var(--text-color);
+  /* DEV COMMENT: This is the general (blue-ish) accent color for most labels. */
+  color: var(--primary-color);
   font-weight: 600;
 }
 .frequencyDetail strong {
-  color: var(--text-color);
+  /* DEV COMMENT: This is the specific override for the frequency label to be red-ish. */
+  color: var(--overdue-border);
 }
 
 /* --- Notes Section --- */
@@ -327,7 +336,7 @@
 .checkbox {
   width: 20px;
   height: 20px;
-  border: 2px solid var(--border-color);
+  border: 2px solid var(--text-color-secondary);
   border-radius: 4px;
   transition: all 0.2s;
   display: flex;
@@ -351,17 +360,54 @@
   width: 20px;
   height: 20px;
   flex-shrink: 0;
-  opacity: 0.2;
+  opacity: 0.5;
   transition: opacity 0.2s ease-in-out;
   cursor: pointer;
 }
 
-/* Using :global selector to check for a class on the App's root container */
 :global(.selection-mode-active) .selectionCheckboxContainer,
 :global(.card.selected) .selectionCheckboxContainer {
   opacity: 1;
 }
 
 .card:hover .selectionCheckboxContainer {
-  opacity: 0.6;
+  opacity: 0.8;
+}
+
+/* --- Tag Styles --- */
+.tagsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tagBadge {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--primary-color);
+  color: var(--primary-text);
+  padding: 0.25rem 0.75rem;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.removeTagBtn {
+  margin-left: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--primary-text);
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  opacity: 0.7;
+  padding: 0;
+}
+
+.removeTagBtn:hover {
+  opacity: 1;
 }

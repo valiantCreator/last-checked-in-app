@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import api from "../apiConfig";
 import { toast } from "react-hot-toast";
-// DEV COMMENT: Import the new CSS Module. This scopes all class names.
 import styles from "./AddContactForm.module.css";
 
 function AddContactForm({ onContactAdded }) {
@@ -21,31 +20,23 @@ function AddContactForm({ onContactAdded }) {
 
     setIsLoading(true);
 
-    // --- TIMEZONE FIX ---
-    // The date from the input is a string like "2025-08-17". new Date() treats this as midnight UTC.
-    // We must adjust it to be midnight in the user's local timezone.
     const dateFromInput = new Date(startDate);
-    const userTimezoneOffset = dateFromInput.getTimezoneOffset() * 60000; // Offset in milliseconds
+    const userTimezoneOffset = dateFromInput.getTimezoneOffset() * 60000;
     const localDate = new Date(dateFromInput.getTime() + userTimezoneOffset);
     const fullIsoDate = localDate.toISOString();
-    // --- END FIX ---
 
     const newContact = {
-      // The backend expects camelCase from Zod, let's send that
       firstName: firstName.trim(),
       checkinFrequency: parseInt(checkinFrequency, 10),
-      lastCheckin: fullIsoDate, // Use the corrected local date
+      lastCheckin: fullIsoDate,
       howWeMet: howWeMet.trim(),
       keyFacts: keyFacts.trim(),
       birthday: birthday || null,
     };
 
     try {
-      // We don't need the response data because we are refetching
       await api.post("/contacts", newContact);
-      onContactAdded(); // This now just triggers a refetch in App.jsx
-
-      // Reset all fields after submission
+      onContactAdded();
       setFirstName("");
       setCheckinFrequency(7);
       setStartDate(new Date().toISOString().split("T")[0]);
@@ -65,19 +56,17 @@ function AddContactForm({ onContactAdded }) {
   };
 
   return (
-    // DEV COMMENT: Use template literals to combine the global 'card' class with the module class.
     <div className={`card ${styles.formCard}`}>
       <h2>Add a New Person</h2>
       <form onSubmit={handleSubmit}>
-        {/* DEV COMMENT: All component-specific classNames are now replaced with the 'styles' object. */}
         <div className={styles.formGrid}>
           <input
             type="text"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
-            placeholder="First Name"
+            // DEV COMMENT: Changed placeholder text from "First Name" to "Name".
+            placeholder="Name"
             required
-            // DEV COMMENT: The 'fullWidthField' class is now scoped via the module.
             className={styles.fullWidthField}
           />
           <input
@@ -86,11 +75,16 @@ function AddContactForm({ onContactAdded }) {
             onChange={(e) => setHowWeMet(e.target.value)}
             placeholder="How we met"
           />
-          <input
-            type="date"
-            value={birthday}
-            onChange={(e) => setBirthday(e.target.value)}
-          />
+          {/* DEV COMMENT: Wrapped the date input to apply the custom placeholder style. */}
+          <div className={styles.dateInputWrapper}>
+            <input
+              type="date"
+              value={birthday}
+              onChange={(e) => setBirthday(e.target.value)}
+              // DEV COMMENT: A conditional class hides the browser's default date format text.
+              className={!birthday ? styles.dateInputEmpty : ""}
+            />
+          </div>
           <textarea
             value={keyFacts}
             onChange={(e) => setKeyFacts(e.target.value)}
@@ -119,7 +113,6 @@ function AddContactForm({ onContactAdded }) {
             />
           </div>
         </div>
-        {/* DEV COMMENT: The 'button-primary' class is global and remains a string. */}
         <button type="submit" className="button-primary" disabled={isLoading}>
           {isLoading ? "Adding..." : "Add Person"}
         </button>

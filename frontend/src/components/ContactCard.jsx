@@ -6,10 +6,8 @@ import {
   parseAsLocalDate,
 } from "../utils.js";
 import TagInput from "./TagInput.jsx";
-// DEV COMMENT: Import the new CSS module for the ContactCard.
 import styles from "./ContactCard.module.css";
 
-// DEV COMMENT: New helper function to format dates into readable strings like "Today", "Tomorrow", or "Sun, Aug 24".
 const formatDateDisplay = (date) => {
   if (!date) return null;
   const localDate = parseAsLocalDate(date);
@@ -38,7 +36,6 @@ function ContactCard({
   onToggleSelection,
   isAgendaItemOverdue,
   uniqueAgendaKey,
-  // DEV COMMENT: New props from AgendaView to override the date display.
   agendaDueDate,
   agendaNextDate,
 }) {
@@ -83,10 +80,6 @@ function ContactCard({
 
   const isAddingNote = addingNoteToContactId === contact.id;
 
-  // DEV COMMENT: New date display logic for the status bar.
-  // It prioritizes dates passed from AgendaView but falls back to the contact's global status.
-
-  // --- "Last" display ---
   const lastCheckinDate = parseAsLocalDate(contact.last_checkin);
   const now = new Date();
   let lastDisplay;
@@ -96,12 +89,10 @@ function ContactCard({
     lastDisplay = `${daysSince(contact.last_checkin)} day(s) ago`;
   }
 
-  // --- "Due" display ---
   let dueDisplay;
   if (agendaDueDate) {
     dueDisplay = formatDateDisplay(agendaDueDate);
   } else {
-    // Fallback logic for List/Grid view
     const isSnoozed =
       contact.snooze_until && parseAsLocalDate(contact.snooze_until) >= now;
     if (isSnoozed) {
@@ -115,7 +106,6 @@ function ContactCard({
     }
   }
 
-  // --- "Next" display (only for Agenda View) ---
   const nextDisplay = agendaNextDate ? formatDateDisplay(agendaNextDate) : null;
 
   const onUpdateContactSubmit = (e) => {
@@ -138,19 +128,16 @@ function ContactCard({
   };
 
   const handleCardClick = (e) => {
-    // DEV COMMENT: Prevent card click from toggling details if a button was clicked.
     if (e.target.closest("button")) return;
 
     if (selectionMode) {
       onToggleSelection(contact.id);
     } else if (!isEditingThisContact) {
-      handleToggleDetails(cardKey); // Use the unique card key here
+      handleToggleDetails(cardKey);
     }
   };
 
-  // DEV COMMENT: Grid view has its own unique, simplified layout and is preserved.
   if (displayMode === "grid") {
-    // DEV COMMENT: Dynamically build the class string for the grid card.
     const gridCardClasses = `
       card 
       ${styles.contactItemGrid} 
@@ -206,7 +193,6 @@ function ContactCard({
     );
   }
 
-  // DEV COMMENT: This is the refactored layout for List and Agenda views.
   const listCardClasses = `
     card 
     ${styles.contactItem} 
@@ -221,7 +207,6 @@ function ContactCard({
           onSubmit={onUpdateContactSubmit}
           className={styles.contactEditForm}
         >
-          {/* The edit form remains unchanged */}
           <input
             name="name"
             value={editingContact.name}
@@ -288,7 +273,6 @@ function ContactCard({
         </form>
       ) : (
         <>
-          {/* ZONE 1: HEADER (IDENTIFICATION & STATE) */}
           <div className={styles.contactCardHeader}>
             <div
               className={styles.contactCardIdentity}
@@ -341,7 +325,6 @@ function ContactCard({
             </button>
           </div>
 
-          {/* ZONE 2: STATUS BAR (THE "WHEN") */}
           <div className={styles.contactCardStatusBar}>
             <div className={styles.statusItem}>
               <span className={styles.statusLabel}>Last:</span>
@@ -383,17 +366,18 @@ function ContactCard({
                   {contact.checkin_frequency} days
                 </p>
               </div>
-              <div className="tags-container">
+              {/* DEV COMMENT: Replaced global class names with styles from the module. */}
+              <div className={styles.tagsContainer}>
                 {contact.tags &&
                   contact.tags.map((tag) => (
-                    <span key={tag.id} className="tag-badge">
+                    <span key={tag.id} className={styles.tagBadge}>
                       {tag.name}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleRemoveTag(contact.id, tag.id);
                         }}
-                        className="remove-tag-btn"
+                        className={styles.removeTagBtn}
                       >
                         x
                       </button>
@@ -484,7 +468,6 @@ function ContactCard({
             </div>
           )}
 
-          {/* ZONE 3: FOOTER (THE "WHAT") */}
           <div className={styles.contactCardFooter}>
             <div className={styles.footerActionsLeft}>
               <button
