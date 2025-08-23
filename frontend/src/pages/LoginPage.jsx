@@ -93,13 +93,24 @@ function LoginPage() {
             Forgot Password?
           </Link>
         </div>
-        <button type="submit" disabled={isLoading} className="button-primary">
+        {/* Gemini DEV COMMENT: Replaced global 'button-primary' with the modular 'submitButton' class. */}
+        <button
+          type="submit"
+          disabled={isLoading}
+          className={styles.submitButton}
+        >
           {isLoading ? "Logging in..." : "Login"}
         </button>
       </form>
       <p className={styles.authFormFooter}>
         Don't have an account? <Link to="/signup">Sign Up</Link>
       </p>
+      {/* Gemini DEV COMMENT: Added a footer section for legal document links. */}
+      <div className={styles.legalLinks}>
+        <Link to="/privacy-policy">Privacy Policy</Link>
+        <span>&nbsp;|&nbsp;</span>
+        <Link to="/terms-of-service">Terms of Service</Link>
+      </div>
     </div>
   );
 }

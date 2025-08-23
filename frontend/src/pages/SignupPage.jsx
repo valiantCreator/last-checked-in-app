@@ -124,13 +124,24 @@ function SignupPage() {
             </button>
           </div>
         </div>
-        <button type="submit" disabled={isLoading} className="button-primary">
+        {/* Gemini DEV COMMENT: Replaced global 'button-primary' with the modular 'submitButton' class. */}
+        <button
+          type="submit"
+          disabled={isLoading}
+          className={styles.submitButton}
+        >
           {isLoading ? "Creating Account..." : "Sign Up"}
         </button>
       </form>
       <p className={styles.authFormFooter}>
         Already have an account? <Link to="/login">Login</Link>
       </p>
+      {/* Gemini DEV COMMENT: Added a footer section for legal document links. */}
+      <div className={styles.legalLinks}>
+        <Link to="/privacy-policy">Privacy Policy</Link>
+        <span>&nbsp;|&nbsp;</span>
+        <Link to="/terms-of-service">Terms of Service</Link>
+      </div>
     </div>
   );
 }

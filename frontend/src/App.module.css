@@ -12,6 +12,11 @@
   margin: 1rem 0;
 }
 
+.viewToggleButtons {
+  /* Gemini DEV COMMENT: Added display: flex to prevent buttons from wrapping to the next line. */
+  display: flex;
+}
+
 .viewToggleButtons button {
   background: none;
   border: 1px solid var(--border-color);
@@ -22,6 +27,12 @@
 
 .viewToggleButtons button:first-child {
   border-radius: 8px 0 0 8px;
+  border-right: none;
+}
+
+/* Gemini DEV COMMENT: Added a rule for the middle button to ensure borders are correct. */
+.viewToggleButtons button:nth-child(2) {
+  border-radius: 0;
   border-right: none;
 }
 

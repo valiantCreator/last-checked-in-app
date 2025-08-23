@@ -16,21 +16,19 @@
   margin-bottom: 1.5rem;
 }
 
-.authForm .inputGroup {
+/* Gemini DEV COMMENT: Removed '.authForm' prefix. This class is now targeted directly. */
+.inputGroup {
   margin-bottom: 1.25rem;
 }
 
-.authForm label {
+/* Gemini DEV COMMENT: Scoped label and input to their direct parent for correctness. */
+.inputGroup label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
 }
 
-.inputWrapper {
-  position: relative;
-}
-
-.authForm input {
+.inputGroup input {
   width: 100%;
   padding: 0.75rem;
   font-size: 1rem;
@@ -40,23 +38,29 @@
   background-color: var(--background-color);
   color: var(--text-color);
   transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.inputGroup input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(var(--text-color-rgb), 0.05);
+}
+
+.inputWrapper {
+  position: relative;
 }
 
 .inputWrapper input {
   padding-right: 3rem;
 }
 
-.authForm input:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(var(--text-color-rgb), 0.05);
-}
-
 .passwordToggleBtn {
   position: absolute;
   right: 0.5rem;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0;
+  bottom: 0;
+  margin: auto 0;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -81,7 +85,6 @@
   height: 20px;
 }
 
-/* DEV COMMENT: NEW - Style for the "Forgot Password?" link. */
 .forgotPasswordLink {
   display: block;
   text-align: right;
@@ -97,11 +100,20 @@
   color: var(--primary-color);
 }
 
-.authForm .button-primary {
+/* Gemini DEV COMMENT: Created a specific, modular class for the submit button. */
+.submitButton {
+  display: block;
   width: 100%;
   padding: 0.85rem;
   font-size: 1.1rem;
-  margin-top: 0.5rem;
+  font-weight: bold;
+  margin-top: 1.5rem;
+  color: var(--primary-text);
+  background-color: var(--primary-color);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
 .authFormFooter {
@@ -118,4 +130,24 @@
 
 .authFormFooter a:hover {
   text-decoration: underline;
+}
+
+.legalLinks {
+  text-align: center;
+  margin-top: 1.5rem;
+  opacity: 0.9;
+}
+
+.legalLinks a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.legalLinks a:hover {
+  text-decoration: underline;
+}
+
+.legalLinks span {
+  color: var(--text-color-secondary);
 }
