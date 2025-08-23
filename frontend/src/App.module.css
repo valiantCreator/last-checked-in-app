@@ -12,35 +12,41 @@
   margin: 1rem 0;
 }
 
+.viewControls h2 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
 .viewToggleButtons {
-  /* Gemini DEV COMMENT: Added display: flex to prevent buttons from wrapping to the next line. */
   display: flex;
 }
 
-.viewToggleButtons button {
+/* Gemini DEV COMMENT: Replaced the old generic 'button' selector with a specific modular class for the view buttons to prevent conflicts with global styles. This class will be applied in App.jsx. */
+.viewToggleButton {
   background: none;
   border: 1px solid var(--border-color);
   color: var(--text-color);
-  padding: 0.5rem 1rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
   cursor: pointer;
+  line-height: 1.2;
 }
 
-.viewToggleButtons button:first-child {
+.viewToggleButton:first-of-type {
   border-radius: 8px 0 0 8px;
   border-right: none;
 }
 
-/* Gemini DEV COMMENT: Added a rule for the middle button to ensure borders are correct. */
-.viewToggleButtons button:nth-child(2) {
+.viewToggleButton:not(:first-of-type):not(:last-of-type) {
   border-radius: 0;
   border-right: none;
 }
 
-.viewToggleButtons button:last-child {
+.viewToggleButton:last-of-type {
   border-radius: 0 8px 8px 0;
 }
 
-.viewToggleButtons button.active {
+.active {
   background-color: var(--primary-color);
   color: var(--primary-text);
   border-color: var(--primary-color);
@@ -48,7 +54,10 @@
 
 .pinnedSection h2 {
   margin-top: 1rem;
-  margin-bottom: 0;
+  margin-bottom: 0.5rem;
+  color: var(--pin-color);
+  font-size: 1.1rem;
+  font-weight: bold;
 }
 
 /* --- Adaptive Grid & List View Container Styles --- */
@@ -77,7 +86,7 @@
 /* On large screens (desktops), switch to 4 columns. */
 @media (min-width: 1024px) {
   .contactsContainer.grid {
-    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
   }
 }
 

@@ -338,7 +338,6 @@ function MainApplication() {
           : ""
       }`}
     >
-           {" "}
       <Header
         view={view}
         archivedCount={archivedCount}
@@ -350,13 +349,10 @@ function MainApplication() {
         onViewArchived={handleViewArchived}
         onExportToCalendar={() => setIsExportModalOpen(true)}
       />
-           {" "}
       {view === "active" ? (
         <>
-                   {" "}
           <div className={styles.contentWrapper}>
-                        <AddContactForm onContactAdded={handleAddContact} />   
-                   {" "}
+            <AddContactForm onContactAdded={handleAddContact} />
             <FilterControls
               globalSearchTerm={globalSearchTerm}
               onGlobalSearchChange={setGlobalSearchTerm}
@@ -380,19 +376,15 @@ function MainApplication() {
               onSelectedTagChange={setSelectedTagId}
               allTags={allTags}
             />
-                     {" "}
           </div>
-                   {" "}
           <div className={styles.contentWrapper}>
-                       {" "}
             {displayMode !== "agenda" &&
               processedContacts.pinned.length > 0 && (
                 <div className={styles.pinnedSection}>
-                                    <h2>Pinned</h2>                 {" "}
+                  <h2>Pinned</h2>
                   <div
                     className={`${styles.contactsContainer} ${styles[displayMode]}`}
                   >
-                                       {" "}
                     {processedContacts.pinned.map((contact) => (
                       <ContactCard
                         key={contact.id}
@@ -405,45 +397,40 @@ function MainApplication() {
                         onToggleSelection={handleToggleSelection}
                       />
                     ))}
-                                     {" "}
                   </div>
-                                 {" "}
                 </div>
               )}
-                       {" "}
             <div className={styles.viewControls}>
-                           {" "}
-              <h2>{displayMode === "agenda" ? "Agenda" : "My People"}</h2>     
-                     {" "}
+              <h2>{displayMode === "agenda" ? "Agenda" : "My People"}</h2>
               <div className={styles.viewToggleButtons}>
-                               {" "}
+                {/* Gemini DEV COMMENT: Applied new modular classes to these buttons to isolate their styles and fix the size regression. */}
                 <button
-                  className={displayMode === "list" ? styles.active : ""}
+                  className={`${styles.viewToggleButton} ${
+                    displayMode === "list" ? styles.active : ""
+                  }`}
                   onClick={() => setDisplayMode("list")}
                 >
-                                    List                {" "}
+                  List
                 </button>
-                               {" "}
                 <button
-                  className={displayMode === "grid" ? styles.active : ""}
+                  className={`${styles.viewToggleButton} ${
+                    displayMode === "grid" ? styles.active : ""
+                  }`}
                   onClick={() => setDisplayMode("grid")}
                 >
-                                    Grid                {" "}
+                  Grid
                 </button>
-                               {" "}
                 <button
-                  className={displayMode === "agenda" ? styles.active : ""}
+                  className={`${styles.viewToggleButton} ${
+                    displayMode === "agenda" ? styles.active : ""
+                  }`}
                   onClick={() => setDisplayMode("agenda")}
                 >
-                                    Agenda                {" "}
+                  Agenda
                 </button>
-                             {" "}
               </div>
-                         {" "}
             </div>
-                     {" "}
           </div>
-                   {" "}
           {displayMode === "agenda" ? (
             <AgendaView
               agendaData={agendaData}
@@ -457,7 +444,6 @@ function MainApplication() {
             <div
               className={`${styles.contactsContainer} ${styles[displayMode]}`}
             >
-                           {" "}
               {processedContacts.unpinned.map((contact) => (
                 <ContactCard
                   key={contact.id}
@@ -470,10 +456,8 @@ function MainApplication() {
                   onToggleSelection={handleToggleSelection}
                 />
               ))}
-                         {" "}
             </div>
           )}
-                 {" "}
         </>
       ) : (
         <ArchivedView
@@ -484,7 +468,6 @@ function MainApplication() {
           onToggleArchivedSelection={handleToggleArchivedSelection}
         />
       )}
-           {" "}
       {selectionModeActive && view === "active" && (
         <BatchActionsToolbar
           selectedCount={selectedContactIds.length}
@@ -496,7 +479,6 @@ function MainApplication() {
           totalContacts={contacts.length}
         />
       )}
-           {" "}
       {selectionModeArchived && view === "archived" && (
         <ArchivedActionsToolbar
           selectedCount={selectedArchivedIds.length}
@@ -507,13 +489,11 @@ function MainApplication() {
           totalContacts={archivedContacts.length}
         />
       )}
-           {" "}
       <ExportCalendarModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
         onGenerateFiles={generateCalendarFiles}
       />
-           {" "}
       {(snoozingContact || isBatchSnoozing) && (
         <SnoozeModal
           contact={snoozingContact}
@@ -526,7 +506,6 @@ function MainApplication() {
           onSnooze={isBatchSnoozing ? handleBatchSnooze : handleSnooze}
         />
       )}
-           {" "}
       <ConfirmationModal
         isOpen={confirmationState.isOpen}
         title={confirmationState.title}
@@ -534,7 +513,6 @@ function MainApplication() {
         onClose={() => setConfirmationState({ isOpen: false })}
         onConfirm={confirmationState.onConfirm}
       />
-         {" "}
     </div>
   );
 }
@@ -542,9 +520,7 @@ function MainApplication() {
 function App() {
   return (
     <BrowserRouter>
-           {" "}
       <AuthProvider>
-               {" "}
         <Toaster
           position="top-center"
           toastOptions={{
@@ -556,35 +532,28 @@ function App() {
             },
           }}
         />
-               {" "}
         <Routes>
-                   {" "}
           <Route
             path="/"
             element={
               <ProtectedRoute>
-                                <MainApplication />             {" "}
+                <MainApplication />
               </ProtectedRoute>
             }
           />
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/signup" element={<SignupPage />} />         {" "}
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />   
-               {" "}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           {/* DEV COMMENT: Add the new route for the reset password page, including the dynamic token parameter. */}
-                   {" "}
           <Route
             path="/reset-password/:token"
             element={<ResetPasswordPage />}
           />
           {/* Gemini DEV COMMENT: Add public routes for legal pages. These do not require authentication. */}
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-          <Route path="/terms-of-service" element={<TermsOfServicePage />} />   
-             {" "}
+          <Route path="/terms-of-service" element={<TermsOfServicePage />} />
         </Routes>
-             {" "}
       </AuthProvider>
-         {" "}
     </BrowserRouter>
   );
 }

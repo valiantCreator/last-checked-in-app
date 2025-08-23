@@ -6,9 +6,8 @@ import styles from "./DropdownMenu.module.css";
 
 function DropdownMenu({ trigger, children }) {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
+  const dropdownRef = useRef(null); // This effect handles clicks outside of the dropdown to close it.
 
-  // This effect handles clicks outside of the dropdown to close it.
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -33,6 +32,7 @@ function DropdownMenu({ trigger, children }) {
   return (
     // DEV COMMENT: All classNames now use the imported 'styles' object.
     <div className={styles.dropdownContainer} ref={dropdownRef}>
+           {" "}
       <button
         type="button"
         className={styles.dropdownTrigger}
@@ -40,12 +40,17 @@ function DropdownMenu({ trigger, children }) {
         aria-haspopup="true"
         aria-expanded={isOpen}
       >
-        {trigger}
+                {trigger}     {" "}
       </button>
+           {" "}
       {isOpen && (
         <div className={styles.dropdownMenu} role="menu">
-          {React.Children.map(children, (child) =>
-            React.cloneElement(child, {
+                   {" "}
+          {React.Children.map(children, (child) => {
+            // Gemini DEV COMMENT: Add a guard clause. If a child is not a valid React element (e.g., 'false' from a conditional render), ignore it to prevent a crash.
+            if (!React.isValidElement(child)) return null;
+
+            return React.cloneElement(child, {
               onClick: (e) => {
                 if (child.props.onClick) {
                   child.props.onClick(e);
@@ -53,10 +58,12 @@ function DropdownMenu({ trigger, children }) {
                 setIsOpen(false);
               },
               role: "menuitem",
-            })
-          )}
+            });
+          })}
+                 {" "}
         </div>
       )}
+         {" "}
     </div>
   );
 }
