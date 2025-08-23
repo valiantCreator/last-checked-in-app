@@ -2,7 +2,6 @@ import React, { useState, useContext } from "react";
 import { Link } from "react-router-dom";
 import AuthContext from "../context/AuthContext";
 import { toast } from "react-hot-toast";
-// DEV COMMENT: Import the shared CSS module for auth forms to ensure consistent styling.
 import styles from "./AuthForm.module.css";
 
 function LoginPage() {
@@ -10,7 +9,6 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  // DEV COMMENT: Added show/hide password state for UX consistency with the signup page.
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -22,7 +20,6 @@ function LoginPage() {
     setIsLoading(true);
     try {
       await login(email, password);
-      // DEV COMMENT: No success toast is needed here as the login function navigates on success.
     } catch (error) {
       toast.error(error.message || "Failed to login.");
     } finally {
@@ -30,7 +27,6 @@ function LoginPage() {
     }
   };
 
-  // DEV COMMENT: SVG icons for the password visibility toggle.
   const eyeIcon = (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -58,7 +54,6 @@ function LoginPage() {
   );
 
   return (
-    // DEV COMMENT: Replaced all inline styles with our consistent CSS module classes.
     <div className={styles.authContainer}>
       <h1>Login</h1>
       <form onSubmit={handleSubmit} className={styles.authForm} noValidate>
@@ -93,6 +88,10 @@ function LoginPage() {
               {showPassword ? eyeSlashIcon : eyeIcon}
             </button>
           </div>
+          {/* DEV COMMENT: Added the "Forgot Password?" link that directs to our new page. */}
+          <Link to="/forgot-password" className={styles.forgotPasswordLink}>
+            Forgot Password?
+          </Link>
         </div>
         <button type="submit" disabled={isLoading} className="button-primary">
           {isLoading ? "Logging in..." : "Login"}

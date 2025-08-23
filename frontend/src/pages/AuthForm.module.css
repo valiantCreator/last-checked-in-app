@@ -81,6 +81,22 @@
   height: 20px;
 }
 
+/* DEV COMMENT: NEW - Style for the "Forgot Password?" link. */
+.forgotPasswordLink {
+  display: block;
+  text-align: right;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  text-decoration: none;
+  color: var(--text-color-secondary);
+  transition: color 0.2s;
+}
+
+.forgotPasswordLink:hover {
+  text-decoration: underline;
+  color: var(--primary-color);
+}
+
 .authForm .button-primary {
   width: 100%;
   padding: 0.85rem;

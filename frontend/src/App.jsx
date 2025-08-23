@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import AuthContext from "./context/AuthContext";
-import { useMemo, useContext, useEffect } from "react";
+import { useMemo, useContext, useEffect, useState } from "react";
 import { Toaster, toast } from "react-hot-toast";
 import { requestForToken } from "./firebase";
 import Header from "./components/Header.jsx";
@@ -24,16 +24,17 @@ import {
 import api from "./apiConfig.js";
 import LoginPage from "./pages/LoginPage.jsx";
 import SignupPage from "./pages/SignupPage.jsx";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
+// DEV COMMENT: Import the new ResetPasswordPage component.
+import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 import styles from "./App.module.css";
 import { useContacts } from "./hooks/useContacts.js";
 import { useUIState } from "./hooks/useUIState.js";
-// DEV COMMENT: Import the final custom hook for selection management.
 import { useSelection } from "./hooks/useSelection.js";
 
 function MainApplication() {
   const { token } = useContext(AuthContext);
 
-  // DEV COMMENT: All UI state is managed by the useUIState hook.
   const {
     theme,
     sortBy,
@@ -74,7 +75,6 @@ function MainApplication() {
     setConfirmationState,
   } = useUIState();
 
-  // DEV COMMENT: All contact-related data is managed by the useContacts hook.
   const {
     contacts,
     archivedContacts,
@@ -98,7 +98,6 @@ function MainApplication() {
     generateCalendarFiles,
   } = useContacts({ token, setConfirmationState });
 
-  // DEV COMMENT: All selection state is managed by the useSelection hook.
   const {
     selectedContactIds,
     setSelectedContactIds,
@@ -178,7 +177,6 @@ function MainApplication() {
     sortDirection,
   ]);
 
-  // --- "Controller" Handlers ---
   const onUpdateContactSubmit = () => {
     handleUpdateContact(editingContact).then(() => setEditingContact(null));
   };
@@ -535,6 +533,12 @@ function App() {
           />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          {/* DEV COMMENT: Add the new route for the reset password page, including the dynamic token parameter. */}
+          <Route
+            path="/reset-password/:token"
+            element={<ResetPasswordPage />}
+          />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
