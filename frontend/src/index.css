@@ -75,6 +75,8 @@ body {
   font-size: 0.9rem;
   transition: background-color 0.2s;
   white-space: nowrap;
+  /* Gemini DEV COMMENT: Added to remove the default underline from link elements styled as buttons. */
+  text-decoration: none;
 }
 .button-secondary:hover {
   background-color: var(--hover-bg);

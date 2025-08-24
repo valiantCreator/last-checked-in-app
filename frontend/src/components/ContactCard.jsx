@@ -82,9 +82,15 @@ function ContactCard({
 
   const lastCheckinDate = parseAsLocalDate(contact.last_checkin);
   const now = new Date();
+
+  // Gemini DEV COMMENT: Create dynamic variables for the 'Last'/'Starts' status item.
+  let lastLabel = "Last";
   let lastDisplay;
+
   if (lastCheckinDate && lastCheckinDate > now) {
-    lastDisplay = `Starting on ${formatDateDisplay(lastCheckinDate)}`;
+    // Gemini DEV COMMENT: If the date is in the future, change the label to 'Starts' and display only the date.
+    lastLabel = "Starts";
+    lastDisplay = formatDateDisplay(lastCheckinDate);
   } else {
     lastDisplay = `${daysSince(contact.last_checkin)} day(s) ago`;
   }
@@ -327,7 +333,8 @@ function ContactCard({
 
           <div className={styles.contactCardStatusBar}>
             <div className={styles.statusItem}>
-              <span className={styles.statusLabel}>Last:</span>
+              {/* Gemini DEV COMMENT: Use the dynamic label variable. */}
+              <span className={styles.statusLabel}>{lastLabel}:</span>
               <span className={styles.statusValue}>{lastDisplay}</span>
             </div>
             <div className={styles.statusItem}>
