@@ -82,11 +82,16 @@ export function isOverdue(contact) {
   ) {
     return false;
   }
-  // FIX: Use the new timezone-safe parser
-  const lastDate = parseAsLocalDate(contact.last_checkin);
-  if (!lastDate) return false;
-  const dueDate = addDays(startOfDay(lastDate), contact.checkin_frequency);
-  return dueDate <= today;
+  // Gemini DEV COMMENT: Replaced the flawed, simplistic calculation with a call to the robust 'calculateNextUpcomingCheckinDate' function. This unifies the logic across the app.
+  const nextDueDate = calculateNextUpcomingCheckinDate(
+    contact.last_checkin,
+    contact.checkin_frequency
+  );
+
+  if (!nextDueDate) return false;
+
+  // A contact is overdue if its actual next due date is today or in the past.
+  return nextDueDate <= today;
 }
 
 export function daysSince(dateString) {
@@ -110,11 +115,11 @@ export function calculateNextUpcomingCheckinDate(lastCheckin, frequency) {
   const lastDate = startOfDay(parseAsLocalDate(lastCheckin));
   const daysSinceLast = differenceInCalendarDays(today, lastDate);
 
-  if (daysSinceLast <= frequency) {
+  if (daysSinceLast < frequency) {
     return addDays(lastDate, frequency);
   } else {
-    const cyclesMissed = Math.floor((daysSinceLast - 1) / frequency);
-    const daysToAdd = (cyclesMissed + 1) * frequency;
+    const cyclesMissed = Math.floor(daysSinceLast / frequency);
+    const daysToAdd = cyclesMissed * frequency;
     return addDays(lastDate, daysToAdd);
   }
 }
