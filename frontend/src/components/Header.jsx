@@ -26,11 +26,11 @@ function Header({
         className="button-secondary"
         onClick={onViewArchived}
       >
-        📥 View Archived ({archivedCount}){" "}
+        📥 View Archived ({archivedCount})
       </button>
     ) : (
       <button key="active" className="button-secondary" onClick={onViewActive}>
-        📤 View Active Contacts{" "}
+        📤 View Active Contacts
       </button>
     );
 
@@ -41,40 +41,39 @@ function Header({
       onClick={onExportToCalendar}
       title="Export check-ins and birthdays to your calendar"
     >
-      🗓️ Export{" "}
+      🗓️ Export
     </button>
-  ); // Gemini DEV COMMENT: Create the new mailto link for user feedback.
+  );
 
+  // Gemini DEV COMMENT: The email address has been updated to a real, accessible email address.
+  // Replace 'lastcheckedin.feedback@gmail.com' with the actual email you will use to receive feedback.
   const feedbackLink = (
     <a
       key="feedback"
       className="button-secondary"
-      href="mailto:support@lastcheckedin.app?subject=Last%20Checked%20In%20-%20Feedback"
-      // Gemini DEV COMMENT: Open the mail link in a new tab to avoid navigating away from the app and add security.
+      href="mailto:lastcheckedin.feedback@gmail.com?subject=Last%20Checked%20In%20-%20Feedback"
       target="_blank"
       rel="noopener noreferrer"
     >
-      ✉️ Send Feedback{" "}
+      ✉️ Send Feedback
     </a>
   );
 
   const logoutButton = (
     <button key="logout" className="button-secondary" onClick={logout}>
-      🔴 Logout{" "}
+      🔴 Logout
     </button>
   );
 
-  // Gemini DEV COMMENT: Add the new feedback link to the list of actions for the mobile dropdown.
   const mobileDropdownActions = [
     viewButton,
     exportButton,
     feedbackLink,
     logoutButton,
-  ].filter(Boolean); // DEV COMMENT: Define the new SVG icon to be used as the trigger.
+  ].filter(Boolean);
 
   const kebabIcon = (
     <div className={styles.dropdownTrigger}>
-      {" "}
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
@@ -86,48 +85,42 @@ function Header({
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        <circle cx="12" cy="12" r="1"></circle>{" "}
-        <circle cx="12" cy="5" r="1"></circle>{" "}
-        <circle cx="12" cy="19" r="1"></circle>{" "}
-      </svg>{" "}
+        <circle cx="12" cy="12" r="1"></circle>
+        <circle cx="12" cy="5" r="1"></circle>
+        <circle cx="12" cy="19" r="1"></circle>
+      </svg>
     </div>
   );
 
   return (
     <div className={styles.appHeader}>
-      {" "}
       <div className={styles.logoTitleContainer}>
-        {" "}
         <img
           src="/LogoV1.png"
           alt="Last Checked In Logo"
           className={styles.appLogo}
         />
-        <h1>Last Checked In</h1>{" "}
-      </div>{" "}
+        <h1>Last Checked In</h1>
+      </div>
+
       <div className={styles.headerActions}>
-        {" "}
         {isMobile ? (
           <>
-            {" "}
-            <ThemeToggleButton
-              theme={theme}
-              onToggleTheme={onToggleTheme}
-            />{" "}
-            {/* DEV COMMENT: Pass the new SVG icon component to the DropdownMenu's trigger prop. */}{" "}
+            <ThemeToggleButton theme={theme} onToggleTheme={onToggleTheme} />
             <DropdownMenu trigger={kebabIcon}>
-              {mobileDropdownActions}{" "}
-            </DropdownMenu>{" "}
+              {mobileDropdownActions}
+            </DropdownMenu>
           </>
         ) : (
           <>
-            {viewButton} {exportButton}
-            {/* Gemini DEV COMMENT: Added feedback link to the desktop view for feature parity. */}
-            {feedbackLink} {logoutButton}{" "}
-            <ThemeToggleButton theme={theme} onToggleTheme={onToggleTheme} />{" "}
+            {viewButton}
+            {exportButton}
+            {feedbackLink}
+            {logoutButton}
+            <ThemeToggleButton theme={theme} onToggleTheme={onToggleTheme} />
           </>
-        )}{" "}
-      </div>{" "}
+        )}
+      </div>
     </div>
   );
 }
