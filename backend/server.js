@@ -33,6 +33,10 @@ admin.initializeApp({
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Gemini DEV COMMENT: This is the fix for the rate limiter warning.
+// It tells Express to trust the 'X-Forwarded-For' header set by Render's proxy.
+app.set("trust proxy", 1);
+
 app.use(cors());
 app.use(express.json());
 
@@ -360,14 +364,14 @@ app.post(
     }
     try {
       const query = `
-          UPDATE contacts
-          SET snooze_until = (
-              GREATEST(
-                  NOW(),
-                  COALESCE(snooze_until, last_checkin + (checkin_frequency * INTERVAL '1 day'))
-              ) + ($1 * INTERVAL '1 day')
-          )
-          WHERE id = ANY($2::int[]) AND user_id = $3;
+        UPDATE contacts
+        SET snooze_until = (
+            GREATEST(
+                NOW(),
+                COALESCE(snooze_until, last_checkin + (checkin_frequency * INTERVAL '1 day'))
+            ) + ($1 * INTERVAL '1 day')
+        )
+        WHERE id = ANY($2::int[]) AND user_id = $3;
       `;
       await pool.query(query, [snooze_days, contactIds, req.userId]);
       res.json({
@@ -435,11 +439,11 @@ app.get("/api/search", authMiddleware, async (req, res) => {
     );
     const notesResult = await pool.query(
       `
-            SELECT n.*, c.name as "contactFirstName"
-            FROM notes n
-            JOIN contacts c ON n.contact_id = c.id
-            WHERE n.content ILIKE $1 AND c.is_archived = FALSE AND n.user_id = $2
-        `,
+        SELECT n.*, c.name as "contactFirstName"
+        FROM notes n
+        JOIN contacts c ON n.contact_id = c.id
+        WHERE n.content ILIKE $1 AND c.is_archived = FALSE AND n.user_id = $2
+      `,
       [searchTerm, req.userId]
     );
     res.json({
@@ -516,7 +520,7 @@ app.post(
     try {
       const result = await pool.query(
         `INSERT INTO contacts (name, checkin_frequency, last_checkin, how_we_met, key_facts, birthday, user_id)
-            VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
         [
           name,
           checkinFrequency,
@@ -656,15 +660,15 @@ app.put(
     const { snooze_days } = req.body;
     try {
       const query = `
-          UPDATE contacts
-          SET snooze_until = (
-              GREATEST(
-                  NOW(),
-                  COALESCE(snooze_until, last_checkin + (checkin_frequency * INTERVAL '1 day'))
-              ) + ($1 * INTERVAL '1 day')
-          )
-          WHERE id = $2 AND user_id = $3
-          RETURNING snooze_until;
+        UPDATE contacts
+        SET snooze_until = (
+            GREATEST(
+                NOW(),
+                COALESCE(snooze_until, last_checkin + (checkin_frequency * INTERVAL '1 day'))
+            ) + ($1 * INTERVAL '1 day')
+        )
+        WHERE id = $2 AND user_id = $3
+        RETURNING snooze_until;
       `;
       const result = await pool.query(query, [
         snooze_days,
@@ -745,12 +749,12 @@ app.delete(
     try {
       await client.query("BEGIN");
       const deleteQuery = `
-            DELETE FROM contact_tags
-            USING contacts
-            WHERE contact_tags.contact_id = contacts.id
-            AND contact_tags.contact_id = $1
-            AND contact_tags.tag_id = $2
-            AND contacts.user_id = $3
+          DELETE FROM contact_tags
+          USING contacts
+          WHERE contact_tags.contact_id = contacts.id
+          AND contact_tags.contact_id = $1
+          AND contact_tags.tag_id = $2
+          AND contacts.user_id = $3
         `;
       await client.query(deleteQuery, [contactId, tagId, req.userId]);
       const usageResult = await client.query(
@@ -778,10 +782,10 @@ app.delete(
 app.get("/api/contacts/:id/notes", authMiddleware, async (req, res) => {
   try {
     const query = `
-            SELECT n.* FROM notes n
-            JOIN contacts c ON n.contact_id = c.id
-            WHERE n.contact_id = $1 AND c.user_id = $2
-            ORDER BY n.created_at DESC
+          SELECT n.* FROM notes n
+          JOIN contacts c ON n.contact_id = c.id
+          WHERE n.contact_id = $1 AND c.user_id = $2
+          ORDER BY n.created_at DESC
         `;
     const result = await pool.query(query, [req.params.id, req.userId]);
     res.json({ notes: result.rows });
@@ -843,9 +847,9 @@ app.post(
     const userId = req.userId;
     try {
       const query = `
-          INSERT INTO devices (user_id, token) VALUES ($1, $2)
-          ON CONFLICT (token) DO UPDATE SET user_id = EXCLUDED.user_id;
-        `;
+        INSERT INTO devices (user_id, token) VALUES ($1, $2)
+        ON CONFLICT (token) DO UPDATE SET user_id = EXCLUDED.user_id;
+      `;
       await pool.query(query, [userId, token]);
       res.status(201).json({ message: "Token saved successfully" });
     } catch (err) {
@@ -878,12 +882,12 @@ cron.schedule("0 9 * * *", async () => {
       );
       const overdueResult = await client.query(
         `
-             SELECT id, name FROM contacts
-             WHERE user_id = $1
-               AND is_archived = FALSE
-               AND (snooze_until IS NULL OR CAST(snooze_until AS DATE) < CURRENT_DATE)
-               AND CAST((last_checkin + checkin_frequency * INTERVAL '1 day') AS DATE) <= CURRENT_DATE
-         `,
+            SELECT id, name FROM contacts
+            WHERE user_id = $1
+              AND is_archived = FALSE
+              AND (snooze_until IS NULL OR CAST(snooze_until AS DATE) < CURRENT_DATE)
+              AND CAST((last_checkin + checkin_frequency * INTERVAL '1 day') AS DATE) <= CURRENT_DATE
+        `,
         [userId]
       );
       const overdueContacts = overdueResult.rows;
