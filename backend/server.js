@@ -54,6 +54,13 @@ const apiLimiter = rateLimit({
 
 app.use("/api/", apiLimiter);
 
+// --- NEW: Health check endpoint for keep-alive service ---
+// This is a lightweight, public endpoint that an external service can ping
+// to prevent the server from sleeping (cold starts) on free hosting tiers.
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "ok", message: "Server is awake." });
+});
+
 // --- NEW: Nodemailer Transporter ---
 // This is the object that knows how to send emails. It's configured once.
 const transporter = nodemailer.createTransport({
@@ -216,7 +223,7 @@ app.post(
       });
 
       // Construct the password reset URL for the frontend.
-      const resetLink = `http://localhost:5173/reset-password/${resetToken}`;
+      const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
       const mailOptions = {
         from: `"Last Checked In" <${process.env.EMAIL_SERVICE_USER}>`,
         to: email,
