@@ -29,8 +29,10 @@ function Header({
         📥 View Archived ({archivedCount})
       </button>
     ) : (
+      // Gemini FIX: Changed the text from "View Active Contacts" to "Home" and updated the icon
+      // to provide simpler, more intuitive navigation per user feedback (Issue 2.3).
       <button key="active" className="button-secondary" onClick={onViewActive}>
-        📤 View Active Contacts
+        🏠 Home
       </button>
     );
 
