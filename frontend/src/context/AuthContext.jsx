@@ -14,6 +14,26 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
+  // Gemini NEW: Listen for the global 'session_expired' event.
+  useEffect(() => {
+    // Gemini NEW: Define the handler function that will run when the session expires.
+    const handleSessionExpired = () => {
+      setToken(null); // Clear the token from React state.
+      // Gemini NEW: Navigate to the login page with a specific reason in the URL.
+      // This allows the LoginPage to show a targeted message to the user.
+      navigate("/login?reason=session_expired");
+    };
+
+    // Gemini NEW: Add the event listener when the component mounts.
+    window.addEventListener("session_expired", handleSessionExpired);
+
+    // Gemini NEW: IMPORTANT: Return a cleanup function to remove the event listener
+    // when the component unmounts. This prevents memory leaks.
+    return () => {
+      window.removeEventListener("session_expired", handleSessionExpired);
+    };
+  }, [navigate]); // Dependency array includes navigate to satisfy the linter.
+
   const signup = async (email, password) => {
     try {
       // NOTE: The signup endpoint in this app doesn't automatically log the user in.

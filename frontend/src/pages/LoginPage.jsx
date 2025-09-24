@@ -1,5 +1,5 @@
-import React, { useState, useContext } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useContext, useEffect } from "react"; // Gemini NEW: Imported useEffect
+import { Link, useSearchParams } from "react-router-dom"; // Gemini NEW: Imported useSearchParams
 import AuthContext from "../context/AuthContext";
 import { toast } from "react-hot-toast";
 import styles from "./AuthForm.module.css";
@@ -10,6 +10,21 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  // Gemini NEW: Get access to the URL's search parameters.
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Gemini NEW: This effect runs when the component loads to check for our specific redirect reason.
+  useEffect(() => {
+    const reason = searchParams.get("reason");
+    if (reason === "session_expired") {
+      toast.error("Your session has expired. Please log in again.");
+      // Gemini NEW: It's good practice to remove the query parameter from the URL
+      // after we've displayed the message. This prevents the message from
+      // re-appearing if the user refreshes the login page.
+      searchParams.delete("reason");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]); // Effect dependencies
 
   const handleSubmit = async (e) => {
     e.preventDefault();

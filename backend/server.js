@@ -304,7 +304,11 @@ const authMiddleware = (req, res, next) => {
   }
   jwt.verify(token, process.env.JWT_SECRET, (err, decodedPayload) => {
     if (err) {
-      return res.status(403).json({ error: "Invalid token." });
+      // Gemini FIX: Changed status from 403 to 401. This is an authentication failure, not an authorization failure.
+      // Also improved the error message for clarity.
+      return res
+        .status(401)
+        .json({ error: "Invalid or expired token. Access denied." });
     }
     req.userId = decodedPayload.userId;
     next();
