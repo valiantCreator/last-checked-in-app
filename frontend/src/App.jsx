@@ -16,6 +16,8 @@ import SnoozeModal from "./components/SnoozeModal.jsx";
 import AgendaView from "./components/AgendaView.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import ConfirmationModal from "./components/ConfirmationModal.jsx";
+// Gemini NEW: Import the ErrorBoundary component.
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import {
   isOverdue,
   generateAgendaViewData,
@@ -532,27 +534,32 @@ function App() {
             },
           }}
         />
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <MainApplication />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          {/* DEV COMMENT: Add the new route for the reset password page, including the dynamic token parameter. */}
-          <Route
-            path="/reset-password/:token"
-            element={<ResetPasswordPage />}
-          />
-          {/* Gemini DEV COMMENT: Add public routes for legal pages. These do not require authentication. */}
-          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-          <Route path="/terms-of-service" element={<TermsOfServicePage />} />
-        </Routes>
+        {/* Gemini NEW: Wrapped the Routes component with the ErrorBoundary.
+            This ensures that any rendering error on any page will be caught
+            and will display our fallback UI instead of a white screen. */}
+        <ErrorBoundary>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <MainApplication />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            {/* DEV COMMENT: Add the new route for the reset password page, including the dynamic token parameter. */}
+            <Route
+              path="/reset-password/:token"
+              element={<ResetPasswordPage />}
+            />
+            {/* Gemini DEV COMMENT: Add public routes for legal pages. These do not require authentication. */}
+            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+          </Routes>
+        </ErrorBoundary>
       </AuthProvider>
     </BrowserRouter>
   );
