@@ -1,5 +1,5 @@
-import React, { useState, useContext, useEffect } from "react"; // Gemini NEW: Imported useEffect
-import { Link, useSearchParams } from "react-router-dom"; // Gemini NEW: Imported useSearchParams
+import React, { useState, useContext, useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import AuthContext from "../context/AuthContext";
 import { toast } from "react-hot-toast";
 import styles from "./AuthForm.module.css";
@@ -10,21 +10,16 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  // Gemini NEW: Get access to the URL's search parameters.
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Gemini NEW: This effect runs when the component loads to check for our specific redirect reason.
   useEffect(() => {
     const reason = searchParams.get("reason");
     if (reason === "session_expired") {
       toast.error("Your session has expired. Please log in again.");
-      // Gemini NEW: It's good practice to remove the query parameter from the URL
-      // after we've displayed the message. This prevents the message from
-      // re-appearing if the user refreshes the login page.
       searchParams.delete("reason");
       setSearchParams(searchParams, { replace: true });
     }
-  }, [searchParams, setSearchParams]); // Effect dependencies
+  }, [searchParams, setSearchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,62 +64,74 @@ function LoginPage() {
   );
 
   return (
-    <div className={styles.authContainer}>
-      <h1>Login</h1>
-      <form onSubmit={handleSubmit} className={styles.authForm} noValidate>
-        <div className={styles.inputGroup}>
-          <label htmlFor="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-          />
-        </div>
-        <div className={styles.inputGroup}>
-          <label htmlFor="password">Password</label>
-          <div className={styles.inputWrapper}>
+    <div className={styles.pageWrapper}>
+      <div className={styles.authBranding}>
+        <img
+          src="/LogoV1.png"
+          alt="Last Checked In Logo"
+          className={styles.authLogo}
+        />
+        {/* Gemini NEW: Added the main app title to the branding section. */}
+        <h2 className={styles.authTitle}>Last Checked In</h2>
+        <p className={styles.authTagline}>
+          Nurture your relationships, one check-in at a time.
+        </p>
+      </div>
+
+      <div className={styles.authContainer}>
+        <h1>Login</h1>
+        <form onSubmit={handleSubmit} className={styles.authForm} noValidate>
+          <div className={styles.inputGroup}>
+            <label htmlFor="email">Email</label>
             <input
-              type={showPassword ? "text" : "password"}
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
-              autoComplete="current-password"
+              autoComplete="email"
             />
-            <button
-              type="button"
-              className={styles.passwordToggleBtn}
-              onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? eyeSlashIcon : eyeIcon}
-            </button>
           </div>
-          {/* DEV COMMENT: Added the "Forgot Password?" link that directs to our new page. */}
-          <Link to="/forgot-password" className={styles.forgotPasswordLink}>
-            Forgot Password?
-          </Link>
+          <div className={styles.inputGroup}>
+            <label htmlFor="password">Password</label>
+            <div className={styles.inputWrapper}>
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className={styles.passwordToggleBtn}
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? eyeSlashIcon : eyeIcon}
+              </button>
+            </div>
+            <Link to="/forgot-password" className={styles.forgotPasswordLink}>
+              Forgot Password?
+            </Link>
+          </div>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className={styles.submitButton}
+          >
+            {isLoading ? "Logging in..." : "Login"}
+          </button>
+        </form>
+        <p className={styles.authFormFooter}>
+          Don't have an account? <Link to="/signup">Sign Up</Link>
+        </p>
+        <div className={styles.legalLinks}>
+          <Link to="/privacy-policy">Privacy Policy</Link>
+          <span>&nbsp;|&nbsp;</span>
+          <Link to="/terms-of-service">Terms of Service</Link>
         </div>
-        {/* Gemini DEV COMMENT: Replaced global 'button-primary' with the modular 'submitButton' class. */}
-        <button
-          type="submit"
-          disabled={isLoading}
-          className={styles.submitButton}
-        >
-          {isLoading ? "Logging in..." : "Login"}
-        </button>
-      </form>
-      <p className={styles.authFormFooter}>
-        Don't have an account? <Link to="/signup">Sign Up</Link>
-      </p>
-      {/* Gemini DEV COMMENT: Added a footer section for legal document links. */}
-      <div className={styles.legalLinks}>
-        <Link to="/privacy-policy">Privacy Policy</Link>
-        <span>&nbsp;|&nbsp;</span>
-        <Link to="/terms-of-service">Terms of Service</Link>
       </div>
     </div>
   );

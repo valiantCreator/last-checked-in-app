@@ -1,13 +1,54 @@
 /* src/pages/AuthForm.module.css */
 
+/* Gemini FIX: Use justify-content to better center the content vertically and reduce top padding. */
+.pageWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center; /* Vertically centers the content block */
+  padding: 1rem;
+  min-height: 100vh;
+}
+
 .authContainer {
   padding: 2rem;
+  width: 100%;
   max-width: 420px;
-  margin: 2rem auto;
   background-color: var(--card-bg);
   border-radius: 12px;
   box-shadow: 0 4px 8px var(--card-shadow);
   border: 1px solid var(--border-color);
+  position: relative;
+  z-index: 5;
+  /* Gemini REVERT: Removed margin since the parent wrapper now handles centering. */
+}
+
+.authBranding {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Gemini FIX: Reduced the bottom margin to tighten the gap between the branding and the card. */
+  margin-bottom: 2rem;
+}
+
+.authLogo {
+  height: 60px;
+  width: auto;
+  margin-bottom: 0.75rem;
+}
+
+/* Gemini FIX: Reduced the font size to be less dominant, closer to an h3. */
+.authTitle {
+  font-size: 1.5rem; /* Was 1.8rem */
+  font-weight: 700;
+  margin: 0.5rem 0;
+  color: var(--text-color);
+}
+
+.authTagline {
+  margin: 0;
+  color: var(--text-color-secondary);
+  text-align: center;
 }
 
 .authContainer h1 {
@@ -16,12 +57,10 @@
   margin-bottom: 1.5rem;
 }
 
-/* Gemini DEV COMMENT: Removed '.authForm' prefix. This class is now targeted directly. */
 .inputGroup {
   margin-bottom: 1.25rem;
 }
 
-/* Gemini DEV COMMENT: Scoped label and input to their direct parent for correctness. */
 .inputGroup label {
   display: block;
   margin-bottom: 0.5rem;
@@ -100,7 +139,6 @@
   color: var(--primary-color);
 }
 
-/* Gemini DEV COMMENT: Created a specific, modular class for the submit button. */
 .submitButton {
   display: block;
   width: 100%;

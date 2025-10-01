@@ -2,7 +2,6 @@ import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthContext from "../context/AuthContext";
 import { toast } from "react-hot-toast";
-// DEV COMMENT: Import the new shared CSS module for auth forms.
 import styles from "./AuthForm.module.css";
 
 function SignupPage() {
@@ -67,80 +66,92 @@ function SignupPage() {
   );
 
   return (
-    // DEV COMMENT: All classNames now use the imported 'styles' object.
-    <div className={styles.authContainer}>
-      <h1>Create Account</h1>
-      <form onSubmit={handleSubmit} className={styles.authForm} noValidate>
-        <div className={styles.inputGroup}>
-          <label htmlFor="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-          />
-        </div>
-        <div className={styles.inputGroup}>
-          <label htmlFor="password">Password</label>
-          <div className={styles.inputWrapper}>
+    <div className={styles.pageWrapper}>
+      <div className={styles.authBranding}>
+        <img
+          src="/LogoV1.png"
+          alt="Last Checked In Logo"
+          className={styles.authLogo}
+        />
+        {/* Gemini NEW: Added the main app title to the branding section. */}
+        <h2 className={styles.authTitle}>Last Checked In</h2>
+        <p className={styles.authTagline}>
+          Nurture your relationships, one check-in at a time.
+        </p>
+      </div>
+
+      <div className={styles.authContainer}>
+        <h1>Create Account</h1>
+        <form onSubmit={handleSubmit} className={styles.authForm} noValidate>
+          <div className={styles.inputGroup}>
+            <label htmlFor="email">Email</label>
             <input
-              type={showPassword ? "text" : "password"}
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
-              autoComplete="new-password"
+              autoComplete="email"
             />
-            <button
-              type="button"
-              className={styles.passwordToggleBtn}
-              onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? eyeSlashIcon : eyeIcon}
-            </button>
           </div>
-        </div>
-        <div className={styles.inputGroup}>
-          <label htmlFor="confirmPassword">Confirm Password</label>
-          <div className={styles.inputWrapper}>
-            <input
-              type={showPassword ? "text" : "password"}
-              id="confirmPassword"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              autoComplete="new-password"
-            />
-            <button
-              type="button"
-              className={styles.passwordToggleBtn}
-              onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? eyeSlashIcon : eyeIcon}
-            </button>
+          <div className={styles.inputGroup}>
+            <label htmlFor="password">Password</label>
+            <div className={styles.inputWrapper}>
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                className={styles.passwordToggleBtn}
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? eyeSlashIcon : eyeIcon}
+              </button>
+            </div>
           </div>
+          <div className={styles.inputGroup}>
+            <label htmlFor="confirmPassword">Confirm Password</label>
+            <div className={styles.inputWrapper}>
+              <input
+                type={showPassword ? "text" : "password"}
+                id="confirmPassword"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                className={styles.passwordToggleBtn}
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? eyeSlashIcon : eyeIcon}
+              </button>
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className={styles.submitButton}
+          >
+            {isLoading ? "Creating Account..." : "Sign Up"}
+          </button>
+        </form>
+        <p className={styles.authFormFooter}>
+          Already have an account? <Link to="/login">Login</Link>
+        </p>
+        <div className={styles.legalLinks}>
+          <Link to="/privacy-policy">Privacy Policy</Link>
+          <span>&nbsp;|&nbsp;</span>
+          <Link to="/terms-of-service">Terms of Service</Link>
         </div>
-        {/* Gemini DEV COMMENT: Replaced global 'button-primary' with the modular 'submitButton' class. */}
-        <button
-          type="submit"
-          disabled={isLoading}
-          className={styles.submitButton}
-        >
-          {isLoading ? "Creating Account..." : "Sign Up"}
-        </button>
-      </form>
-      <p className={styles.authFormFooter}>
-        Already have an account? <Link to="/login">Login</Link>
-      </p>
-      {/* Gemini DEV COMMENT: Added a footer section for legal document links. */}
-      <div className={styles.legalLinks}>
-        <Link to="/privacy-policy">Privacy Policy</Link>
-        <span>&nbsp;|&nbsp;</span>
-        <Link to="/terms-of-service">Terms of Service</Link>
       </div>
     </div>
   );
