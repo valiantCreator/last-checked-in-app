@@ -205,7 +205,9 @@ export const useContacts = ({ token, setConfirmationState }) => {
       const contactToRestore = archivedContacts.find((c) => c.id === contactId);
       api.put(`/contacts/${contactId}/restore`).then(() => {
         setArchivedContacts((prev) => prev.filter((c) => c.id !== contactId));
-        setArchivedCount((prev) => prev - 1);
+        // Gemini FIX: Use Math.max to prevent the count from ever going below 0.
+        // This solves the optimistic update race condition that could cause a "-1" display.
+        setArchivedCount((prev) => Math.max(0, prev - 1));
         if (contactToRestore) {
           setContacts((prev) => [
             ...prev,
