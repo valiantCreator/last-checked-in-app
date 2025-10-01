@@ -224,23 +224,28 @@ function ContactCard({
             onChange={handleEditingContactChange}
             placeholder="How we met"
           />
-          <input
-            type="date"
-            name="birthday"
-            value={
-              editingContact.birthday
-                ? editingContact.birthday.split("T")[0]
-                : ""
-            }
-            onChange={handleEditingContactChange}
-          />
+          {/* Gemini FIX: Wrapped the birthday input in a div and added a label with an icon for clarity. */}
+          <div className={styles.editFieldWrapper}>
+            <label htmlFor={`birthday-${contact.id}`}>🎂 Birthday</label>
+            <input
+              type="date"
+              id={`birthday-${contact.id}`}
+              name="birthday"
+              value={
+                editingContact.birthday
+                  ? editingContact.birthday.split("T")[0]
+                  : ""
+              }
+              onChange={handleEditingContactChange}
+            />
+          </div>
           <textarea
             name="key_facts"
             value={editingContact.key_facts || ""}
             onChange={handleEditingContactChange}
             placeholder="Key facts"
           />
-          <div>
+          <div className={styles.editFieldWrapper}>
             <label>Remind every</label>
             <input
               type="number"
@@ -251,10 +256,11 @@ function ContactCard({
             />
             <label>days</label>
           </div>
-          <div>
-            <label>Starting from</label>
+          <div className={styles.editFieldWrapper}>
+            <label htmlFor={`last_checkin-${contact.id}`}>Starting from</label>
             <input
               type="date"
+              id={`last_checkin-${contact.id}`}
               name="last_checkin"
               value={
                 editingContact.last_checkin

@@ -55,9 +55,9 @@
   position: relative;
 }
 
-/* Gemini FIX: This rule now only applies the custom placeholder when the wrapper is empty. */
+/* Gemini FIX: Added the birthday cake icon to the custom placeholder content. */
 .wrapperEmpty::before {
-  content: "Birthday";
+  content: "🎂 Birthday";
   position: absolute;
   left: 0.75rem; /* Match input padding */
   top: 50%;
