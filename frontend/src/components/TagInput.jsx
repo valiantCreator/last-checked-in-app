@@ -64,7 +64,9 @@ function TagInput({ contact, onTagAdded }) {
           type="text"
           value={inputValue}
           onChange={handleInputChange}
-          placeholder="Add a tag..."
+          // Gemini FIX: Updated the placeholder text to clarify that the input
+          // can be used for both searching and creating tags (Addresses Issue 2.1).
+          placeholder="Search or create tags..."
           className={styles.tagInput}
         />
       </form>
