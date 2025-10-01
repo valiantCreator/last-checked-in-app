@@ -16,8 +16,9 @@ import SnoozeModal from "./components/SnoozeModal.jsx";
 import AgendaView from "./components/AgendaView.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import ConfirmationModal from "./components/ConfirmationModal.jsx";
-// Gemini NEW: Import the ErrorBoundary component.
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
+// Gemini NEW: Import the new OnboardingModal component.
+import OnboardingModal from "./components/OnboardingModal.jsx";
 import {
   isOverdue,
   generateAgendaViewData,
@@ -27,9 +28,7 @@ import api from "./apiConfig.js";
 import LoginPage from "./pages/LoginPage.jsx";
 import SignupPage from "./pages/SignupPage.jsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
-// DEV COMMENT: Import the new ResetPasswordPage component.
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
-// Gemini DEV COMMENT: Import the new legal page components.
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage.jsx";
 import TermsOfServicePage from "./pages/TermsOfServicePage.jsx";
 import styles from "./App.module.css";
@@ -39,6 +38,9 @@ import { useSelection } from "./hooks/useSelection.js";
 
 function MainApplication() {
   const { token } = useContext(AuthContext);
+
+  // Gemini NEW: Add state to control the visibility of the onboarding modal.
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const {
     theme,
@@ -119,6 +121,23 @@ function MainApplication() {
   useEffect(() => {
     if (token) requestForToken();
   }, [token]);
+
+  // Gemini NEW: This effect checks if the user has seen the onboarding modal before.
+  useEffect(() => {
+    // We check for a specific flag in the browser's local storage.
+    const hasSeenOnboarding = localStorage.getItem("hasSeenOnboarding");
+    // If the flag is not set, we show the modal.
+    if (!hasSeenOnboarding) {
+      setShowOnboarding(true);
+    }
+  }, []); // The empty dependency array ensures this runs only once when the component mounts.
+
+  // Gemini NEW: This handler is passed to the modal to close it and set the flag.
+  const handleCloseOnboarding = () => {
+    setShowOnboarding(false);
+    // We set the flag in local storage so the modal won't appear again for this user.
+    localStorage.setItem("hasSeenOnboarding", "true");
+  };
 
   const agendaData = useMemo(
     () => generateAgendaViewData(contacts),
@@ -340,6 +359,12 @@ function MainApplication() {
           : ""
       }`}
     >
+      {/* Gemini NEW: Render the onboarding modal. */}
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onClose={handleCloseOnboarding}
+      />
+
       <Header
         view={view}
         archivedCount={archivedCount}
@@ -405,7 +430,6 @@ function MainApplication() {
             <div className={styles.viewControls}>
               <h2>{displayMode === "agenda" ? "Agenda" : "My People"}</h2>
               <div className={styles.viewToggleButtons}>
-                {/* Gemini DEV COMMENT: Applied new modular classes to these buttons to isolate their styles and fix the size regression. */}
                 <button
                   className={`${styles.viewToggleButton} ${
                     displayMode === "list" ? styles.active : ""
@@ -534,9 +558,6 @@ function App() {
             },
           }}
         />
-        {/* Gemini NEW: Wrapped the Routes component with the ErrorBoundary.
-            This ensures that any rendering error on any page will be caught
-            and will display our fallback UI instead of a white screen. */}
         <ErrorBoundary>
           <Routes>
             <Route
@@ -550,12 +571,10 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            {/* DEV COMMENT: Add the new route for the reset password page, including the dynamic token parameter. */}
             <Route
               path="/reset-password/:token"
               element={<ResetPasswordPage />}
             />
-            {/* Gemini DEV COMMENT: Add public routes for legal pages. These do not require authentication. */}
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
             <Route path="/terms-of-service" element={<TermsOfServicePage />} />
           </Routes>

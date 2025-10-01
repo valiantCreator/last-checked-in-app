@@ -1,0 +1,111 @@
+/* Gemini NEW: Create this new file at frontend/src/components/OnboardingModal.module.css */
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modalContent {
+  background: var(--card-bg);
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color);
+  /* Gemini FIX: Use flexbox and set a max-height to prevent viewport overflow. */
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh; /* Ensures modal is never taller than 90% of the screen */
+}
+
+/* Gemini NEW: This new class makes the main content area scrollable if it's too long. */
+.scrollableContent {
+  overflow-y: auto; /* Adds a scrollbar ONLY if needed */
+  /* Negative margins and padding are a trick to make the scrollbar align nicely */
+  margin-right: -1rem;
+  padding-right: 1rem;
+}
+
+.title {
+  margin-top: 0;
+  color: var(--primary-color);
+  text-align: center;
+  flex-shrink: 0; /* Prevents title from shrinking */
+}
+
+.intro {
+  text-align: center;
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  color: var(--text-color-secondary);
+}
+
+.feature {
+  margin-bottom: 1.5rem;
+}
+
+.feature h3 {
+  margin-bottom: 0.5rem;
+}
+
+.feature p {
+  margin-top: 0;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+.modalFooter {
+  margin-top: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0; /* Prevents footer from shrinking */
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.pageIndicator {
+  display: flex;
+  gap: 8px;
+}
+
+.dot,
+.dotActive {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--border-color);
+  transition: background-color 0.3s;
+}
+
+.dotActive {
+  background-color: var(--primary-color);
+}
+
+.navigationButtons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.backButton {
+  composes: button-secondary from global;
+  padding: 0.75rem 1.5rem;
+}
+
+.nextButton,
+.closeButton {
+  composes: button-primary from global;
+  padding: 0.75rem 1.5rem;
+  min-width: 120px;
+  text-align: center;
+}
