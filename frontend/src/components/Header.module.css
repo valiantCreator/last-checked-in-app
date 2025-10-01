@@ -60,3 +60,14 @@
   width: 24px;
   height: 24px;
 }
+
+/* Gemini NEW: Style for icon-only buttons in the header. */
+.iconButton {
+  width: 40px; /* Set a fixed width */
+  height: 40px; /* Set a fixed height to match */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0; /* Remove padding to let the fixed size control spacing */
+  font-size: 1.5rem; /* Make the emoji icon larger */
+}
