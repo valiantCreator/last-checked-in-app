@@ -55,7 +55,8 @@
   position: relative;
 }
 
-.dateInputWrapper::before {
+/* Gemini FIX: This rule now only applies the custom placeholder when the wrapper is empty. */
+.wrapperEmpty::before {
   content: "Birthday";
   position: absolute;
   left: 0.75rem; /* Match input padding */
@@ -64,6 +65,7 @@
   color: var(--text-color);
   opacity: 0.6;
   pointer-events: none; /* Allows clicks to go through to the input */
+  z-index: 1; /* Ensure placeholder is on top of the transparent text */
 }
 
 /* This class is applied when the date input is empty, hiding the browser's "mm/dd/yyyy" text */

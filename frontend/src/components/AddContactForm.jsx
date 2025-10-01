@@ -75,8 +75,14 @@ function AddContactForm({ onContactAdded }) {
             onChange={(e) => setHowWeMet(e.target.value)}
             placeholder="How we met"
           />
-          {/* DEV COMMENT: Wrapped the date input to apply the custom placeholder style. */}
-          <div className={styles.dateInputWrapper}>
+          {/* Gemini FIX: Added a conditional class to the WRAPPER div.
+              This gives us a reliable hook in CSS to hide the placeholder
+              when the input has a value. */}
+          <div
+            className={`${styles.dateInputWrapper} ${
+              !birthday ? styles.wrapperEmpty : ""
+            }`}
+          >
             <input
               type="date"
               value={birthday}
