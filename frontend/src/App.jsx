@@ -17,8 +17,8 @@ import AgendaView from "./components/AgendaView.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import ConfirmationModal from "./components/ConfirmationModal.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
-// Gemini NEW: Import the new OnboardingModal component.
 import OnboardingModal from "./components/OnboardingModal.jsx";
+import FeedbackModal from "./components/FeedbackModal.jsx";
 import {
   isOverdue,
   generateAgendaViewData,
@@ -39,8 +39,8 @@ import { useSelection } from "./hooks/useSelection.js";
 function MainApplication() {
   const { token } = useContext(AuthContext);
 
-  // Gemini NEW: Add state to control the visibility of the onboarding modal.
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
 
   const {
     theme,
@@ -122,21 +122,32 @@ function MainApplication() {
     if (token) requestForToken();
   }, [token]);
 
-  // Gemini NEW: This effect checks if the user has seen the onboarding modal before.
   useEffect(() => {
-    // We check for a specific flag in the browser's local storage.
     const hasSeenOnboarding = localStorage.getItem("hasSeenOnboarding");
-    // If the flag is not set, we show the modal.
     if (!hasSeenOnboarding) {
       setShowOnboarding(true);
     }
-  }, []); // The empty dependency array ensures this runs only once when the component mounts.
+  }, []);
 
-  // Gemini NEW: This handler is passed to the modal to close it and set the flag.
   const handleCloseOnboarding = () => {
     setShowOnboarding(false);
-    // We set the flag in local storage so the modal won't appear again for this user.
     localStorage.setItem("hasSeenOnboarding", "true");
+  };
+
+  const handleSendFeedback = async (content) => {
+    try {
+      // Gemini FIX: Removed the redundant "/api" prefix. The axios instance
+      // in apiConfig.js already includes the base path.
+      await api.post("/feedback", { content });
+      toast.success("Feedback submitted. Thank you!");
+      setIsFeedbackModalOpen(false);
+    } catch (error) {
+      console.error("Failed to submit feedback", error);
+      toast.error(
+        error.response?.data?.details?.[0]?.message ||
+          "Could not submit feedback."
+      );
+    }
   };
 
   const agendaData = useMemo(
@@ -359,10 +370,15 @@ function MainApplication() {
           : ""
       }`}
     >
-      {/* Gemini NEW: Render the onboarding modal. */}
       <OnboardingModal
         isOpen={showOnboarding}
         onClose={handleCloseOnboarding}
+      />
+
+      <FeedbackModal
+        isOpen={isFeedbackModalOpen}
+        onClose={() => setIsFeedbackModalOpen(false)}
+        onSubmit={handleSendFeedback}
       />
 
       <Header
@@ -375,6 +391,7 @@ function MainApplication() {
         onViewActive={handleViewActive}
         onViewArchived={handleViewArchived}
         onExportToCalendar={() => setIsExportModalOpen(true)}
+        onOpenFeedbackModal={() => setIsFeedbackModalOpen(true)}
       />
       {view === "active" ? (
         <>

@@ -15,6 +15,8 @@ function Header({
   onViewActive,
   onExportToCalendar,
   theme,
+  // Gemini NEW: Accept the new handler prop from App.jsx
+  onOpenFeedbackModal,
 }) {
   const { logout } = useContext(AuthContext);
   const isMobile = useMediaQuery("(max-width: 500px)");
@@ -29,8 +31,6 @@ function Header({
         📥 View Archived ({archivedCount})
       </button>
     ) : (
-      // Gemini FIX: Changed the text from "View Active Contacts" to "Home" and updated the icon
-      // to provide simpler, more intuitive navigation per user feedback (Issue 2.3).
       <button key="active" className="button-secondary" onClick={onViewActive}>
         🏠 Home
       </button>
@@ -47,18 +47,16 @@ function Header({
     </button>
   );
 
-  // Gemini DEV COMMENT: The email address has been updated to a real, accessible email address.
-  // Replace 'lastcheckedin.feedback@gmail.com' with the actual email you will use to receive feedback.
-  const feedbackLink = (
-    <a
+  // Gemini FIX: Replaced the unreliable mailto: link with a button that opens the in-app modal.
+  const feedbackButton = (
+    <button
       key="feedback"
       className="button-secondary"
-      href="mailto:lastcheckedin.feedback@gmail.com?subject=Last%20Checked%20In%20-%20Feedback"
-      target="_blank"
-      rel="noopener noreferrer"
+      onClick={onOpenFeedbackModal}
+      title="Send Feedback"
     >
       ✉️ Send Feedback
-    </a>
+    </button>
   );
 
   const logoutButton = (
@@ -70,7 +68,7 @@ function Header({
   const mobileDropdownActions = [
     viewButton,
     exportButton,
-    feedbackLink,
+    feedbackButton,
     logoutButton,
   ].filter(Boolean);
 
@@ -117,7 +115,7 @@ function Header({
           <>
             {viewButton}
             {exportButton}
-            {feedbackLink}
+            {feedbackButton}
             {logoutButton}
             <ThemeToggleButton theme={theme} onToggleTheme={onToggleTheme} />
           </>

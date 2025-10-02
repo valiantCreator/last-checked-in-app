@@ -8,7 +8,8 @@ const cors = require("cors");
 const admin = require("firebase-admin");
 const cron = require("node-cron");
 const { Pool } = require("pg"); // Import the PostgreSQL client
-const nodemailer = require("nodemailer"); // NEW: Import nodemailer
+// Gemini FIX: Replaced nodemailer with the official node-mailjet library.
+const Mailjet = require("node-mailjet");
 
 // --- NEW: Import security and auth packages ---
 const rateLimit = require("express-rate-limit");
@@ -55,23 +56,15 @@ const apiLimiter = rateLimit({
 app.use("/api/", apiLimiter);
 
 // --- NEW: Health check endpoint for keep-alive service ---
-// This is a lightweight, public endpoint that an external service can ping
-// to prevent the server from sleeping (cold starts) on free hosting tiers.
 app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok", message: "Server is awake." });
 });
 
-// --- NEW: Nodemailer Transporter ---
-// This is the object that knows how to send emails. It's configured once.
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_SERVICE_HOST,
-  port: process.env.EMAIL_SERVICE_PORT,
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.EMAIL_SERVICE_USER,
-    pass: process.env.EMAIL_SERVICE_PASS,
-  },
-});
+// Gemini FIX: Initialize the Mailjet client using the correct environment variables.
+const mailjet = Mailjet.apiConnect(
+  process.env.MJ_APIKEY_PUBLIC,
+  process.env.MJ_APIKEY_PRIVATE
+);
 
 // --- NEW: Zod Validation Schemas ---
 const authSchema = z.object({
@@ -130,6 +123,13 @@ const tokenSchema = z.object({
 
 const emailSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
+});
+
+const feedbackSchema = z.object({
+  content: z
+    .string()
+    .min(10, { message: "Feedback must be at least 10 characters." })
+    .max(5000, { message: "Feedback cannot exceed 5000 characters." }),
 });
 
 // --- NEW: Validation Middleware Factory ---
@@ -208,7 +208,6 @@ app.post(
       ]);
       const user = result.rows[0];
 
-      // CRITICAL: We always return a 200 OK to prevent attackers from guessing which emails are in our database.
       if (!user) {
         return res.status(200).json({
           message:
@@ -216,29 +215,37 @@ app.post(
         });
       }
 
-      // Generate a secure, short-lived JWT for the password reset.
       const payload = { userId: user.id };
       const resetToken = jwt.sign(payload, process.env.RESET_TOKEN_SECRET, {
         expiresIn: "1h",
       });
 
-      // Construct the password reset URL for the frontend.
       const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-      const mailOptions = {
-        from: `"Last Checked In" <${process.env.EMAIL_SERVICE_USER}>`,
-        to: email,
-        subject: "Password Reset Request",
-        html: `
-        <h1>Password Reset for Last Checked In</h1>
-        <p>Hello,</p>
-        <p>A password reset was requested for your account. Click the link below to reset your password:</p>
-        <a href="${resetLink}">Reset Password</a>
-        <p>If you did not request a password reset, please ignore this email.</p>
-        <p>This link is valid for 1 hour.</p>
-      `,
-      };
 
-      await transporter.sendMail(mailOptions);
+      // Gemini FIX: Rebuild the email sending logic using the Mailjet API client.
+      const request = mailjet.post("send", { version: "v3.1" }).request({
+        Messages: [
+          {
+            From: {
+              Email: process.env.MAILJET_SENDER_EMAIL,
+              Name: "Last Checked In",
+            },
+            To: [{ Email: email }],
+            Subject: "Password Reset Request",
+            HTMLPart: `
+              <h1>Password Reset for Last Checked In</h1>
+              <p>Hello,</p>
+              <p>A password reset was requested for your account. Click the link below to reset your password:</p>
+              <a href="${resetLink}">Reset Password</a>
+              <p>If you did not request a password reset, please ignore this email.</p>
+              <p>This link is valid for 1 hour.</p>
+            `,
+          },
+        ],
+      });
+
+      await request;
+
       res.status(200).json({
         message:
           "If a user with that email exists, a password reset link has been sent.",
@@ -259,15 +266,12 @@ app.post(
   async (req, res) => {
     const { token, password } = req.body;
     try {
-      // Verify the reset token using the dedicated secret.
       const decodedPayload = jwt.verify(token, process.env.RESET_TOKEN_SECRET);
       const userId = decodedPayload.userId;
 
-      // Hash the new password before storing it.
       const saltRounds = 10;
       const passwordHash = await bcrypt.hash(password, saltRounds);
 
-      // Update the user's password in the database.
       await pool.query("UPDATE users SET password_hash = $1 WHERE id = $2", [
         passwordHash,
         userId,
@@ -276,7 +280,6 @@ app.post(
       res.status(200).json({ message: "Password reset successfully." });
     } catch (error) {
       console.error("Reset Password Error:", error);
-      // If the token is invalid or expired, return a 400 Bad Request.
       if (
         error.name === "TokenExpiredError" ||
         error.name === "JsonWebTokenError"
@@ -294,7 +297,6 @@ app.post(
 
 // =================================================================
 // --- AUTHENTICATION MIDDLEWARE ---
-// This function acts as a gatekeeper for our protected routes.
 // =================================================================
 const authMiddleware = (req, res, next) => {
   const authHeader = req.headers["authorization"];
@@ -304,8 +306,6 @@ const authMiddleware = (req, res, next) => {
   }
   jwt.verify(token, process.env.JWT_SECRET, (err, decodedPayload) => {
     if (err) {
-      // Gemini FIX: Changed status from 403 to 401. This is an authentication failure, not an authorization failure.
-      // Also improved the error message for clarity.
       return res
         .status(401)
         .json({ error: "Invalid or expired token. Access denied." });
@@ -318,6 +318,58 @@ const authMiddleware = (req, res, next) => {
 // =================================================================
 // --- API Endpoints (ALL PROTECTED AND SCOPED FROM THIS POINT ON) ---
 // =================================================================
+
+app.post(
+  "/api/feedback",
+  authMiddleware,
+  validate(feedbackSchema),
+  async (req, res) => {
+    const { content } = req.body;
+    const userId = req.userId;
+    try {
+      const userResult = await pool.query(
+        "SELECT email FROM users WHERE id = $1",
+        [userId]
+      );
+      const userEmail = userResult.rows[0]?.email || "Unknown Email";
+
+      console.log(`--- USER FEEDBACK RECEIVED ---`);
+      console.log(`User ID: ${userId} (${userEmail})`);
+      console.log(`Feedback: "${content}"`);
+      console.log(`----------------------------`);
+
+      // Gemini FIX: Rebuild the email sending logic using the Mailjet API client.
+      const request = mailjet.post("send", { version: "v3.1" }).request({
+        Messages: [
+          {
+            From: {
+              Email: process.env.MAILJET_SENDER_EMAIL,
+              Name: "Last Checked In Feedback",
+            },
+            To: [{ Email: process.env.FEEDBACK_RECIPIENT_EMAIL }],
+            Subject: `New Feedback from User: ${userEmail}`,
+            HTMLPart: `
+              <h1>New Feedback Received</h1>
+              <p><strong>From User ID:</strong> ${userId}</p>
+              <p><strong>From User Email:</strong> <a href="mailto:${userEmail}">${userEmail}</a></p>
+              <hr>
+              <h2>Feedback Content:</h2>
+              <p style="white-space: pre-wrap;">${content}</p>
+            `,
+          },
+        ],
+      });
+
+      await request;
+      res.status(200).json({ message: "Feedback received successfully." });
+    } catch (error) {
+      console.error("Error processing feedback:", error);
+      res
+        .status(500)
+        .json({ error: "Internal server error while processing feedback." });
+    }
+  }
+);
 
 // --- Batch Action Endpoints ---
 app.post(
