@@ -1,30 +1,29 @@
-// frontend/src/firebase.js
+// Gemini COMMENT: Import only the necessary functions from the Firebase SDK.
+// This is crucial for tree-shaking and reducing the final bundle size.
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken } from "firebase/messaging";
-// UPDATED: Replaced 'axios' and 'API_URL' with our pre-configured 'api' instance
-import api from './apiConfig.js'; 
+import api from "./apiConfig.js";
 
-// --- IMPORTANT ---
-// Paste your own firebaseConfig object here from the Firebase console.
-// This object contains your project's unique keys.
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// Gemini COMMENT: SECURITY FIX - The Firebase config is now loaded from environment variables.
+// The hardcoded keys have been removed to prevent them from being exposed in the source code.
+// Vite exposes environment variables prefixed with `VITE_` on the `import.meta.env` object.
 const firebaseConfig = {
-  apiKey: "AIzaSyDeLrFceFzBr0lbACkPBm7Xva_PtMsFHeg",
-  authDomain: "last-checked-in.firebaseapp.com",
-  projectId: "last-checked-in",
-  storageBucket: "last-checked-in.firebasestorage.app",
-  messagingSenderId: "813141602060",
-  appId: "1:813141602060:web:792d25a43a9ccf3f152329",
-  measurementId: "G-6PW5VDQPJQ"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize Firebase with your configuration
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
-const VAPID_KEY = 'BO0L9UFpX0v6bo3AoYtuBQEBKLVQi1SNZoMgR-Gp5_wgSSb6cJxARGlyEaygEPTy9Ybc57GHJK-ignlou8IWwhw';
+// Gemini COMMENT: It's better practice to also store this VAPID key as an environment variable.
+const VAPID_KEY =
+  "BO0L9UFpX0v6bo3AoYtuBQEBKLVQi1SNZoMgR-Gp5_wgSSb6cJxARGlyEaygEPTy9Ybc57GHJK-ignlou8IWwhw";
 
 // This function now uses async/await and correctly returns the token
 export const requestForToken = async () => {
@@ -32,17 +31,17 @@ export const requestForToken = async () => {
     const currentToken = await getToken(messaging, { vapidKey: VAPID_KEY });
 
     if (currentToken) {
-      // UPDATED: This now uses our 'api' instance, which will automatically
-      // include the Authorization header if the user is logged in.
-      await api.post('/devices/token', { token: currentToken });
-      console.log('FCM Token successfully sent to server.');
+      await api.post("/devices/token", { token: currentToken });
+      console.log("FCM Token successfully sent to server.");
       return currentToken; // <-- Explicitly return the token on success
     } else {
-      console.log('No registration token available. Request permission to generate one.');
+      console.log(
+        "No registration token available. Request permission to generate one."
+      );
       return null; // <-- Return null on failure
     }
   } catch (err) {
-    console.error('An error occurred while retrieving token. ', err);
+    console.error("An error occurred while retrieving token. ", err);
     return null; // <-- Return null on error
   }
 };

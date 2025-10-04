@@ -319,6 +319,62 @@ const authMiddleware = (req, res, next) => {
 // --- API Endpoints (ALL PROTECTED AND SCOPED FROM THIS POINT ON) ---
 // =================================================================
 
+// --- NEW: PERFORMANCE FIX ---
+// This new endpoint fetches all initial data for the dashboard in one go.
+// It replaces the separate calls to /api/contacts, /api/contacts/archived/count, and /api/tags.
+app.get("/api/dashboard-data", authMiddleware, async (req, res) => {
+  try {
+    // Gemini COMMENT: We run all three queries in parallel for maximum efficiency.
+    const [contactsResult, archivedCountResult, tagsResult] = await Promise.all(
+      [
+        // Gemini COMMENT: This is the new, optimized query to get contacts with their tags aggregated into a JSON array.
+        // CORRECTED: All non-breaking spaces removed from indentation.
+        pool.query(
+          `
+            SELECT
+              c.*,
+              COALESCE(
+                (
+                  SELECT JSON_AGG(t.* ORDER BY t.name)
+                  FROM tags t
+                  JOIN contact_tags ct ON t.id = ct.tag_id
+                  WHERE ct.contact_id = c.id
+                ),
+                '[]'::json
+              ) as tags
+            FROM contacts c
+            WHERE c.is_archived = FALSE AND c.user_id = $1
+            ORDER BY c.last_checkin;
+          `,
+          [req.userId]
+        ),
+        // Gemini COMMENT: This query fetches the count of archived contacts.
+        pool.query(
+          "SELECT COUNT(*) FROM contacts WHERE is_archived = TRUE AND user_id = $1",
+          [req.userId]
+        ),
+        // Gemini COMMENT: This query fetches all unique tags for the user.
+        pool.query("SELECT * FROM tags WHERE user_id = $1 ORDER BY name", [
+          req.userId,
+        ]),
+      ]
+    );
+
+    const contacts = contactsResult.rows;
+    const archivedCount = parseInt(archivedCountResult.rows[0].count, 10);
+    const tags = tagsResult.rows;
+
+    res.json({
+      contacts,
+      archivedCount,
+      tags,
+    });
+  } catch (err) {
+    console.error("Error fetching dashboard data:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post(
   "/api/feedback",
   authMiddleware,
@@ -496,6 +552,7 @@ app.get("/api/search", authMiddleware, async (req, res) => {
   if (!q) return res.json({ results: { contacts: [], notes: [] } });
   const searchTerm = `%${q}%`;
   try {
+    // Gemini COMMENT: For a future optimization, this search could also be improved with a JOIN to include tags.
     const contactsResult = await pool.query(
       "SELECT * FROM contacts WHERE name ILIKE $1 AND is_archived = FALSE AND user_id = $2",
       [searchTerm, req.userId]
@@ -518,21 +575,32 @@ app.get("/api/search", authMiddleware, async (req, res) => {
   }
 });
 
+// Gemini COMMENT: DEPRECATED due to N+1 query bug. Use the new /api/dashboard-data endpoint instead.
+// The logic has been updated to be efficient, but it's better to use the consolidated endpoint.
 app.get("/api/contacts", authMiddleware, async (req, res) => {
   try {
+    // Gemini COMMENT: PERFORMANCE FIX - This query now uses a subquery with JSON_AGG to fetch all tags in one go, eliminating the N+1 loop.
+    // CORRECTED: All non-breaking spaces removed from indentation.
     const contactsResult = await pool.query(
-      "SELECT * FROM contacts WHERE is_archived = FALSE AND user_id = $1 ORDER BY last_checkin",
+      `
+        SELECT
+          c.*,
+          COALESCE(
+            (
+              SELECT JSON_AGG(t.* ORDER BY t.name)
+              FROM tags t
+              JOIN contact_tags ct ON t.id = ct.tag_id
+              WHERE ct.contact_id = c.id
+            ),
+            '[]'::json
+          ) as tags
+        FROM contacts c
+        WHERE c.is_archived = FALSE AND c.user_id = $1
+        ORDER BY c.last_checkin;
+      `,
       [req.userId]
     );
-    const contacts = contactsResult.rows;
-    for (const contact of contacts) {
-      const tagsResult = await pool.query(
-        `SELECT t.id, t.name FROM tags t JOIN contact_tags ct ON t.id = ct.tag_id WHERE ct.contact_id = $1 AND t.user_id = $2`,
-        [contact.id, req.userId]
-      );
-      contact.tags = tagsResult.rows || [];
-    }
-    res.json({ contacts });
+    res.json({ contacts: contactsResult.rows });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -552,6 +620,7 @@ app.get("/api/contacts/archived", authMiddleware, async (req, res) => {
   }
 });
 
+// Gemini COMMENT: DEPRECATED. This data is now included in the /api/dashboard-data endpoint.
 app.get("/api/contacts/archived/count", authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(
@@ -749,6 +818,7 @@ app.put(
   }
 );
 
+// Gemini COMMENT: DEPRECATED. This data is now included in the /api/dashboard-data endpoint.
 app.get("/api/tags", authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(
@@ -909,6 +979,7 @@ app.post(
     const { token } = req.body;
     const userId = req.userId;
     try {
+      // CORRECTED: All non-breaking spaces removed from indentation.
       const query = `
         INSERT INTO devices (user_id, token) VALUES ($1, $2)
         ON CONFLICT (token) DO UPDATE SET user_id = EXCLUDED.user_id;

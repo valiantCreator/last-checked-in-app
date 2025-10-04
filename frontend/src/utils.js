@@ -1,13 +1,12 @@
-// frontend/src/utils.js
-
-import {
-  addDays,
-  startOfDay,
-  format,
-  isToday,
-  isTomorrow,
-  differenceInCalendarDays,
-} from "date-fns";
+// Gemini COMMENT: PERFORMANCE FIX - Each function is now imported directly from its own module.
+// This allows Vite's tree-shaking to remove all unused parts of the date-fns library,
+// significantly reducing the final bundle size.
+import addDays from "date-fns/addDays";
+import startOfDay from "date-fns/startOfDay";
+import format from "date-fns/format";
+import isToday from "date-fns/isToday";
+import isTomorrow from "date-fns/isTomorrow";
+import differenceInCalendarDays from "date-fns/differenceInCalendarDays";
 
 // NEW: A robust helper function to parse a UTC date string (from the DB)
 // as if it were a local date. This is the core of the timezone bug fix.

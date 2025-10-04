@@ -13,17 +13,25 @@ export const useContacts = ({ token, setConfirmationState }) => {
   const [allTags, setAllTags] = useState([]);
   const [fetchingNotesFor, setFetchingNotesFor] = useState(new Set());
 
-  const fetchContacts = useCallback(async () => {
+  // Gemini COMMENT: PERFORMANCE REFACTOR - This is the new, single function to get all dashboard data.
+  // It hits the efficient `/api/dashboard-data` endpoint and populates all relevant state at once.
+  const fetchDashboardData = useCallback(async () => {
+    if (!token) return;
     try {
-      const res = await api.get("/contacts");
+      const res = await api.get("/dashboard-data");
+      const { contacts, archivedCount, tags } = res.data;
+
+      // Gemini COMMENT: We still initialize a 'notes' array on the frontend for lazy loading notes later.
       setContacts(
-        res.data.contacts.map((c) => ({ ...c, notes: [], tags: c.tags || [] }))
+        contacts.map((c) => ({ ...c, notes: [], tags: c.tags || [] }))
       );
+      setArchivedCount(archivedCount);
+      setAllTags(tags);
     } catch (error) {
-      console.error("Failed to fetch contacts", error);
-      toast.error("Could not load contacts.");
+      console.error("Failed to fetch dashboard data", error);
+      toast.error("Could not load your data. Please try again.");
     }
-  }, []);
+  }, [token]);
 
   const fetchArchivedContacts = useCallback(async () => {
     try {
@@ -35,24 +43,16 @@ export const useContacts = ({ token, setConfirmationState }) => {
     }
   }, []);
 
-  const fetchInitialData = useCallback(async () => {
-    if (token) {
-      await fetchContacts();
-      api.get("/tags").then((res) => setAllTags(res.data.tags || []));
-      api
-        .get("/contacts/archived/count")
-        .then((res) => setArchivedCount(res.data.count));
-    }
-  }, [token, fetchContacts]);
-
+  // Gemini COMMENT: The old `fetchInitialData` and `fetchContacts` are removed. This useEffect now calls our single data source function.
   useEffect(() => {
-    fetchInitialData();
-  }, [fetchInitialData]);
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   const handleAddContact = useCallback(() => {
     toast.success("Contact added!");
-    fetchContacts();
-  }, [fetchContacts]);
+    // Gemini COMMENT: Instead of just refetching contacts, we refetch all dashboard data to ensure consistency.
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   const handleCheckIn = useCallback(
     (id) => {
@@ -100,11 +100,12 @@ export const useContacts = ({ token, setConfirmationState }) => {
       return api
         .put(`/contacts/${editingContact.id}`, contactToUpdate)
         .then(() => {
-          fetchContacts();
+          // Gemini COMMENT: Refetch all data for consistency after an update.
+          fetchDashboardData();
           toast.success("Contact updated!");
         });
     },
-    [fetchContacts]
+    [fetchDashboardData]
   );
 
   const fetchNotesForContact = useCallback(
@@ -171,26 +172,39 @@ export const useContacts = ({ token, setConfirmationState }) => {
     });
   }, []);
 
-  const handleTagAdded = useCallback((contactId, newTag) => {
-    setContacts((cs) =>
-      cs.map((c) =>
-        c.id === contactId ? { ...c, tags: [...c.tags, newTag] } : c
-      )
-    );
-  }, []);
-
-  const handleRemoveTag = useCallback((contactId, tagId) => {
-    api.delete(`/contacts/${contactId}/tags/${tagId}`).then(() => {
+  const handleTagAdded = useCallback(
+    (contactId, newTag) => {
       setContacts((cs) =>
-        cs.map((c) => {
-          if (c.id === contactId)
-            return { ...c, tags: c.tags.filter((t) => t.id !== tagId) };
-          return c;
-        })
+        cs.map((c) =>
+          c.id === contactId ? { ...c, tags: [...c.tags, newTag] } : c
+        )
       );
-      api.get(`/tags`).then((res) => setAllTags(res.data.tags || []));
-    });
-  }, []);
+      // Gemini COMMENT: When a new tag is created, we need to refresh the global tag list.
+      // The most reliable way is to refetch all dashboard data.
+      fetchDashboardData();
+    },
+    [fetchDashboardData]
+  );
+
+  const handleRemoveTag = useCallback(
+    (contactId, tagId) => {
+      api.delete(`/contacts/${contactId}/tags/${tagId}`).then(() => {
+        // Gemini COMMENT: Optimistically update the UI for a faster user experience.
+        setContacts((cs) =>
+          cs.map((c) => {
+            if (c.id === contactId)
+              return { ...c, tags: c.tags.filter((t) => t.id !== tagId) };
+            return c;
+          })
+        );
+        // Gemini COMMENT: The separate tag refetch is no longer needed. The dashboard refetch will handle it.
+        // However, since we optimistically updated the contact, we only need to refresh the global tag list
+        // if the tag is now orphaned. The most robust way to handle all edge cases is a full data refresh.
+        fetchDashboardData();
+      });
+    },
+    [fetchDashboardData]
+  );
 
   const handleArchiveContact = useCallback((contactId) => {
     api.put(`/contacts/${contactId}/archive`).then(() => {
@@ -204,24 +218,17 @@ export const useContacts = ({ token, setConfirmationState }) => {
     (contactId) => {
       const contactToRestore = archivedContacts.find((c) => c.id === contactId);
       api.put(`/contacts/${contactId}/restore`).then(() => {
-        setArchivedContacts((prev) => prev.filter((c) => c.id !== contactId));
-        // Gemini FIX: Use Math.max to prevent the count from ever going below 0.
-        // This solves the optimistic update race condition that could cause a "-1" display.
+        setArchivedContacts((prev) => prev.filter((c) => c.id !== contactId)); // Gemini FIX: Use Math.max to prevent the count from ever going below 0. // This solves the optimistic update race condition that could cause a "-1" display.
         setArchivedCount((prev) => Math.max(0, prev - 1));
         if (contactToRestore) {
-          setContacts((prev) => [
-            ...prev,
-            {
-              ...contactToRestore,
-              notes: [],
-              tags: contactToRestore.tags || [],
-            },
-          ]);
+          // Gemini COMMENT: When restoring, we now need to refetch all data to get the contact with its tags.
+          // This avoids complex state merging and ensures data is fresh.
+          fetchDashboardData();
         }
         toast.success("Contact restored!");
       });
     },
-    [archivedContacts]
+    [archivedContacts, fetchDashboardData]
   );
 
   const handleDeletePermanently = useCallback(
@@ -258,7 +265,8 @@ export const useContacts = ({ token, setConfirmationState }) => {
       api
         .put(`/contacts/${contactId}/snooze`, { snooze_days: days })
         .then(() => {
-          fetchContacts();
+          // Gemini COMMENT: Snoozing affects overdue status, so a full refetch is the safest way to update the UI.
+          fetchDashboardData();
           toast.success("Snoozed!");
         })
         .catch((err) => {
@@ -266,7 +274,7 @@ export const useContacts = ({ token, setConfirmationState }) => {
           toast.error("Could not snooze contact.");
         });
     },
-    [fetchContacts]
+    [fetchDashboardData]
   );
 
   const handleTogglePin = useCallback(
@@ -355,15 +363,15 @@ export const useContacts = ({ token, setConfirmationState }) => {
       };
     },
     [contacts]
-  );
+  ); // DEV COMMENT: Return the state and all handler functions.
 
-  // DEV COMMENT: Return the state and all handler functions.
   return {
     contacts,
     archivedContacts,
     archivedCount,
     allTags,
-    fetchContacts,
+    // Gemini COMMENT: The old fetchContacts function is removed and replaced with the more comprehensive fetchDashboardData.
+    // It's not returned as it's only used internally in the hook.
     fetchArchivedContacts,
     handleAddContact,
     handleCheckIn,
