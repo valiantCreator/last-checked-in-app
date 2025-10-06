@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/:path((?!.*\\.).*)",
+      "source": "/((?!api|assets|_vercel|sw.js|favicon.ico|manifest.webmanifest).*)",
       "destination": "/index.html"
     }
   ]
