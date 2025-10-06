@@ -35,7 +35,27 @@ const PORT = process.env.PORT || 3001;
 
 // --- Core Middleware ---
 app.set("trust proxy", 1);
-app.use(cors());
+
+// Gemini COMMENT: DEPLOYMENT FIX - Replaced the overly permissive default cors()
+// with a robust, production-ready configuration that explicitly whitelists the frontend.
+const whitelist = [
+  process.env.FRONTEND_URL, // The live Vercel URL from your Render environment variables
+  "http://localhost:5173", // Your local Vite dev server
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // The 'origin' can be undefined for server-to-server requests or some mobile apps.
+    // '!origin' allows these cases. The whitelist ensures browsers are restricted.
+    if (whitelist.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // --- Rate Limiting Middleware ---
@@ -124,11 +144,11 @@ cron.schedule("0 9 * * *", async () => {
       );
       const overdueResult = await client.query(
         `
-            SELECT id, name FROM contacts
-            WHERE user_id = $1
-              AND is_archived = FALSE
-              AND (snooze_until IS NULL OR CAST(snooze_until AS DATE) < CURRENT_DATE)
-              AND CAST((last_checkin + checkin_frequency * INTERVAL '1 day') AS DATE) <= CURRENT_DATE
+          SELECT id, name FROM contacts
+          WHERE user_id = $1
+            AND is_archived = FALSE
+            AND (snooze_until IS NULL OR CAST(snooze_until AS DATE) < CURRENT_DATE)
+            AND CAST((last_checkin + checkin_frequency * INTERVAL '1 day') AS DATE) <= CURRENT_DATE
         `,
         [userId]
       );
