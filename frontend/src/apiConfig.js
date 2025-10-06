@@ -1,15 +1,17 @@
 import axios from "axios";
 
-// Gemini COMMENT: FIX - Vite uses `import.meta.env` for environment variables, not `process.env`.
-// The logic is updated to correctly distinguish between dev, production, and a local preview.
-const isProduction = import.meta.env.PROD;
-const productionURL = "https://last-checked-in-api.onrender.com/api";
-const developmentURL = "http://localhost:3001/api";
-
-// Gemini COMMENT: The new override allows `npm run preview` to talk to the local backend.
+// Gemini COMMENT: This is the definitive, simplified configuration.
+// It relies on a single environment variable, VITE_API_URL, which MUST be set
+// in the deployment environment (Vercel) and can be overridden locally.
 const API_URL =
-  import.meta.env.VITE_API_URL_OVERRIDE ||
-  (isProduction ? productionURL : developmentURL);
+  import.meta.env.VITE_API_URL_OVERRIDE || import.meta.env.VITE_API_URL;
+
+// Gemini COMMENT: If the API_URL is not set, we throw an error immediately to prevent silent failures.
+if (!API_URL) {
+  throw new Error(
+    "VITE_API_URL is not defined. Please set it in your .env file or deployment environment."
+  );
+}
 
 const api = axios.create({
   baseURL: API_URL,
