@@ -1,15 +1,18 @@
 import axios from "axios";
 
-// Gemini COMMENT: This is the definitive, simplified configuration.
-// It relies on a single environment variable, VITE_API_URL, which MUST be set
-// in the deployment environment (Vercel) and can be overridden locally.
-const API_URL =
-  import.meta.env.VITE_API_URL_OVERRIDE || import.meta.env.VITE_API_URL;
+// Gemini COMMENT: This is the definitive, industry-standard configuration for Vite.
+// It uses Vite's built-in `MODE` to distinguish between environments, removing all ambiguity.
+const isProduction = import.meta.env.MODE === "production";
 
-// Gemini COMMENT: If the API_URL is not set, we throw an error immediately to prevent silent failures.
+// In production, the URL MUST come from the Vercel environment variable.
+// In development, we hardcode it to point to our local backend.
+const API_URL = isProduction
+  ? import.meta.env.VITE_API_URL
+  : "http://localhost:3001/api";
+
 if (!API_URL) {
   throw new Error(
-    "VITE_API_URL is not defined. Please set it in your .env file or deployment environment."
+    "API_URL is not defined. Ensure VITE_API_URL is set in your deployment environment."
   );
 }
 
