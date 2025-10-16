@@ -28,6 +28,12 @@ export default defineConfig({
           },
         ],
       },
+      // Gemini COMMENT: ADD THIS BLOCK. This is not a "fix," it is the REQUIRED
+      // configuration to enable the PWA plugin during development. Without this,
+      // the dev server will not generate the manifest or serve the service worker.
+      devOptions: {
+        enabled: true,
+      },
     }),
   ],
 });

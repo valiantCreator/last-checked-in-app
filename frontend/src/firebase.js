@@ -1,12 +1,9 @@
 // Gemini COMMENT: Import only the necessary functions from the Firebase SDK.
-// This is crucial for tree-shaking and reducing the final bundle size.
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken } from "firebase/messaging";
 import api from "./apiConfig.js";
 
 // Gemini COMMENT: SECURITY FIX - The Firebase config is now loaded from environment variables.
-// The hardcoded keys have been removed to prevent them from being exposed in the source code.
-// Vite exposes environment variables prefixed with `VITE_` on the `import.meta.env` object.
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -25,10 +22,23 @@ const messaging = getMessaging(app);
 const VAPID_KEY =
   "BO0L9UFpX0v6bo3AoYtuBQEBKLVQi1SNZoMgR-Gp5_wgSSb6cJxARGlyEaygEPTy9Ybc57GHJK-ignlou8IWwhw";
 
-// This function now uses async/await and correctly returns the token
-export const requestForToken = async () => {
+// Gemini COMMENT: REFACTOR - The function now accepts the service worker registration object.
+export const requestForToken = async (swRegistration) => {
+  // Gemini COMMENT: CRITICAL FIX - Add a guard clause. Do not proceed if the registration object isn't ready.
+  // This prevents errors if `getToken` is called before the service worker is active.
+  if (!swRegistration) {
+    console.error("Service worker registration not available yet.");
+    return null;
+  }
+
   try {
-    const currentToken = await getToken(messaging, { vapidKey: VAPID_KEY });
+    // Gemini COMMENT: CRITICAL FIX - Pass the registration object to `getToken`.
+    // This forces Firebase to use our existing, correctly-served service worker
+    // instead of trying to register its own, which solves the MIME type error.
+    const currentToken = await getToken(messaging, {
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: swRegistration,
+    });
 
     if (currentToken) {
       await api.post("/devices/token", { token: currentToken });

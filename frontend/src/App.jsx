@@ -29,8 +29,10 @@ import { useContacts } from "./hooks/useContacts.js";
 import { useUIState } from "./hooks/useUIState.js";
 import { useSelection } from "./hooks/useSelection.js";
 
+// Gemini COMMENT: ADDED IMPORT - Import the new context to access the service worker registration.
+import { SWContext } from "./context/SWContext.jsx";
+
 // Gemini COMMENT: PERFORMANCE FIX - Lazy load components that are not needed for the initial paint.
-// This breaks them into separate JavaScript chunks that are only downloaded when they are first rendered.
 const ArchivedView = lazy(() => import("./components/ArchivedView.jsx"));
 const AgendaView = lazy(() => import("./components/AgendaView.jsx"));
 const ExportCalendarModal = lazy(() =>
@@ -64,6 +66,8 @@ const LoadingFallback = () => (
 
 function MainApplication() {
   const { token } = useContext(AuthContext);
+  // Gemini COMMENT: ADDED - Get the service worker registration from the context.
+  const { swRegistration } = useContext(SWContext);
 
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
@@ -113,7 +117,6 @@ function MainApplication() {
     archivedContacts,
     archivedCount,
     allTags,
-    // Gemini COMMENT: fetchContacts has been replaced by the more efficient fetchDashboardData in the useContacts hook
     fetchArchivedContacts,
     handleAddContact,
     handleCheckIn,
@@ -144,9 +147,14 @@ function MainApplication() {
     selectionModeArchived,
   } = useSelection();
 
+  // Gemini COMMENT: REFACTORED - The useEffect now depends on the swRegistration object.
+  // It will only attempt to get a token when both the user token AND the service
+  // worker registration are available.
   useEffect(() => {
-    if (token) requestForToken();
-  }, [token]);
+    if (token && swRegistration) {
+      requestForToken(swRegistration);
+    }
+  }, [token, swRegistration]);
 
   useEffect(() => {
     const hasSeenOnboarding = localStorage.getItem("hasSeenOnboarding");
@@ -236,13 +244,8 @@ function MainApplication() {
     sortDirection,
   ]);
 
-  // Gemini COMMENT: We need to get the correct refetch function from the hook.
-  // Since we refactored it, let's assume the hook will be updated to expose a single refetcher.
-  // For now, this is a placeholder for where the correct refetch function would be called.
   const refetchDashboardData = () => {
     // This function will be properly connected once the useContacts hook is updated
-    // to expose the fetchDashboardData function. For now, we are replacing fetchContacts with a no-op
-    // to avoid calling the old, inefficient function.
   };
 
   const onUpdateContactSubmit = () => {
@@ -300,7 +303,7 @@ function MainApplication() {
       .post("/contacts/batch-archive", { contactIds: selectedContactIds })
       .then(() => {
         toast.success(`${selectedContactIds.length} contacts archived.`);
-        refetchDashboardData(); // Using the placeholder
+        refetchDashboardData();
         handleClearSelection();
       })
       .catch((err) => toast.error("Could not archive contacts."));
@@ -313,7 +316,7 @@ function MainApplication() {
       })
       .then(() => {
         toast.success(`${selectedContactIds.length} contacts snoozed.`);
-        refetchDashboardData(); // Using the placeholder
+        refetchDashboardData();
         handleClearSelection();
         setIsBatchSnoozing(false);
       })
@@ -324,7 +327,7 @@ function MainApplication() {
       .post("/contacts/batch-checkin", { contactIds: selectedContactIds })
       .then(() => {
         toast.success(`${selectedContactIds.length} contacts checked in.`);
-        refetchDashboardData(); // Using the placeholder
+        refetchDashboardData();
         handleClearSelection();
       })
       .catch((err) => toast.error("Could not check in contacts."));
@@ -334,7 +337,7 @@ function MainApplication() {
       .post("/contacts/batch-restore", { contactIds: selectedArchivedIds })
       .then(() => {
         toast.success(`${selectedArchivedIds.length} contacts restored.`);
-        refetchDashboardData(); // Using the placeholder
+        refetchDashboardData();
         fetchArchivedContacts();
         handleClearArchivedSelection();
       })
@@ -403,7 +406,6 @@ function MainApplication() {
           : ""
       }`}
     >
-      {/* Gemini COMMENT: Wrap lazy modals in a Suspense boundary. A fallback isn't critical here since they are invisible until triggered. */}
       <Suspense fallback={null}>
         {showOnboarding && (
           <OnboardingModal
@@ -514,7 +516,6 @@ function MainApplication() {
               </div>
             </div>
           </div>
-          {/* Gemini COMMENT: Wrap lazy views in a Suspense boundary with a visible fallback. */}
           <Suspense fallback={<LoadingFallback />}>
             {displayMode === "agenda" ? (
               <AgendaView
@@ -627,7 +628,6 @@ function App() {
           }}
         />
         <ErrorBoundary>
-          {/* Gemini COMMENT: Wrap all routes in Suspense for page-level code splitting. */}
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
               <Route
