@@ -28,11 +28,15 @@ export default defineConfig({
           },
         ],
       },
-      // Gemini COMMENT: ADD THIS BLOCK. This is not a "fix," it is the REQUIRED
-      // configuration to enable the PWA plugin during development. Without this,
-      // the dev server will not generate the manifest or serve the service worker.
+      // Gemini COMMENT:it is the REQUIRED configuration to enable the PWA plugin during development
+      // Without this, the dev server will not generate the manifest or serve the service worker.
       devOptions: {
         enabled: true,
+        // Gemini COMMENT: CRITICAL FIX - THIS IS THE ENTIRE FIX.
+        // This tells the browser to load our service worker as an ES Module.
+        // Our firebase-messaging-sw.js uses `import` statements, which makes this mandatory.
+        // The 'TypeError' about an invalid WorkerType was caused by this line being absent.
+        type: "module",
       },
     }),
   ],

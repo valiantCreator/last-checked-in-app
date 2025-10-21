@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import AuthContext from "./context/AuthContext";
-// Gemini COMMENT: PERFORMANCE FIX - Imported `lazy` and `Suspense` from React for code-splitting.
 import {
   useMemo,
   useContext,
@@ -9,6 +8,7 @@ import {
   useState,
   lazy,
   Suspense,
+  useCallback,
 } from "react";
 import { Toaster, toast } from "react-hot-toast";
 import { requestForToken } from "./firebase";
@@ -29,10 +29,9 @@ import { useContacts } from "./hooks/useContacts.js";
 import { useUIState } from "./hooks/useUIState.js";
 import { useSelection } from "./hooks/useSelection.js";
 
-// Gemini COMMENT: ADDED IMPORT - Import the new context to access the service worker registration.
-import { SWContext } from "./context/SWContext.jsx";
+import { SWProvider, SWContext } from "./context/SWContext.jsx";
+import { registerSW } from "virtual:pwa-register";
 
-// Gemini COMMENT: PERFORMANCE FIX - Lazy load components that are not needed for the initial paint.
 const ArchivedView = lazy(() => import("./components/ArchivedView.jsx"));
 const AgendaView = lazy(() => import("./components/AgendaView.jsx"));
 const ExportCalendarModal = lazy(() =>
@@ -51,7 +50,6 @@ const ConfirmationModal = lazy(() =>
 const OnboardingModal = lazy(() => import("./components/OnboardingModal.jsx"));
 const FeedbackModal = lazy(() => import("./components/FeedbackModal.jsx"));
 
-// Gemini COMMENT: PERFORMANCE FIX - Lazy load all page-level components for route-based code-splitting.
 const LoginPage = lazy(() => import("./pages/LoginPage.jsx"));
 const SignupPage = lazy(() => import("./pages/SignupPage.jsx"));
 const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage.jsx"));
@@ -59,14 +57,52 @@ const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage.jsx"));
 const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage.jsx"));
 const TermsOfServicePage = lazy(() => import("./pages/TermsOfServicePage.jsx"));
 
-// Gemini COMMENT: A simple fallback component to show while lazy-loaded components are being fetched.
 const LoadingFallback = () => (
   <div className={styles.loadingFallback}>Loading...</div>
 );
 
+function ApplicationCore() {
+  const { setSwRegistration } = useContext(SWContext);
+
+  useEffect(() => {
+    // Gemini COMMENT: The registerSW call is now clean, without diagnostic logs.
+    registerSW({
+      onRegistered(registration) {
+        if (registration) {
+          setSwRegistration(registration);
+        }
+      },
+      onRegisterError(error) {
+        // Log registration errors to the console for future debugging.
+        console.error("Service Worker registration failed:", error);
+      },
+    });
+  }, [setSwRegistration]);
+
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <MainApplication />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+      </Routes>
+    </Suspense>
+  );
+}
+
 function MainApplication() {
   const { token } = useContext(AuthContext);
-  // Gemini COMMENT: ADDED - Get the service worker registration from the context.
   const { swRegistration } = useContext(SWContext);
 
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -92,6 +128,8 @@ function MainApplication() {
     activeSearchFilter,
     isExportModalOpen,
     confirmationState,
+    notificationPermission,
+    isRequestingNotifications,
     setTheme,
     setSortBy,
     setSortDirection,
@@ -110,6 +148,8 @@ function MainApplication() {
     setActiveSearchFilter,
     setIsExportModalOpen,
     setConfirmationState,
+    setNotificationPermission,
+    setIsRequestingNotifications,
   } = useUIState();
 
   const {
@@ -147,14 +187,42 @@ function MainApplication() {
     selectionModeArchived,
   } = useSelection();
 
-  // Gemini COMMENT: REFACTORED - The useEffect now depends on the swRegistration object.
-  // It will only attempt to get a token when both the user token AND the service
-  // worker registration are available.
   useEffect(() => {
-    if (token && swRegistration) {
-      requestForToken(swRegistration);
+    if ("Notification" in window) {
+      setNotificationPermission(Notification.permission);
     }
-  }, [token, swRegistration]);
+  }, [setNotificationPermission]);
+
+  const handleRequestNotificationPermission = useCallback(async () => {
+    if (!swRegistration) {
+      toast.error("Service worker not ready. Please try again in a moment.");
+      return;
+    }
+
+    setIsRequestingNotifications(true);
+    try {
+      const fcmToken = await requestForToken(swRegistration);
+      if (fcmToken) {
+        setNotificationPermission("granted");
+        toast.success("Notifications enabled successfully!");
+      } else {
+        toast("You can enable notifications later using the bell icon.");
+      }
+    } catch (err) {
+      if (err && err.code === "messaging/permission-blocked") {
+        setNotificationPermission("denied");
+        toast.error(
+          "Notifications are blocked. To enable them, please go to your browser's site settings for this page.",
+          { duration: 6000 }
+        );
+      } else {
+        console.error("An unexpected error occurred:", err);
+        toast.error("Could not enable notifications. Please try again.");
+      }
+    } finally {
+      setIsRequestingNotifications(false);
+    }
+  }, [swRegistration, setIsRequestingNotifications, setNotificationPermission]);
 
   useEffect(() => {
     const hasSeenOnboarding = localStorage.getItem("hasSeenOnboarding");
@@ -244,9 +312,7 @@ function MainApplication() {
     sortDirection,
   ]);
 
-  const refetchDashboardData = () => {
-    // This function will be properly connected once the useContacts hook is updated
-  };
+  const refetchDashboardData = () => {};
 
   const onUpdateContactSubmit = () => {
     handleUpdateContact(editingContact).then(() => setEditingContact(null));
@@ -336,7 +402,7 @@ function MainApplication() {
     api
       .post("/contacts/batch-restore", { contactIds: selectedArchivedIds })
       .then(() => {
-        toast.success(`${selectedArchivedIds.length} contacts restored.`);
+        toast.success(`${selectedContactIds.length} contacts restored.`);
         refetchDashboardData();
         fetchArchivedContacts();
         handleClearArchivedSelection();
@@ -434,6 +500,10 @@ function MainApplication() {
         onViewArchived={handleViewArchived}
         onExportToCalendar={() => setIsExportModalOpen(true)}
         onOpenFeedbackModal={() => setIsFeedbackModalOpen(true)}
+        notificationPermission={notificationPermission}
+        onRequestNotifications={handleRequestNotificationPermission}
+        isRequestingNotifications={isRequestingNotifications}
+        swRegistration={swRegistration}
       />
       {view === "active" ? (
         <>
@@ -616,43 +686,22 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Toaster
-          position="top-center"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: "var(--card-bg)",
-              color: "var(--text-color)",
-              border: "1px solid var(--border-color)",
-            },
-          }}
-        />
-        <ErrorBoundary>
-          <Suspense fallback={<LoadingFallback />}>
-            <Routes>
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <MainApplication />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route
-                path="/reset-password/:token"
-                element={<ResetPasswordPage />}
-              />
-              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-              <Route
-                path="/terms-of-service"
-                element={<TermsOfServicePage />}
-              />
-            </Routes>
-          </Suspense>
-        </ErrorBoundary>
+        <SWProvider>
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              duration: 3000,
+              style: {
+                background: "var(--card-bg)",
+                color: "var(--text-color)",
+                border: "1px solid var(--border-color)",
+              },
+            }}
+          />
+          <ErrorBoundary>
+            <ApplicationCore />
+          </ErrorBoundary>
+        </SWProvider>
       </AuthProvider>
     </BrowserRouter>
   );

@@ -36,6 +36,9 @@ export const useUIState = () => {
     message: "",
     onConfirm: () => {},
   });
+  const [notificationPermission, setNotificationPermission] = useState(null);
+  const [isRequestingNotifications, setIsRequestingNotifications] =
+    useState(false);
 
   // Effect to update the DOM and localStorage when the theme changes.
   useEffect(() => {
@@ -75,6 +78,8 @@ export const useUIState = () => {
     activeSearchFilter,
     isExportModalOpen,
     confirmationState,
+    notificationPermission,
+    isRequestingNotifications,
 
     // State setters
     setTheme,
@@ -95,5 +100,7 @@ export const useUIState = () => {
     setActiveSearchFilter,
     setIsExportModalOpen,
     setConfirmationState,
+    setNotificationPermission,
+    setIsRequestingNotifications,
   };
 };

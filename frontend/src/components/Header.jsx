@@ -15,11 +15,81 @@ function Header({
   onViewActive,
   onExportToCalendar,
   theme,
-  // Gemini NEW: Accept the new handler prop from App.jsx
   onOpenFeedbackModal,
+  notificationPermission,
+  onRequestNotifications,
+  isRequestingNotifications,
+  swRegistration,
 }) {
   const { logout } = useContext(AuthContext);
   const isMobile = useMediaQuery("(max-width: 500px)");
+
+  let notificationButton = null;
+
+  if (isRequestingNotifications) {
+    notificationButton = (
+      <button
+        key="notifications-loading"
+        className="button-secondary"
+        title="Requesting permission..."
+        disabled
+      >
+        Enabling...
+      </button>
+    );
+  } else if (notificationPermission) {
+    switch (notificationPermission) {
+      case "granted":
+        notificationButton = (
+          <button
+            key="notifications-granted"
+            className="button-secondary"
+            title="Notifications are enabled"
+            disabled
+          >
+            🔔 Enabled
+          </button>
+        );
+        break;
+      case "denied":
+        notificationButton = (
+          <button
+            key="notifications-denied"
+            className="button-secondary"
+            title="Notifications are blocked in your browser settings"
+            onClick={onRequestNotifications}
+          >
+            🔕 Blocked
+          </button>
+        );
+        break;
+      default: // 'default' state. Now we check for SW readiness.
+        if (!swRegistration) {
+          notificationButton = (
+            <button
+              key="notifications-initializing"
+              className="button-secondary"
+              title="Initializing notification service..."
+              disabled
+            >
+              Initializing...
+            </button>
+          );
+        } else {
+          notificationButton = (
+            <button
+              key="notifications-default"
+              className="button-secondary"
+              title="Enable Notifications"
+              onClick={onRequestNotifications}
+            >
+              🔔 Enable Notifications
+            </button>
+          );
+        }
+        break;
+    }
+  }
 
   const viewButton =
     view === "active" ? (
@@ -47,7 +117,6 @@ function Header({
     </button>
   );
 
-  // Gemini FIX: Replaced the unreliable mailto: link with a button that opens the in-app modal.
   const feedbackButton = (
     <button
       key="feedback"
@@ -68,12 +137,15 @@ function Header({
   const mobileDropdownActions = [
     viewButton,
     exportButton,
+    notificationButton,
     feedbackButton,
     logoutButton,
   ].filter(Boolean);
 
   const kebabIcon = (
     <div className={styles.dropdownTrigger}>
+      {/* Gemini COMMENT: CRITICAL SYNTAX FIX - The viewBox attribute was missing a '24'.
+          This was causing a fatal rendering error, crashing the entire component. */}
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
@@ -115,6 +187,7 @@ function Header({
           <>
             {viewButton}
             {exportButton}
+            {notificationButton}
             {feedbackButton}
             {logoutButton}
             <ThemeToggleButton theme={theme} onToggleTheme={onToggleTheme} />
