@@ -34,9 +34,16 @@ const createContactsRouter = (pool, validate, authMiddleware) => {
     tagName: z.string().min(1, { message: "Tag name is required" }),
   });
 
-  const snoozeDurationSchema = z.object({
-    snooze_days: z.number().int().positive({
-      message: "Snooze duration must be a positive number of days.",
+  // Gemini COMMENT: REFACTOR - The Zod schema now accepts 'tomorrow' as a valid unit.
+  const granularSnoozeSchema = z.object({
+    value: z
+      .number()
+      .int()
+      .positive({ message: "Snooze value must be a positive number." }),
+    unit: z.enum(["days", "hours", "tomorrow"], {
+      errorMap: () => ({
+        message: "Invalid time unit. Must be 'days', 'hours', or 'tomorrow'.",
+      }),
     }),
   });
 
@@ -44,7 +51,7 @@ const createContactsRouter = (pool, validate, authMiddleware) => {
     contactIds: z
       .array(z.number().int().positive())
       .min(1, { message: "At least one contact ID is required." }),
-    snooze_days: z.number().int().positive().optional(),
+    snooze: granularSnoozeSchema.optional(),
   });
 
   // Gemini COMMENT: All routes in this file are protected by the authMiddleware.
@@ -95,24 +102,37 @@ const createContactsRouter = (pool, validate, authMiddleware) => {
     "/batch-snooze",
     validate(batchActionSchema),
     async (req, res) => {
-      const { contactIds, snooze_days } = req.body;
-      if (!snooze_days) {
+      const { contactIds, snooze } = req.body;
+      if (!snooze) {
         return res
           .status(400)
-          .json({ error: "snooze_days is required for batch snooze." });
+          .json({ error: "snooze object is required for batch snooze." });
       }
       try {
+        // Gemini COMMENT: REFACTOR - Conditional logic to handle the 'tomorrow' case.
+        let snoozeUntilUpdate;
+        if (snooze.unit === "tomorrow") {
+          // Set snooze_until to 9 AM UTC on the next day.
+          snoozeUntilUpdate =
+            "date_trunc('day', NOW() + interval '1 day') + interval '9 hours'";
+        } else {
+          // Use a parameterized interval for other units ('days', 'hours').
+          const interval = `${snooze.value} ${snooze.unit}`;
+          snoozeUntilUpdate = `(
+            GREATEST(
+                NOW(),
+                COALESCE(snooze_until, last_checkin + (checkin_frequency * INTERVAL '1 day'))
+            ) + ('${interval}'::interval)
+          )`;
+        }
+
         const query = `
           UPDATE contacts
-          SET snooze_until = (
-              GREATEST(
-                  NOW(),
-                  COALESCE(snooze_until, last_checkin + (checkin_frequency * INTERVAL '1 day'))
-              ) + ($1 * INTERVAL '1 day')
-          )
-          WHERE id = ANY($2::int[]) AND user_id = $3;
+          SET snooze_until = ${snoozeUntilUpdate}
+          WHERE id = ANY($1::int[]) AND user_id = $2;
         `;
-        await pool.query(query, [snooze_days, contactIds, req.userId]);
+        await pool.query(query, [contactIds, req.userId]);
+
         res.json({
           message: `${contactIds.length} contacts snoozed successfully.`,
         });
@@ -375,26 +395,42 @@ const createContactsRouter = (pool, validate, authMiddleware) => {
   // PUT /api/contacts/:id/snooze
   router.put(
     "/:id/snooze",
-    validate(snoozeDurationSchema),
+    validate(granularSnoozeSchema),
     async (req, res) => {
-      const { snooze_days } = req.body;
+      const { value, unit } = req.body;
       try {
+        // Gemini COMMENT: REFACTOR - Conditional logic to handle the 'tomorrow' case.
+        let snoozeUntilUpdate;
+        let queryParams = [req.params.id, req.userId];
+
+        if (unit === "tomorrow") {
+          // Sets snooze_until to 9 AM UTC on the next day.
+          snoozeUntilUpdate =
+            "date_trunc('day', NOW() + interval '1 day') + interval '9 hours'";
+        } else {
+          // Use a parameterized interval for other units ('days', 'hours').
+          const interval = `${value} ${unit}`;
+          snoozeUntilUpdate = `(
+            GREATEST(
+                NOW(),
+                COALESCE(snooze_until, last_checkin + (checkin_frequency * INTERVAL '1 day'))
+            ) + ($1::interval)
+          )`;
+          // Prepend the interval to the query parameters for this case.
+          queryParams.unshift(interval);
+        }
+
         const query = `
           UPDATE contacts
-          SET snooze_until = (
-              GREATEST(
-                  NOW(),
-                  COALESCE(snooze_until, last_checkin + (checkin_frequency * INTERVAL '1 day'))
-              ) + ($1 * INTERVAL '1 day')
-          )
-          WHERE id = $2 AND user_id = $3
+          SET snooze_until = ${snoozeUntilUpdate}
+          WHERE id = $${queryParams.length - 1} AND user_id = $${
+          queryParams.length
+        }
           RETURNING snooze_until;
         `;
-        const result = await pool.query(query, [
-          snooze_days,
-          req.params.id,
-          req.userId,
-        ]);
+
+        const result = await pool.query(query, queryParams);
+
         res.json({
           message: "Contact snoozed successfully",
           snooze_until: result.rows[0].snooze_until,

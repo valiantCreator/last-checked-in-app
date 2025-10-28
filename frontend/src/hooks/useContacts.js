@@ -260,10 +260,14 @@ export const useContacts = ({ token, setConfirmationState }) => {
     [archivedContacts, setConfirmationState]
   );
 
+  // Gemini COMMENT: REFACTOR - This function now accepts the granular snooze object.
   const handleSnooze = useCallback(
-    (contactId, days) => {
-      api
-        .put(`/contacts/${contactId}/snooze`, { snooze_days: days })
+    (contactId, snoozeObject) => {
+      // Gemini COMMENT: CRITICAL FIX - Return the entire promise chain.
+      // This allows the calling component (`App.jsx`) to chain a `.then()` and
+      // perform UI actions (like closing the modal) after this logic completes.
+      return api
+        .put(`/contacts/${contactId}/snooze`, snoozeObject)
         .then(() => {
           // Gemini COMMENT: Snoozing affects overdue status, so a full refetch is the safest way to update the UI.
           fetchDashboardData();
@@ -272,6 +276,8 @@ export const useContacts = ({ token, setConfirmationState }) => {
         .catch((err) => {
           console.error("Snooze failed", err);
           toast.error("Could not snooze contact.");
+          // Gemini COMMENT: It's important to re-throw the error so the calling component's .catch() block will trigger.
+          throw err;
         });
     },
     [fetchDashboardData]
