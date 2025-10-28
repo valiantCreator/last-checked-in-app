@@ -4,7 +4,7 @@ const express = require("express");
 const { z } = require("zod");
 const Mailjet = require("node-mailjet");
 
-// Gemini COMMENT: This router handles general, app-wide endpoints.
+// Gemini COMMENT: REVERT - The router no longer needs the job function.
 const createIndexRouter = (pool, validate, authMiddleware) => {
   const router = express.Router();
 
@@ -31,6 +31,8 @@ const createIndexRouter = (pool, validate, authMiddleware) => {
 
   // All subsequent routes are protected
   router.use(authMiddleware);
+
+  // Gemini COMMENT: REMOVED - The temporary /test/run-job endpoint has been deleted.
 
   // GET /api/dashboard-data
   router.get("/dashboard-data", async (req, res) => {
