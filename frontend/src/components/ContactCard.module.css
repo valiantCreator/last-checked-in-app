@@ -162,40 +162,30 @@
 }
 
 /* --- Zone 3: Footer --- */
+/* Gemini COMMENT: FINAL, SIMPLIFIED LAYOUT */
 .contactCardFooter {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
+  gap: 0.75rem;
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border-color);
 }
 
-.footerActionsLeft,
-.footerActionsRight {
+.footerActionPrimary {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
+}
+.footerActionPrimary > button {
+  width: 100%;
+  font-size: 1.1rem;
 }
 
-@media (max-width: 500px) {
-  .contactCardFooter {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-  .footerActionsLeft,
-  .footerActionsRight {
-    justify-content: center;
-    width: 100%;
-  }
-  .footerActionsLeft > button,
-  .footerActionsRight > button {
-    flex-grow: 1;
-  }
+.footerActionsSecondary {
+  display: flex;
+  gap: 8px;
+}
+.footerActionsSecondary > button {
+  flex-grow: 1; /* Make all secondary buttons share space equally */
 }
 
 /* --- Expanded Details Section --- */

@@ -338,8 +338,8 @@ function ContactCard({
           </div>
 
           <div className={styles.contactCardStatusBar}>
+            {/* Gemini DEV COMMENT: Use the dynamic label variable. */}
             <div className={styles.statusItem}>
-              {/* Gemini DEV COMMENT: Use the dynamic label variable. */}
               <span className={styles.statusLabel}>{lastLabel}:</span>
               <span className={styles.statusValue}>{lastDisplay}</span>
             </div>
@@ -481,32 +481,23 @@ function ContactCard({
             </div>
           )}
 
+          {/* Gemini COMMENT: FINAL REFACTOR - Implementing the simple "Primary Action Swap" layout. */}
           <div className={styles.contactCardFooter}>
-            <div className={styles.footerActionsLeft}>
+            {/* Gemini COMMENT: The primary action is now in its own full-width container at the top. */}
+            <div className={styles.footerActionPrimary}>
               <button
-                className="button-secondary button-danger"
+                className="button-primary"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleArchiveContact(contact.id);
+                  handleCheckIn(contact.id);
                 }}
                 disabled={selectionMode}
               >
-                Archive
+                Checked In!
               </button>
             </div>
-            <div className={styles.footerActionsRight}>
-              {isCardOverdue && (
-                <button
-                  className="button-secondary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenSnoozeModal(contact);
-                  }}
-                  disabled={selectionMode}
-                >
-                  Snooze
-                </button>
-              )}
+            {/* Gemini COMMENT: All secondary actions are grouped in a single flex container below. */}
+            <div className={styles.footerActionsSecondary}>
               <button
                 className="button-secondary"
                 onClick={(e) => {
@@ -532,15 +523,27 @@ function ContactCard({
               >
                 Add Note
               </button>
+              {isCardOverdue && (
+                <button
+                  className="button-secondary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenSnoozeModal(contact);
+                  }}
+                  disabled={selectionMode}
+                >
+                  Snooze
+                </button>
+              )}
               <button
-                className="button-primary"
+                className="button-secondary button-danger"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleCheckIn(contact.id);
+                  handleArchiveContact(contact.id);
                 }}
                 disabled={selectionMode}
               >
-                Checked In!
+                Archive
               </button>
             </div>
           </div>
