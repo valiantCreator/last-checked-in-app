@@ -3,24 +3,46 @@ import { initializeApp } from "firebase/app";
 import { getMessaging, getToken } from "firebase/messaging";
 import api from "./apiConfig.js";
 
-// Gemini COMMENT: SECURITY FIX - The Firebase config is now loaded from environment variables.
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
-};
+// Gemini COMMENT: INFRASTRUCTURE REFACTOR - This block now dynamically selects the correct Firebase configuration
+// based on the environment. Vite provides `import.meta.env.DEV` which is `true` during development (`npm run dev`).
+const isDevelopment = import.meta.env.DEV;
 
-// Initialize Firebase with your configuration
+// Gemini COMMENT: Conditionally select the production or development config object.
+const firebaseConfig = isDevelopment
+  ? {
+      apiKey: import.meta.env.VITE_DEV_FIREBASE_API_KEY,
+      authDomain: import.meta.env.VITE_DEV_FIREBASE_AUTH_DOMAIN,
+      projectId: import.meta.env.VITE_DEV_FIREBASE_PROJECT_ID,
+      storageBucket: import.meta.env.VITE_DEV_FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: import.meta.env.VITE_DEV_FIREBASE_MESSAGING_SENDER_ID,
+      appId: import.meta.env.VITE_DEV_FIREBASE_APP_ID,
+      measurementId: import.meta.env.VITE_DEV_FIREBASE_MEASUREMENT_ID,
+    }
+  : {
+      apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+      authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+      storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+      appId: import.meta.env.VITE_FIREBASE_APP_ID,
+      measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+    };
+
+// Gemini COMMENT: Conditionally select the correct VAPID key.
+const VAPID_KEY = isDevelopment
+  ? import.meta.env.VITE_DEV_FIREBASE_VAPID_KEY
+  : import.meta.env.VITE_FIREBASE_VAPID_KEY;
+
+// Gemini COMMENT: A log to confirm which environment is active. This is useful for debugging.
+console.log(
+  isDevelopment
+    ? "Firebase running in DEV mode."
+    : "Firebase running in PROD mode."
+);
+
+// Initialize Firebase with the dynamically selected configuration
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
-
-// Gemini COMMENT: It's better practice to also store this VAPID key as an environment variable.
-const VAPID_KEY =
-  "BO0L9UFpX0v6bo3AoYtuBQEBKLVQi1SNZoMgR-Gp5_wgSSb6cJxARGlyEaygEPTy9Ybc57GHJK-ignlou8IWwhw";
 
 // Gemini COMMENT: REFACTOR - The function now accepts the service worker registration object.
 export const requestForToken = async (swRegistration) => {
@@ -32,9 +54,7 @@ export const requestForToken = async (swRegistration) => {
   }
 
   try {
-    // Gemini COMMENT: CRITICAL FIX - Pass the registration object to `getToken`.
-    // This forces Firebase to use our existing, correctly-served service worker
-    // instead of trying to register its own, which solves the MIME type error.
+    // Gemini COMMENT: The hardcoded VAPID_KEY is replaced with the environment-aware variable.
     const currentToken = await getToken(messaging, {
       vapidKey: VAPID_KEY,
       serviceWorkerRegistration: swRegistration,
@@ -52,6 +72,7 @@ export const requestForToken = async (swRegistration) => {
     }
   } catch (err) {
     console.error("An error occurred while retrieving token. ", err);
-    return null; // <-- Return null on error
+    // Gemini COMMENT: Re-throw the error so the calling component can catch it and handle specific cases (like permission denied).
+    throw err;
   }
 };

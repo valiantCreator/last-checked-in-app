@@ -2,6 +2,8 @@
 /backend/node_modules
 /backend/.env
 /backend/serviceAccountKey.json
+# Gemini COMMENT: ADD THIS LINE - Explicitly ignore the new development key.
+/backend/serviceAccountKey.dev.json
 
 # Frontend Dependencies & Secrets
 /frontend/node_modules

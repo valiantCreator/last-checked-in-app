@@ -14,14 +14,28 @@ const createAuthRouter = require("./routes/auth");
 const createContactsRouter = require("./routes/contacts");
 const createIndexRouter = require("./routes/index");
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-});
+// Gemini COMMENT: INFRASTRUCTURE REFACTOR - The isDevelopment flag is moved to the top.
+// This flag is now used for both Firebase and Database configuration.
+const isDevelopment = process.env.NODE_ENV === "development";
 
-const serviceAccount = require("./serviceAccountKey.json");
+// Gemini COMMENT: INFRASTRUCTURE REFACTOR - The database configuration is now dynamic.
+const dbConfig = {
+  connectionString: process.env.DATABASE_URL,
+  // Gemini COMMENT: CRITICAL FIX - The 'ssl' object is ONLY included for production.
+  // The '...isDevelopment' part evaluates to nothing in dev, effectively removing the ssl key.
+  // Render's production DB requires SSL. Local PostgreSQL does not support it by default.
+  // This resolves the "The server does not support SSL connections" error.
+  ...(!isDevelopment && { ssl: { rejectUnauthorized: false } }),
+};
+const pool = new Pool(dbConfig);
+
+// Gemini COMMENT: INFRASTRUCTURE REFACTOR - This block now dynamically selects the correct Firebase service account key.
+const serviceAccountPath = isDevelopment
+  ? process.env.DEV_SERVICE_ACCOUNT_PATH // From .env file: './serviceAccountKey.dev.json'
+  : "./serviceAccountKey.json"; // The production default
+
+const serviceAccount = require(serviceAccountPath);
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
@@ -219,4 +233,16 @@ cron.schedule("0 9 * * *", async () => {
 // --- Start Server ---
 app.listen(PORT, () => {
   console.log(`Backend server is running on port ${PORT}`);
+  // Gemini COMMENT: Add a log to confirm which environment the backend is running in.
+  console.log(
+    isDevelopment
+      ? `Firebase Admin using DEV key: ${serviceAccountPath}`
+      : `Firebase Admin using PROD key: ${serviceAccountPath}`
+  );
+  // Gemini COMMENT: Add a log to confirm which database is being used.
+  console.log(
+    isDevelopment
+      ? `Connected to LOCAL database.`
+      : `Connected to PRODUCTION database.`
+  );
 });
