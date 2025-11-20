@@ -162,7 +162,6 @@
 }
 
 /* --- Zone 3: Footer --- */
-/* Gemini COMMENT: FINAL, SIMPLIFIED LAYOUT */
 .contactCardFooter {
   display: flex;
   flex-direction: column;
@@ -183,9 +182,32 @@
 .footerActionsSecondary {
   display: flex;
   gap: 8px;
+  /* Gemini COMMENT: Standard flex behavior for desktop */
+  flex-wrap: nowrap;
 }
 .footerActionsSecondary > button {
-  flex-grow: 1; /* Make all secondary buttons share space equally */
+  flex-grow: 1;
+  text-align: center;
+}
+
+/* Gemini COMMENT: SMART GRID FIX for Mobile */
+@media (max-width: 500px) {
+  .footerActionsSecondary {
+    display: grid;
+    /* Create a 2-column grid */
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  /* 
+     Gemini COMMENT: This logic handles the 3-item vs 4-item layout automatically.
+     If there are exactly 3 buttons (Edit, Add Note, Archive), the last child (Archive)
+     will span both columns.
+     If there are 4 buttons (Edit, Add Note, Snooze, Archive), the grid naturally handles 2x2.
+  */
+  .footerActionsSecondary > button:last-child:nth-child(odd) {
+    grid-column: 1 / -1; /* Span full width */
+  }
 }
 
 /* --- Expanded Details Section --- */
@@ -202,12 +224,10 @@
   margin: 0.5rem 0;
 }
 .contactDetails strong {
-  /* DEV COMMENT: This is the general (blue-ish) accent color for most labels. */
   color: var(--primary-color);
   font-weight: 600;
 }
 .frequencyDetail strong {
-  /* DEV COMMENT: This is the specific override for the frequency label to be red-ish. */
   color: var(--overdue-border);
 }
 
