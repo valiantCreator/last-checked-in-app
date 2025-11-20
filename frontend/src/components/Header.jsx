@@ -1,6 +1,8 @@
 // frontend/src/components/Header.jsx
 
 import React, { useContext } from "react";
+// Gemini COMMENT: Import useNavigate for routing to the settings page.
+import { useNavigate } from "react-router-dom";
 import AuthContext from "../context/AuthContext";
 import ThemeToggleButton from "./ThemeToggleButton";
 import useMediaQuery from "../hooks/useMediaQuery";
@@ -22,6 +24,7 @@ function Header({
   swRegistration,
 }) {
   const { logout } = useContext(AuthContext);
+  const navigate = useNavigate(); // Gemini COMMENT: Initialize navigation hook
   const isMobile = useMediaQuery("(max-width: 500px)");
 
   let notificationButton = null;
@@ -117,6 +120,18 @@ function Header({
     </button>
   );
 
+  // Gemini COMMENT: New Settings Button logic
+  const settingsButton = (
+    <button
+      key="settings"
+      className="button-secondary"
+      onClick={() => navigate("/settings")}
+      title="Settings"
+    >
+      ⚙️ Settings
+    </button>
+  );
+
   const feedbackButton = (
     <button
       key="feedback"
@@ -138,6 +153,7 @@ function Header({
     viewButton,
     exportButton,
     notificationButton,
+    settingsButton, // Gemini COMMENT: Added Settings to mobile menu
     feedbackButton,
     logoutButton,
   ].filter(Boolean);
@@ -188,6 +204,8 @@ function Header({
             {viewButton}
             {exportButton}
             {notificationButton}
+            {settingsButton}{" "}
+            {/* Gemini COMMENT: Added Settings to desktop header */}
             {feedbackButton}
             {logoutButton}
             <ThemeToggleButton theme={theme} onToggleTheme={onToggleTheme} />

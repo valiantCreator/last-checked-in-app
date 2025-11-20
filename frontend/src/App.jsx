@@ -56,6 +56,8 @@ const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage.jsx"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage.jsx"));
 const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage.jsx"));
 const TermsOfServicePage = lazy(() => import("./pages/TermsOfServicePage.jsx"));
+// Gemini COMMENT: Import the new SettingsPage
+const SettingsPage = lazy(() => import("./pages/SettingsPage.jsx"));
 
 const LoadingFallback = () => (
   <div className={styles.loadingFallback}>Loading...</div>
@@ -87,6 +89,15 @@ function ApplicationCore() {
           element={
             <ProtectedRoute>
               <MainApplication />
+            </ProtectedRoute>
+          }
+        />
+        {/* Gemini COMMENT: Add the new Protected Route for Settings */}
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
             </ProtectedRoute>
           }
         />
