@@ -13,6 +13,8 @@ const jwt = require("jsonwebtoken");
 const createAuthRouter = require("./routes/auth");
 const createContactsRouter = require("./routes/contacts");
 const createIndexRouter = require("./routes/index");
+// Gemini COMMENT: Import the new settings router
+const createSettingsRouter = require("./routes/settings");
 
 // Gemini COMMENT: INFRASTRUCTURE REFACTOR - The isDevelopment flag is moved to the top.
 // This flag is now used for both Firebase and Database configuration.
@@ -103,26 +105,39 @@ const validate = (schema) => (req, res, next) => {
 app.use("/api/", apiLimiter);
 app.use("/api/auth", createAuthRouter(pool, validate));
 app.use("/api/contacts", createContactsRouter(pool, validate, authMiddleware));
+// Gemini COMMENT: Register the new settings router under /api/settings
+app.use("/api/settings", createSettingsRouter(pool, validate, authMiddleware));
 // Gemini COMMENT: REVERT - The index router is no longer passed the job function.
 app.use("/api", createIndexRouter(pool, validate, authMiddleware));
 
 // =================================================================
 // --- SCHEDULED JOB ---
 // =================================================================
-// Gemini COMMENT: REVERT - The cron job logic is now self-contained again.
-cron.schedule("0 9 * * *", async () => {
+// Gemini COMMENT: REFACTOR - Cron job now runs hourly (at minute 0).
+// It calculates the current UTC hour and only targets users who requested notifications at this time.
+cron.schedule("0 * * * *", async () => {
+  const currentHourUtc = new Date().getUTCHours();
   console.log(
-    `[${new Date().toISOString()}] Running daily notifications job...`
+    `[${new Date().toISOString()}] Running hourly notifications job for UTC hour: ${currentHourUtc}`
   );
+
   const client = await pool.connect();
   try {
+    // Gemini COMMENT: Fetch distinct users who have devices AND match the current notification hour.
+    // We join the devices table with the users table to filter by notification_hour_utc.
     const usersResult = await client.query(
-      "SELECT DISTINCT user_id FROM devices"
+      `SELECT DISTINCT d.user_id 
+       FROM devices d
+       JOIN users u ON d.user_id = u.id
+       WHERE u.notification_hour_utc = $1`,
+      [currentHourUtc]
     );
+
     const userIds = usersResult.rows.map((row) => row.user_id);
+
     if (userIds.length === 0) {
       console.log(
-        `[${new Date().toISOString()}] No users with registered devices. Job finished.`
+        `[${new Date().toISOString()}] No users scheduled for notifications at ${currentHourUtc}:00 UTC. Job finished.`
       );
       return;
     }
@@ -138,6 +153,7 @@ cron.schedule("0 9 * * *", async () => {
       const userDeviceTokens = devicesResult.rows.map((row) => row.token);
 
       if (userDeviceTokens.length === 0) {
+        // This assumes the join above caught it, but good for safety if devices were deleted mid-process
         console.log(
           `[${new Date().toISOString()}] User ${userId} has no registered devices. Skipping.`
         );
