@@ -1,3 +1,5 @@
+/* frontend/src/components/Header.module.css */
+
 /* DEV COMMENT: Styles for the Header component, now locally scoped. */
 
 .appHeader {
@@ -6,9 +8,15 @@
   align-items: center;
   margin-bottom: 1rem;
   gap: 1rem;
-  /* Gemini DEV COMMENT: Removed 'flex-wrap: wrap;'. This was the root cause of the layout breaking on small screens, which in turn broke the dropdown positioning. */
-  /* flex-wrap: wrap; */
+
+  /* Gemini DEV COMMENT: Layout constraints.
+     width: 100% + max-width: 700px ensures it matches the contentWrapper exactly.
+     padding: 0.5rem 0 removes global horizontal padding, allowing specific alignment. */
+  width: 100%;
   max-width: 700px;
+  padding: 0.5rem 0;
+  box-sizing: border-box;
+
   margin-left: auto;
   margin-right: auto;
 }
@@ -36,14 +44,20 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
+
+  /* Gemini DEV COMMENT: CRITICAL VISUAL FIX.
+     The buttons (like the kebab menu) have internal padding (approx 8px) for touch accessibility.
+     This negative margin pulls the container to the right, making the VISUAL icons align 
+     flush with the content edge below, while keeping the touch targets large. */
+  margin-right: -8px;
 }
 
-/* DEV COMMENT: New style for the SVG icon trigger. It's a clean, borderless button with a hover state. */
+/* DEV COMMENT: New style for the SVG icon trigger. */
 .dropdownTrigger {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px;
+  padding: 8px; /* This padding creates the 'gap' we are correcting above */
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -63,11 +77,11 @@
 
 /* Gemini NEW: Style for icon-only buttons in the header. */
 .iconButton {
-  width: 40px; /* Set a fixed width */
-  height: 40px; /* Set a fixed height to match */
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0; /* Remove padding to let the fixed size control spacing */
-  font-size: 1.5rem; /* Make the emoji icon larger */
+  padding: 0;
+  font-size: 1.5rem;
 }

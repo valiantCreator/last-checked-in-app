@@ -1,0 +1,57 @@
+/* frontend/src/components/BottomNav.module.css */
+
+.bottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  background-color: var(--card-bg);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 1000;
+  padding-bottom: env(safe-area-inset-bottom); /* For iPhone Home Indicator */
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.navItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  flex: 1;
+  height: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.navItem:hover {
+  color: var(--text-color);
+}
+
+.navItem.active {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.icon {
+  font-size: 1.5rem;
+  margin-bottom: 2px;
+  /* Ensure icons are filled with current color */
+  fill: currentColor;
+}
+
+/* Hide on Desktop/Tablet via Media Query is handled by Layout.jsx conditional rendering,
+   but good to have a safety style here just in case. */
+@media (min-width: 501px) {
+  .bottomNav {
+    display: none;
+  }
+}

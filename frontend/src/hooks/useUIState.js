@@ -16,7 +16,7 @@ export const useUIState = () => {
   const [sortBy, setSortBy] = useState("newestFirst");
   const [sortDirection, setSortDirection] = useState("desc");
   const [selectedTagId, setSelectedTagId] = useState("");
-  const [view, setView] = useState("active");
+  // Gemini COMMENT: REFACTOR - 'view' state is removed. Routing is handled by React Router.
   const [displayMode, setDisplayMode] = useState("list");
   const [detailedItemId, setDetailedItemId] = useState(null);
   const [editingContact, setEditingContact] = useState(null);
@@ -63,7 +63,7 @@ export const useUIState = () => {
     sortBy,
     sortDirection,
     selectedTagId,
-    view,
+    // view, <- REMOVED
     displayMode,
     detailedItemId,
     editingContact,
@@ -86,7 +86,7 @@ export const useUIState = () => {
     setSortBy,
     setSortDirection,
     setSelectedTagId,
-    setView,
+    // setView, <- REMOVED
     setDisplayMode,
     setDetailedItemId,
     setEditingContact,

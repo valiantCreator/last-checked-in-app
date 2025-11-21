@@ -1,8 +1,7 @@
 // frontend/src/components/Header.jsx
 
 import React, { useContext } from "react";
-// Gemini COMMENT: Import useNavigate for routing to the settings page.
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import AuthContext from "../context/AuthContext";
 import ThemeToggleButton from "./ThemeToggleButton";
 import useMediaQuery from "../hooks/useMediaQuery";
@@ -10,11 +9,8 @@ import DropdownMenu from "./DropdownMenu";
 import styles from "./Header.module.css";
 
 function Header({
-  view,
   archivedCount,
   onToggleTheme,
-  onViewArchived,
-  onViewActive,
   onExportToCalendar,
   theme,
   onOpenFeedbackModal,
@@ -24,8 +20,13 @@ function Header({
   swRegistration,
 }) {
   const { logout } = useContext(AuthContext);
-  const navigate = useNavigate(); // Gemini COMMENT: Initialize navigation hook
+  const navigate = useNavigate();
+  const location = useLocation();
   const isMobile = useMediaQuery("(max-width: 500px)");
+
+  // Gemini COMMENT: Determine if we are on the 'active' (home) view or 'archived' view based on URL.
+  const isArchivedView = location.pathname === "/archived";
+  const isHomeView = location.pathname === "/";
 
   let notificationButton = null;
 
@@ -66,7 +67,7 @@ function Header({
           </button>
         );
         break;
-      default: // 'default' state. Now we check for SW readiness.
+      default:
         if (!swRegistration) {
           notificationButton = (
             <button
@@ -94,22 +95,29 @@ function Header({
     }
   }
 
-  const viewButton =
-    view === "active" ? (
-      <button
-        key="archive"
-        className="button-secondary"
-        onClick={onViewArchived}
-      >
-        📥 View Archived ({archivedCount})
-      </button>
-    ) : (
-      <button key="active" className="button-secondary" onClick={onViewActive}>
-        🏠 Home
-      </button>
-    );
+  // Gemini COMMENT: Desktop Navigation Logic
+  // If we are on Home, show "View Archived".
+  // If we are on Archived (or others), show "Home".
+  const viewButton = !isArchivedView ? (
+    <button
+      key="archive"
+      className="button-secondary"
+      onClick={() => navigate("/archived")}
+    >
+      📥 View Archived ({archivedCount})
+    </button>
+  ) : (
+    <button
+      key="active"
+      className="button-secondary"
+      onClick={() => navigate("/")}
+    >
+      🏠 Home
+    </button>
+  );
 
-  const exportButton = view === "active" && (
+  // Gemini COMMENT: Only show export button on the main list view.
+  const exportButton = isHomeView && (
     <button
       key="export"
       className="button-secondary"
@@ -120,7 +128,6 @@ function Header({
     </button>
   );
 
-  // Gemini COMMENT: New Settings Button logic
   const settingsButton = (
     <button
       key="settings"
@@ -149,19 +156,19 @@ function Header({
     </button>
   );
 
+  // Gemini COMMENT: Mobile Dropdown Actions
+  // We REMOVED 'Settings' and 'View Archived' from here because they are now in the BottomNav.
   const mobileDropdownActions = [
-    viewButton,
+    // View Button (Home/Archived) is removed on mobile to save space (it's in bottom nav)
     exportButton,
     notificationButton,
-    settingsButton, // Gemini COMMENT: Added Settings to mobile menu
+    // settingsButton, <- REMOVED on mobile
     feedbackButton,
     logoutButton,
   ].filter(Boolean);
 
   const kebabIcon = (
     <div className={styles.dropdownTrigger}>
-      {/* Gemini COMMENT: CRITICAL SYNTAX FIX - The viewBox attribute was missing a '24'.
-          This was causing a fatal rendering error, crashing the entire component. */}
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
@@ -204,8 +211,7 @@ function Header({
             {viewButton}
             {exportButton}
             {notificationButton}
-            {settingsButton}{" "}
-            {/* Gemini COMMENT: Added Settings to desktop header */}
+            {settingsButton}
             {feedbackButton}
             {logoutButton}
             <ThemeToggleButton theme={theme} onToggleTheme={onToggleTheme} />

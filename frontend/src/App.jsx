@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"; // Gemini COMMENT: Added Navigate for redirects
 import { AuthProvider } from "./context/AuthContext";
 import AuthContext from "./context/AuthContext";
 import {
@@ -12,7 +12,8 @@ import {
 } from "react";
 import { Toaster, toast } from "react-hot-toast";
 import { requestForToken } from "./firebase";
-import Header from "./components/Header.jsx";
+// Gemini COMMENT: Import the new Layout component
+import Layout from "./components/Layout.jsx";
 import AddContactForm from "./components/AddContactForm.jsx";
 import FilterControls from "./components/FilterControls.jsx";
 import ContactCard from "./components/ContactCard.jsx";
@@ -56,7 +57,6 @@ const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage.jsx"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage.jsx"));
 const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage.jsx"));
 const TermsOfServicePage = lazy(() => import("./pages/TermsOfServicePage.jsx"));
-// Gemini COMMENT: Import the new SettingsPage
 const SettingsPage = lazy(() => import("./pages/SettingsPage.jsx"));
 
 const LoadingFallback = () => (
@@ -67,7 +67,6 @@ function ApplicationCore() {
   const { setSwRegistration } = useContext(SWContext);
 
   useEffect(() => {
-    // Gemini COMMENT: The registerSW call is now clean, without diagnostic logs.
     registerSW({
       onRegistered(registration) {
         if (registration) {
@@ -75,7 +74,6 @@ function ApplicationCore() {
         }
       },
       onRegisterError(error) {
-        // Log registration errors to the console for future debugging.
         console.error("Service Worker registration failed:", error);
       },
     });
@@ -84,29 +82,23 @@ function ApplicationCore() {
   return (
     <Suspense fallback={<LoadingFallback />}>
       <Routes>
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <MainApplication />
-            </ProtectedRoute>
-          }
-        />
-        {/* Gemini COMMENT: Add the new Protected Route for Settings */}
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <SettingsPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* Public Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+
+        {/* Protected Routes - All Wrapped in MainApplication */}
+        <Route
+          path="/*"
+          element={
+            <ProtectedRoute>
+              <MainApplication />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </Suspense>
   );
@@ -124,7 +116,6 @@ function MainApplication() {
     sortBy,
     sortDirection,
     selectedTagId,
-    view,
     displayMode,
     detailedItemId,
     editingContact,
@@ -145,7 +136,6 @@ function MainApplication() {
     setSortBy,
     setSortDirection,
     setSelectedTagId,
-    setView,
     setDisplayMode,
     setDetailedItemId,
     setEditingContact,
@@ -323,13 +313,8 @@ function MainApplication() {
     sortDirection,
   ]);
 
-  // Gemini COMMENT: We need to get the correct refetch function from the hook.
-  // Since we refactored it, let's assume the hook will be updated to expose a single refetcher.
-  // For now, this is a placeholder for where the correct refetch function would be called.
   const refetchDashboardData = () => {
-    // This function will be properly connected once the useContacts hook is updated
-    // to expose the fetchDashboardData function. For now, we are replacing fetchContacts with a no-op
-    // to avoid calling the old, inefficient function.
+    // Placeholder
   };
 
   const onUpdateContactSubmit = () => {
@@ -361,15 +346,7 @@ function MainApplication() {
       fetchNotesForContact(contactId);
     }
   };
-  const handleViewArchived = () => {
-    fetchArchivedContacts();
-    setView("archived");
-    handleClearSelection();
-  };
-  const handleViewActive = () => {
-    setView("active");
-    handleClearArchivedSelection();
-  };
+
   const handleSelectAll = () => {
     let allVisibleIds =
       displayMode === "agenda"
@@ -382,6 +359,8 @@ function MainApplication() {
   const handleSelectAllArchived = () => {
     setSelectedArchivedIds(archivedContacts.map((c) => c.id));
   };
+
+  // --- Batch Action Handlers ---
   const handleBatchArchive = () => {
     api
       .post("/contacts/batch-archive", { contactIds: selectedContactIds })
@@ -401,7 +380,7 @@ function MainApplication() {
       })
       .then(() => {
         toast.success(`${selectedContactIds.length} contacts snoozed.`);
-        refetchDashboardData(); // Using the placeholder
+        refetchDashboardData();
         handleClearSelection();
         setIsBatchSnoozing(false);
       })
@@ -484,6 +463,11 @@ function MainApplication() {
     isOverdue,
   };
 
+  // Gemini COMMENT: Fetch archived contacts when entering the archived route.
+  // Since we don't have a dedicated route component yet, we trigger this via an effect
+  // if we were to use a route, but here we rely on the existing fetchArchivedContacts logic.
+  // However, ArchivedView expects data. We pass the data we have.
+
   return (
     <div
       className={`app-container ${
@@ -509,166 +493,204 @@ function MainApplication() {
         )}
       </Suspense>
 
-      <Header
-        view={view}
-        archivedCount={archivedCount}
-        theme={theme}
-        onToggleTheme={() =>
-          setTheme((t) => (t === "light" ? "dark" : "light"))
-        }
-        onViewActive={handleViewActive}
-        onViewArchived={handleViewArchived}
-        onExportToCalendar={() => setIsExportModalOpen(true)}
-        onOpenFeedbackModal={() => setIsFeedbackModalOpen(true)}
-        notificationPermission={notificationPermission}
-        onRequestNotifications={handleRequestNotificationPermission}
-        isRequestingNotifications={isRequestingNotifications}
-        swRegistration={swRegistration}
-      />
-      {view === "active" ? (
-        <>
-          <div className={styles.contentWrapper}>
-            <AddContactForm onContactAdded={handleAddContact} />
-            <FilterControls
-              globalSearchTerm={globalSearchTerm}
-              onGlobalSearchChange={setGlobalSearchTerm}
-              onSearchSubmit={handleSearchSubmit}
-              isSearchFocused={isSearchFocused}
-              onSearchFocus={() => setIsSearchFocused(true)}
-              onSearchBlur={() =>
-                setTimeout(() => setIsSearchFocused(false), 200)
+      {/* Gemini COMMENT: The Layout component wraps all our routes and provides the Header/BottomNav. */}
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <Layout
+              archivedCount={archivedCount}
+              theme={theme}
+              onToggleTheme={() =>
+                setTheme((t) => (t === "light" ? "dark" : "light"))
               }
-              searchResults={searchResults}
-              onClearSearch={handleClearSearch}
-              debouncedGlobalSearch={debouncedGlobalSearch}
-              onSearchResultClick={handleSearchResultClick}
-              sortBy={sortBy}
-              onSortByChange={setSortBy}
-              sortDirection={sortDirection}
-              onToggleSortDirection={() =>
-                setSortDirection((sd) => (sd === "asc" ? "desc" : "asc"))
-              }
-              selectedTagId={selectedTagId}
-              onSelectedTagChange={setSelectedTagId}
-              allTags={allTags}
+              onExportToCalendar={() => setIsExportModalOpen(true)}
+              onOpenFeedbackModal={() => setIsFeedbackModalOpen(true)}
+              notificationPermission={notificationPermission}
+              onRequestNotifications={handleRequestNotificationPermission}
+              isRequestingNotifications={isRequestingNotifications}
+              swRegistration={swRegistration}
             />
-          </div>
-          <div className={styles.contentWrapper}>
-            {displayMode !== "agenda" &&
-              processedContacts.pinned.length > 0 && (
-                <div className={styles.pinnedSection}>
-                  <h2>Pinned</h2>
-                  <div
-                    className={`${styles.contactsContainer} ${styles[displayMode]}`}
-                  >
-                    {processedContacts.pinned.map((contact) => (
-                      <ContactCard
-                        key={contact.id}
-                        contact={contact}
-                        handlers={contactHandlers}
-                        uiState={uiState}
-                        displayMode={displayMode}
-                        selectionMode={selectionModeActive}
-                        isSelected={selectedContactIds.includes(contact.id)}
-                        onToggleSelection={handleToggleSelection}
-                      />
-                    ))}
+          }
+        >
+          {/* Route: Active Contacts (Home) */}
+          <Route
+            index
+            element={
+              <>
+                <div className={styles.contentWrapper}>
+                  <AddContactForm onContactAdded={handleAddContact} />
+                  <FilterControls
+                    globalSearchTerm={globalSearchTerm}
+                    onGlobalSearchChange={setGlobalSearchTerm}
+                    onSearchSubmit={handleSearchSubmit}
+                    isSearchFocused={isSearchFocused}
+                    onSearchFocus={() => setIsSearchFocused(true)}
+                    onSearchBlur={() =>
+                      setTimeout(() => setIsSearchFocused(false), 200)
+                    }
+                    searchResults={searchResults}
+                    onClearSearch={handleClearSearch}
+                    debouncedGlobalSearch={debouncedGlobalSearch}
+                    onSearchResultClick={handleSearchResultClick}
+                    sortBy={sortBy}
+                    onSortByChange={setSortBy}
+                    sortDirection={sortDirection}
+                    onToggleSortDirection={() =>
+                      setSortDirection((sd) => (sd === "asc" ? "desc" : "asc"))
+                    }
+                    selectedTagId={selectedTagId}
+                    onSelectedTagChange={setSelectedTagId}
+                    allTags={allTags}
+                  />
+                </div>
+                <div className={styles.contentWrapper}>
+                  {displayMode !== "agenda" &&
+                    processedContacts.pinned.length > 0 && (
+                      <div className={styles.pinnedSection}>
+                        <h2>Pinned</h2>
+                        <div
+                          className={`${styles.contactsContainer} ${styles[displayMode]}`}
+                        >
+                          {processedContacts.pinned.map((contact) => (
+                            <ContactCard
+                              key={contact.id}
+                              contact={contact}
+                              handlers={contactHandlers}
+                              uiState={uiState}
+                              displayMode={displayMode}
+                              selectionMode={selectionModeActive}
+                              isSelected={selectedContactIds.includes(
+                                contact.id
+                              )}
+                              onToggleSelection={handleToggleSelection}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  <div className={styles.viewControls}>
+                    <h2>{displayMode === "agenda" ? "Agenda" : "My People"}</h2>
+                    <div className={styles.viewToggleButtons}>
+                      <button
+                        className={`${styles.viewToggleButton} ${
+                          displayMode === "list" ? styles.active : ""
+                        }`}
+                        onClick={() => setDisplayMode("list")}
+                      >
+                        List
+                      </button>
+                      <button
+                        className={`${styles.viewToggleButton} ${
+                          displayMode === "grid" ? styles.active : ""
+                        }`}
+                        onClick={() => setDisplayMode("grid")}
+                      >
+                        Grid
+                      </button>
+                      <button
+                        className={`${styles.viewToggleButton} ${
+                          displayMode === "agenda" ? styles.active : ""
+                        }`}
+                        onClick={() => setDisplayMode("agenda")}
+                      >
+                        Agenda
+                      </button>
+                    </div>
                   </div>
                 </div>
-              )}
-            <div className={styles.viewControls}>
-              <h2>{displayMode === "agenda" ? "Agenda" : "My People"}</h2>
-              <div className={styles.viewToggleButtons}>
-                <button
-                  className={`${styles.viewToggleButton} ${
-                    displayMode === "list" ? styles.active : ""
-                  }`}
-                  onClick={() => setDisplayMode("list")}
-                >
-                  List
-                </button>
-                <button
-                  className={`${styles.viewToggleButton} ${
-                    displayMode === "grid" ? styles.active : ""
-                  }`}
-                  onClick={() => setDisplayMode("grid")}
-                >
-                  Grid
-                </button>
-                <button
-                  className={`${styles.viewToggleButton} ${
-                    displayMode === "agenda" ? styles.active : ""
-                  }`}
-                  onClick={() => setDisplayMode("agenda")}
-                >
-                  Agenda
-                </button>
-              </div>
-            </div>
-          </div>
-          <Suspense fallback={<LoadingFallback />}>
-            {displayMode === "agenda" ? (
-              <AgendaView
-                agendaData={agendaData}
-                handlers={contactHandlers}
-                uiState={uiState}
-                selectionMode={selectionModeActive}
-                selectedContactIds={selectedContactIds}
-                onToggleSelection={handleToggleSelection}
-              />
-            ) : (
-              <div
-                className={`${styles.contactsContainer} ${styles[displayMode]}`}
-              >
-                {processedContacts.unpinned.map((contact) => (
-                  <ContactCard
-                    key={contact.id}
-                    contact={contact}
-                    handlers={contactHandlers}
-                    uiState={uiState}
-                    displayMode={displayMode}
-                    selectionMode={selectionModeActive}
-                    isSelected={selectedContactIds.includes(contact.id)}
-                    onToggleSelection={handleToggleSelection}
+                <Suspense fallback={<LoadingFallback />}>
+                  {displayMode === "agenda" ? (
+                    <AgendaView
+                      agendaData={agendaData}
+                      handlers={contactHandlers}
+                      uiState={uiState}
+                      selectionMode={selectionModeActive}
+                      selectedContactIds={selectedContactIds}
+                      onToggleSelection={handleToggleSelection}
+                    />
+                  ) : (
+                    <div
+                      className={`${styles.contactsContainer} ${styles[displayMode]}`}
+                    >
+                      {processedContacts.unpinned.map((contact) => (
+                        <ContactCard
+                          key={contact.id}
+                          contact={contact}
+                          handlers={contactHandlers}
+                          uiState={uiState}
+                          displayMode={displayMode}
+                          selectionMode={selectionModeActive}
+                          isSelected={selectedContactIds.includes(contact.id)}
+                          onToggleSelection={handleToggleSelection}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </Suspense>
+                {/* Inline Batch Actions for Active View */}
+                {selectionModeActive && (
+                  <BatchActionsToolbar
+                    selectedCount={selectedContactIds.length}
+                    onSelectAll={handleSelectAll}
+                    onClear={handleClearSelection}
+                    onArchive={handleBatchArchive}
+                    onCheckIn={handleBatchCheckIn}
+                    onOpenSnoozeModal={() => setIsBatchSnoozing(true)}
+                    totalContacts={contacts.length}
                   />
-                ))}
-              </div>
-            )}
-          </Suspense>
-        </>
-      ) : (
-        <Suspense fallback={<LoadingFallback />}>
-          <ArchivedView
-            archivedContacts={archivedContacts}
-            onRestore={handleRestoreContact}
-            onDeletePermanently={handleDeletePermanently}
-            selectedArchivedIds={selectedArchivedIds}
-            onToggleArchivedSelection={handleToggleArchivedSelection}
+                )}
+              </>
+            }
           />
-        </Suspense>
-      )}
+
+          {/* Route: Archived Contacts */}
+          <Route
+            path="archived"
+            element={
+              <>
+                {/* Gemini COMMENT: Fetch data on mount for this route effectively handled by MainApplication, 
+                    but we should ensure fetchArchivedContacts is called. 
+                    Ideally, we'd use a useEffect here, but since we are inside MainApplication, 
+                    we'll rely on the user action or initial load logic. 
+                    For now, we explicitly call fetchArchivedContacts when the component mounts? 
+                    No, we'll just render the view, assuming data is populated or will be on 'view archived' action.
+                    Actually, since we removed the explicit 'view' state toggle which triggered the fetch,
+                    we might need to trigger it. But let's assume the initial load or previous fetch populated it.
+                    Improvement: Add a useEffect in the ArchivedView wrapper or here to ensure freshness.
+                */}
+                <FetchArchivedWrapper fetcher={fetchArchivedContacts}>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <ArchivedView
+                      archivedContacts={archivedContacts}
+                      onRestore={handleRestoreContact}
+                      onDeletePermanently={handleDeletePermanently}
+                      selectedArchivedIds={selectedArchivedIds}
+                      onToggleArchivedSelection={handleToggleArchivedSelection}
+                    />
+                  </Suspense>
+                </FetchArchivedWrapper>
+                {selectionModeArchived && (
+                  <ArchivedActionsToolbar
+                    selectedCount={selectedArchivedIds.length}
+                    onSelectAll={handleSelectAllArchived}
+                    onClear={handleClearArchivedSelection}
+                    onRestore={handleBatchRestore}
+                    onDelete={handleBatchDelete}
+                    totalContacts={archivedContacts.length}
+                  />
+                )}
+              </>
+            }
+          />
+
+          {/* Route: Settings */}
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
+      </Routes>
+
+      {/* Global Modals that can appear on any route */}
       <Suspense fallback={null}>
-        {selectionModeActive && view === "active" && (
-          <BatchActionsToolbar
-            selectedCount={selectedContactIds.length}
-            onSelectAll={handleSelectAll}
-            onClear={handleClearSelection}
-            onArchive={handleBatchArchive}
-            onCheckIn={handleBatchCheckIn}
-            onOpenSnoozeModal={() => setIsBatchSnoozing(true)}
-            totalContacts={contacts.length}
-          />
-        )}
-        {selectionModeArchived && view === "archived" && (
-          <ArchivedActionsToolbar
-            selectedCount={selectedArchivedIds.length}
-            onSelectAll={handleSelectAllArchived}
-            onClear={handleClearArchivedSelection}
-            onRestore={handleBatchRestore}
-            onDelete={handleBatchDelete}
-            totalContacts={archivedContacts.length}
-          />
-        )}
         {isExportModalOpen && (
           <ExportCalendarModal
             isOpen={isExportModalOpen}
@@ -685,13 +707,11 @@ function MainApplication() {
               setSnoozingContact(null);
               setIsBatchSnoozing(false);
             }}
-            // Gemini COMMENT: CRITICAL FIX - The variable name is corrected from 'isBatchSnooze' to 'isBatchSnoozing'.
             onSnooze={
               isBatchSnoozing
                 ? handleBatchSnooze
                 : (contactId, snoozeObject) => {
                     handleSnooze(contactId, snoozeObject).then(() => {
-                      // This .then() block only runs if the API call was successful.
                       setSnoozingContact(null);
                     });
                   }
@@ -710,6 +730,14 @@ function MainApplication() {
       </Suspense>
     </div>
   );
+}
+
+// Gemini COMMENT: A small wrapper component to ensure archived contacts are fetched when navigating to the route directly.
+function FetchArchivedWrapper({ fetcher, children }) {
+  useEffect(() => {
+    fetcher();
+  }, [fetcher]);
+  return children;
 }
 
 function App() {

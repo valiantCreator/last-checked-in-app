@@ -1,0 +1,24 @@
+/* frontend/src/components/Layout.module.css */
+
+.layoutContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.mainContent {
+  flex: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  /* Default padding */
+  padding-bottom: 2rem;
+}
+
+/* Mobile specific adjustments */
+@media (max-width: 500px) {
+  .mainContent {
+    /* Add extra padding to prevent content from being hidden behind BottomNav */
+    padding-bottom: 80px;
+  }
+}

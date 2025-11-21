@@ -22,8 +22,13 @@
   position: absolute;
   /* Position it below the trigger, with a small gap for aesthetics. */
   top: calc(100% + 8px);
-  /* Gemini DEV COMMENT: Reverted to 'right: 0;'. With the header wrapping fixed, this is the correct value to align the menu to the trigger button on the right edge of the screen. */
-  right: 0;
+
+  /* Gemini DEV COMMENT: CRITICAL ALIGNMENT FIX.
+     We set 'right: 8px' to shift the menu slightly to the left.
+     This counter-acts the 'margin-right: -8px' on the header buttons.
+     Result: The button is pulled to the edge, but the menu remains perfectly aligned with the content grid. */
+  right: 8px;
+
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 8px;
