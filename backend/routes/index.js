@@ -169,7 +169,24 @@ const createIndexRouter = (pool, validate, authMiddleware) => {
     }
   });
 
-  // GET /api/tags (DEPRECATED)
+  // GET /api/tags/search - Server-side tag autocomplete
+  router.get("/tags/search", async (req, res) => {
+    const { q } = req.query;
+    if (!q) return res.json({ tags: [] });
+    const searchTerm = `%${q}%`;
+    try {
+      const result = await pool.query(
+        "SELECT * FROM tags WHERE user_id = $1 AND name ILIKE $2 ORDER BY name LIMIT 10",
+        [req.userId, searchTerm]
+      );
+      res.json({ tags: result.rows });
+    } catch (err) {
+      console.error("Error searching tags:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET /api/tags (Still used by FilterControls dropdown for the full list)
   router.get("/tags", async (req, res) => {
     try {
       const result = await pool.query(

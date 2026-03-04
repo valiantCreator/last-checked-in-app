@@ -161,13 +161,14 @@ cron.schedule("0 * * * *", async () => {
       }
 
       // --- Block 1: Overdue Check-ins ---
+      // PERF REFACTOR: Uses the pre-calculated, indexed next_checkin_date column
+      // instead of computing overdue status on the fly.
       const overdueResult = await client.query(
         `
           SELECT id, name FROM contacts
           WHERE user_id = $1
             AND is_archived = FALSE
-            AND (snooze_until IS NULL OR CAST(snooze_until AS DATE) < CURRENT_DATE)
-            AND CAST((last_checkin + checkin_frequency * INTERVAL '1 day') AS DATE) <= CURRENT_DATE
+            AND next_checkin_date <= NOW()
         `,
         [userId]
       );

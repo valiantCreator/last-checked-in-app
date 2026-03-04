@@ -126,9 +126,11 @@ const createContactsRouter = (pool, validate, authMiddleware) => {
           )`;
         }
 
+        // Also update next_checkin_date to match the snooze value
         const query = `
           UPDATE contacts
-          SET snooze_until = ${snoozeUntilUpdate}
+          SET snooze_until = ${snoozeUntilUpdate},
+              next_checkin_date = ${snoozeUntilUpdate}
           WHERE id = ANY($1::int[]) AND user_id = $2;
         `;
         await pool.query(query, [contactIds, req.userId]);
@@ -170,8 +172,13 @@ const createContactsRouter = (pool, validate, authMiddleware) => {
       const { contactIds } = req.body;
       const lastCheckin = new Date();
       try {
+        // Recalculate next_checkin_date for each contact based on their individual frequency
         await pool.query(
-          "UPDATE contacts SET last_checkin = $1, snooze_until = NULL WHERE id = ANY($2::int[]) AND user_id = $3",
+          `UPDATE contacts
+           SET last_checkin = $1,
+               snooze_until = NULL,
+               next_checkin_date = $1 + (checkin_frequency * INTERVAL '1 day')
+           WHERE id = ANY($2::int[]) AND user_id = $3`,
           [lastCheckin, contactIds, req.userId]
         );
         res.json({
@@ -226,10 +233,12 @@ const createContactsRouter = (pool, validate, authMiddleware) => {
       lastCheckin,
     } = req.body;
     const startDate = lastCheckin ? new Date(lastCheckin) : new Date();
+    // Calculate next_checkin_date at write-time
+    const nextCheckinDate = new Date(startDate.getTime() + checkinFrequency * 24 * 60 * 60 * 1000);
     try {
       const result = await pool.query(
-        `INSERT INTO contacts (name, checkin_frequency, last_checkin, how_we_met, key_facts, birthday, user_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+        `INSERT INTO contacts (name, checkin_frequency, last_checkin, how_we_met, key_facts, birthday, user_id, next_checkin_date)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
         [
           name,
           checkinFrequency,
@@ -238,6 +247,7 @@ const createContactsRouter = (pool, validate, authMiddleware) => {
           keyFacts,
           birthday,
           req.userId,
+          nextCheckinDate,
         ]
       );
       res.status(201).json({ ...result.rows[0], tags: [] });
@@ -288,6 +298,9 @@ const createContactsRouter = (pool, validate, authMiddleware) => {
       birthday,
       lastCheckin,
     } = req.body;
+    // Recalculate next_checkin_date when schedule changes (snooze is cleared)
+    const baseDate = lastCheckin ? new Date(lastCheckin) : new Date();
+    const nextCheckinDate = new Date(baseDate.getTime() + checkinFrequency * 24 * 60 * 60 * 1000);
     try {
       const updateQuery = `
         UPDATE contacts
@@ -298,8 +311,9 @@ const createContactsRouter = (pool, validate, authMiddleware) => {
           key_facts = $4,
           birthday = $5,
           last_checkin = $6,
-          snooze_until = NULL
-        WHERE id = $7 AND user_id = $8
+          snooze_until = NULL,
+          next_checkin_date = $7
+        WHERE id = $8 AND user_id = $9
       `;
       await pool.query(updateQuery, [
         name,
@@ -308,6 +322,7 @@ const createContactsRouter = (pool, validate, authMiddleware) => {
         keyFacts,
         birthday,
         lastCheckin,
+        nextCheckinDate,
         req.params.id,
         req.userId,
       ]);
@@ -378,9 +393,20 @@ const createContactsRouter = (pool, validate, authMiddleware) => {
   router.post("/:id/checkin", async (req, res) => {
     const lastCheckin = new Date();
     try {
+      // Fetch the contact's frequency to calculate next_checkin_date
+      const contactResult = await pool.query(
+        "SELECT checkin_frequency FROM contacts WHERE id = $1 AND user_id = $2",
+        [req.params.id, req.userId]
+      );
+      if (contactResult.rows.length === 0) {
+        return res.status(404).json({ error: "Contact not found." });
+      }
+      const freq = contactResult.rows[0].checkin_frequency;
+      const nextCheckinDate = new Date(lastCheckin.getTime() + freq * 24 * 60 * 60 * 1000);
+
       await pool.query(
-        "UPDATE contacts SET last_checkin = $1, snooze_until = NULL WHERE id = $2 AND user_id = $3",
-        [lastCheckin, req.params.id, req.userId]
+        "UPDATE contacts SET last_checkin = $1, snooze_until = NULL, next_checkin_date = $2 WHERE id = $3 AND user_id = $4",
+        [lastCheckin, nextCheckinDate, req.params.id, req.userId]
       );
       res.json({
         message: "Checked in successfully",
@@ -420,9 +446,11 @@ const createContactsRouter = (pool, validate, authMiddleware) => {
           queryParams.unshift(interval);
         }
 
+        // Also update next_checkin_date to match the snooze_until value
         const query = `
           UPDATE contacts
-          SET snooze_until = ${snoozeUntilUpdate}
+          SET snooze_until = ${snoozeUntilUpdate},
+              next_checkin_date = ${snoozeUntilUpdate}
           WHERE id = $${queryParams.length - 1} AND user_id = $${
           queryParams.length
         }

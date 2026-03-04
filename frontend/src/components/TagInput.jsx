@@ -1,43 +1,47 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useDebouncedCallback } from "use-debounce";
 import api from "../apiConfig";
-// DEV COMMENT: Import the new CSS Module.
+// DEV COMMENT: Import the CSS Module.
 import styles from "./TagInput.module.css";
 
 // --- TagInput Component ---
 // This component provides an input field for adding tags to a contact.
-// It fetches all existing tags to provide suggestions as the user types.
+// It fetches tag suggestions from the server as the user types.
 function TagInput({ contact, onTagAdded }) {
   // --- State ---
   const [inputValue, setInputValue] = useState(""); // The current text in the input field
   const [suggestions, setSuggestions] = useState([]); // The list of suggested tags
-  const [allTags, setAllTags] = useState([]); // All unique tags in the system
 
-  // --- Effect ---
-  // Fetch all existing tags from the system once when the component first loads.
-  useEffect(() => {
-    api.get("/tags").then((res) => {
-      if (res.data.tags) setAllTags(res.data.tags);
-    });
-  }, []);
+  // --- Debounced Server-Side Search ---
+  // PERF REFACTOR: Instead of fetching ALL tags on mount and filtering client-side,
+  // we now debounce the input and search on the server. This scales to thousands of tags.
+  const debouncedSearch = useDebouncedCallback((query) => {
+    if (!query.trim()) {
+      setSuggestions([]);
+      return;
+    }
+    api
+      .get(`/tags/search?q=${encodeURIComponent(query)}`)
+      .then((res) => {
+        if (res.data.tags) {
+          // Filter out tags that are already on this contact
+          const existingContactTagIds = contact.tags.map((t) => t.id);
+          const filtered = res.data.tags.filter(
+            (tag) => !existingContactTagIds.includes(tag.id)
+          );
+          setSuggestions(filtered);
+        }
+      })
+      .catch((err) => console.error("Tag search failed:", err));
+  }, 300);
 
   // --- Handlers ---
 
-  // Update the input value and filter suggestions as the user types.
+  // Update the input value and trigger debounced search as the user types.
   const handleInputChange = (e) => {
     const value = e.target.value;
     setInputValue(value);
-    if (value) {
-      const existingContactTagIds = contact.tags.map((t) => t.id);
-      // DEV COMMENT: BUG FIX - Corrected typo from 'existingContactTagDds' to 'existingContactTagIds'.
-      const filtered = allTags.filter(
-        (tag) =>
-          tag.name.toLowerCase().includes(value.toLowerCase()) &&
-          !existingContactTagIds.includes(tag.id)
-      );
-      setSuggestions(filtered);
-    } else {
-      setSuggestions([]);
-    }
+    debouncedSearch(value);
   };
 
   // Add a tag to the contact, either from a suggestion click or form submission.
@@ -64,8 +68,6 @@ function TagInput({ contact, onTagAdded }) {
           type="text"
           value={inputValue}
           onChange={handleInputChange}
-          // Gemini FIX: Updated the placeholder text to clarify that the input
-          // can be used for both searching and creating tags (Addresses Issue 2.1).
           placeholder="Search or create tags..."
           className={styles.tagInput}
         />
