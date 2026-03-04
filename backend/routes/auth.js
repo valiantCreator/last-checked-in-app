@@ -2,7 +2,7 @@
 
 const express = require("express");
 const { z } = require("zod");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Mailjet = require("node-mailjet");
 
