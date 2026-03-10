@@ -111,6 +111,30 @@ app.use("/api/settings", createSettingsRouter(pool, validate, authMiddleware));
 app.use("/api", createIndexRouter(pool, validate, authMiddleware));
 
 // =================================================================
+// --- STALE TOKEN CLEANUP HELPER ---
+// =================================================================
+async function cleanupStaleTokens(batchResponse, tokens, client) {
+  const STALE_ERROR_CODES = [
+    'messaging/registration-token-not-registered',
+    'messaging/invalid-registration-token',
+  ];
+
+  const staleTokens = [];
+  batchResponse.responses.forEach((resp, idx) => {
+    if (!resp.success && resp.error && STALE_ERROR_CODES.includes(resp.error.code)) {
+      staleTokens.push(tokens[idx]);
+    }
+  });
+
+  if (staleTokens.length > 0) {
+    await client.query('DELETE FROM devices WHERE token = ANY($1)', [staleTokens]);
+    console.log(
+      `[${new Date().toISOString()}] Cleaned up ${staleTokens.length} stale FCM token(s).`
+    );
+  }
+}
+
+// =================================================================
 // --- SCHEDULED JOB ---
 // =================================================================
 // Gemini COMMENT: REFACTOR - Cron job now runs hourly (at minute 0).
@@ -186,7 +210,8 @@ cron.schedule("0 * * * *", async () => {
           data: { app_url: "/" },
           tokens: userDeviceTokens,
         };
-        await admin.messaging().sendEachForMulticast(message);
+        const overdueResponse = await admin.messaging().sendEachForMulticast(message);
+        await cleanupStaleTokens(overdueResponse, userDeviceTokens, client);
         console.log(
           `[${new Date().toISOString()}] User ${userId}: Sent ${
             overdueContacts.length
@@ -225,7 +250,8 @@ cron.schedule("0 * * * *", async () => {
           data: { app_url: "/" },
           tokens: userDeviceTokens,
         };
-        await admin.messaging().sendEachForMulticast(birthdayMessage);
+        const birthdayResponse = await admin.messaging().sendEachForMulticast(birthdayMessage);
+        await cleanupStaleTokens(birthdayResponse, userDeviceTokens, client);
         console.log(
           `[${new Date().toISOString()}] User ${userId}: Sent ${
             birthdayContacts.length
