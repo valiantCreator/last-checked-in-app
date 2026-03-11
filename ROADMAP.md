@@ -77,7 +77,7 @@
 
 ---
 
-### B4. SQL Injection Risk in Batch Snooze
+### [DONE] B4. SQL Injection Risk in Batch Snooze
 **Priority:** 🔴 Critical | **Effort:** Small | **Infra:** None
 
 **Problem:** In the batch-snooze endpoint, the interval string is built via string interpolation (`'${interval}'::interval`) rather than a parameterized query. While Zod validates the input as `{value: number, unit: enum}`, the pattern is dangerous and could become exploitable if the schema changes.

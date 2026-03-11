@@ -1,7 +1,7 @@
 # **Last Checked In \- Project Documentation**
 
 **Last Updated:** March 11, 2026  
-**Version:** 14.2.0 \-\> 14.3.0  
+**Version:** 14.3.0 \-\> 14.4.0  
 **Author:** Gemini
 
 ## **1\. Project Overview**
@@ -54,7 +54,8 @@ The application has been fundamentally re-architected into a full-featured, mult
 * **Advanced Filtering & Sorting:** Comprehensive controls to organize the contact list.  
 * **Global Search:** A search bar that filters contacts by name or note content.  
 * **Archive/Restore System:** Archive contacts instead of permanently deleting them.  
-* **Multi-User Push Notifications:** An hourly scheduled job on the backend (node-cron) is the single source of truth for notifications. It queries users whose preferred notification hour matches the current UTC hour, then performs a fast, indexed lookup on the pre-calculated `next_checkin_date` column to find overdue contacts. It sends a single, dynamic summary push notification. After each send, the job automatically inspects the FCM response and removes any stale or permanently-invalid device tokens from the database, keeping the `devices` table clean and preventing wasted FCM calls on subsequent runs.  
+* **Multi-User Push Notifications:** An hourly scheduled job on the backend (node-cron) is the single source of truth for notifications. It queries users whose preferred notification hour matches the current UTC hour, then performs a fast, indexed lookup on the pre-calculated `next_checkin_date` column to find overdue contacts. It sends a single, dynamic summary push notification. After each send, the job automatically inspects the FCM response and removes any stale or permanently-invalid device tokens from the database, keeping the `devices` table clean and preventing wasted FCM calls on subsequent runs.
+* **Parameterized Batch Snooze Query (v14.4, B4):** The batch-snooze endpoint (`POST /api/contacts/batch-snooze`) previously built its PostgreSQL interval via string interpolation (`'${interval}'::interval`). While the input was Zod-validated, this pattern was a latent SQL injection vector — if the Zod schema ever loosened or was bypassed, a crafted interval string could escape the SQL context and execute arbitrary queries. The fix replaces the interpolated string with a parameterized query placeholder (`$1::interval`), ensuring the database driver always treats the value as data, never as SQL. This matches the pattern already used by the single-contact snooze endpoint. The change has zero functional impact on users — snooze behavior is identical — but eliminates a class of vulnerability entirely. **Testing:** Best tested in the **dev environment** (local database, no production risk) by selecting 2+ contacts, batch-snoozing with a days/hours option (exercises the parameterized branch) and with "Tomorrow Morning" (exercises the hardcoded branch). Production testing is unnecessary since the SQL output is identical; the only difference is *how* the value reaches PostgreSQL.  
 * **Agenda View with Recurring Events:** An Agenda View provides a forward-looking summary of all upcoming check-ins for the next 30 days. The logic has been completely rewritten to correctly project and display all recurring events for each contact within the timeframe.  
 * **In-App Toast Notifications:** Modern, non-blocking "toast" notifications for all user actions, provided by react-hot-toast.  
 * **Intuitive & Timezone-Safe Date Display:** All date calculations and displays have been refactored to be timezone-safe, ensuring consistency regardless of user location.  

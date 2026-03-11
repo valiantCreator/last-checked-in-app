@@ -111,19 +111,23 @@ const createContactsRouter = (pool, validate, authMiddleware) => {
       try {
         // Gemini COMMENT: REFACTOR - Conditional logic to handle the 'tomorrow' case.
         let snoozeUntilUpdate;
+        let queryParams = [contactIds, req.userId];
+
         if (snooze.unit === "tomorrow") {
           // Set snooze_until to 9 AM UTC on the next day.
           snoozeUntilUpdate =
             "date_trunc('day', NOW() + interval '1 day') + interval '9 hours'";
         } else {
-          // Use a parameterized interval for other units ('days', 'hours').
+          // B4 FIX: Use a parameterized interval ($1) instead of string interpolation.
           const interval = `${snooze.value} ${snooze.unit}`;
           snoozeUntilUpdate = `(
             GREATEST(
                 NOW(),
                 COALESCE(snooze_until, last_checkin + (checkin_frequency * INTERVAL '1 day'))
-            ) + ('${interval}'::interval)
+            ) + ($1::interval)
           )`;
+          // Prepend the interval to the query parameters for this case.
+          queryParams.unshift(interval);
         }
 
         // Also update next_checkin_date to match the snooze value
@@ -131,9 +135,9 @@ const createContactsRouter = (pool, validate, authMiddleware) => {
           UPDATE contacts
           SET snooze_until = ${snoozeUntilUpdate},
               next_checkin_date = ${snoozeUntilUpdate}
-          WHERE id = ANY($1::int[]) AND user_id = $2;
+          WHERE id = ANY($${queryParams.length - 1}::int[]) AND user_id = $${queryParams.length};
         `;
-        await pool.query(query, [contactIds, req.userId]);
+        await pool.query(query, queryParams);
 
         res.json({
           message: `${contactIds.length} contacts snoozed successfully.`,
