@@ -167,99 +167,106 @@ cron.schedule("0 * * * *", async () => {
     }
 
     for (const userId of userIds) {
-      console.log(
-        `[${new Date().toISOString()}] Processing notifications for user: ${userId}`
-      );
-      const devicesResult = await client.query(
-        "SELECT token FROM devices WHERE user_id = $1",
-        [userId]
-      );
-      const userDeviceTokens = devicesResult.rows.map((row) => row.token);
-
-      if (userDeviceTokens.length === 0) {
-        // This assumes the join above caught it, but good for safety if devices were deleted mid-process
+      try {
         console.log(
-          `[${new Date().toISOString()}] User ${userId} has no registered devices. Skipping.`
+          `[${new Date().toISOString()}] Processing notifications for user: ${userId}`
         );
-        continue;
-      }
+        const devicesResult = await client.query(
+          "SELECT token FROM devices WHERE user_id = $1",
+          [userId]
+        );
+        const userDeviceTokens = devicesResult.rows.map((row) => row.token);
 
-      // --- Block 1: Overdue Check-ins ---
-      // PERF REFACTOR: Uses the pre-calculated, indexed next_checkin_date column
-      // instead of computing overdue status on the fly.
-      const overdueResult = await client.query(
-        `
-          SELECT id, name FROM contacts
-          WHERE user_id = $1
-            AND is_archived = FALSE
-            AND next_checkin_date <= NOW()
-        `,
-        [userId]
-      );
-      const overdueContacts = overdueResult.rows;
-
-      if (overdueContacts.length > 0) {
-        let notificationBody;
-        if (overdueContacts.length === 1) {
-          notificationBody = `Time to check in with ${overdueContacts[0].name}.`;
-        } else {
-          notificationBody = `You have ${overdueContacts.length} overdue check-ins.`;
+        if (userDeviceTokens.length === 0) {
+          // This assumes the join above caught it, but good for safety if devices were deleted mid-process
+          console.log(
+            `[${new Date().toISOString()}] User ${userId} has no registered devices. Skipping.`
+          );
+          continue;
         }
-        const message = {
-          notification: { title: "Check-in Reminder", body: notificationBody },
-          data: { app_url: "/" },
-          tokens: userDeviceTokens,
-        };
-        const overdueResponse = await admin.messaging().sendEachForMulticast(message);
-        await cleanupStaleTokens(overdueResponse, userDeviceTokens, client);
-        console.log(
-          `[${new Date().toISOString()}] User ${userId}: Sent ${
-            overdueContacts.length
-          } overdue notification(s).`
-        );
-      } else {
-        console.log(
-          `[${new Date().toISOString()}] User ${userId} has no overdue contacts.`
-        );
-      }
 
-      // --- Block 2: Birthday Check ---
-      const birthdayResult = await client.query(
-        `
-          SELECT name FROM contacts
-          WHERE user_id = $1
-            AND is_archived = FALSE
-            AND birthday IS NOT NULL
-            AND EXTRACT(MONTH FROM birthday) = EXTRACT(MONTH FROM CURRENT_DATE)
-            AND EXTRACT(DAY FROM birthday) = EXTRACT(DAY FROM CURRENT_DATE)
-        `,
-        [userId]
-      );
-      const birthdayContacts = birthdayResult.rows;
+        // --- Block 1: Overdue Check-ins ---
+        // PERF REFACTOR: Uses the pre-calculated, indexed next_checkin_date column
+        // instead of computing overdue status on the fly.
+        const overdueResult = await client.query(
+          `
+            SELECT id, name FROM contacts
+            WHERE user_id = $1
+              AND is_archived = FALSE
+              AND next_checkin_date <= NOW()
+          `,
+          [userId]
+        );
+        const overdueContacts = overdueResult.rows;
 
-      if (birthdayContacts.length > 0) {
-        let birthdayBody;
-        if (birthdayContacts.length === 1) {
-          birthdayBody = `It's ${birthdayContacts[0].name}'s birthday today! Don't forget to reach out.`;
+        if (overdueContacts.length > 0) {
+          let notificationBody;
+          if (overdueContacts.length === 1) {
+            notificationBody = `Time to check in with ${overdueContacts[0].name}.`;
+          } else {
+            notificationBody = `You have ${overdueContacts.length} overdue check-ins.`;
+          }
+          const message = {
+            notification: { title: "Check-in Reminder", body: notificationBody },
+            data: { app_url: "/" },
+            tokens: userDeviceTokens,
+          };
+          const overdueResponse = await admin.messaging().sendEachForMulticast(message);
+          await cleanupStaleTokens(overdueResponse, userDeviceTokens, client);
+          console.log(
+            `[${new Date().toISOString()}] User ${userId}: Sent ${
+              overdueContacts.length
+            } overdue notification(s).`
+          );
         } else {
-          const names = birthdayContacts.map((c) => c.name).join(", ");
-          birthdayBody = `It's a special day for a few people: ${names}. Don't forget to wish them a happy birthday!`;
+          console.log(
+            `[${new Date().toISOString()}] User ${userId} has no overdue contacts.`
+          );
         }
-        const birthdayMessage = {
-          notification: { title: "Birthday Reminder", body: birthdayBody },
-          data: { app_url: "/" },
-          tokens: userDeviceTokens,
-        };
-        const birthdayResponse = await admin.messaging().sendEachForMulticast(birthdayMessage);
-        await cleanupStaleTokens(birthdayResponse, userDeviceTokens, client);
-        console.log(
-          `[${new Date().toISOString()}] User ${userId}: Sent ${
-            birthdayContacts.length
-          } birthday notification(s).`
+
+        // --- Block 2: Birthday Check ---
+        const birthdayResult = await client.query(
+          `
+            SELECT name FROM contacts
+            WHERE user_id = $1
+              AND is_archived = FALSE
+              AND birthday IS NOT NULL
+              AND EXTRACT(MONTH FROM birthday) = EXTRACT(MONTH FROM CURRENT_DATE)
+              AND EXTRACT(DAY FROM birthday) = EXTRACT(DAY FROM CURRENT_DATE)
+          `,
+          [userId]
         );
-      } else {
-        console.log(
-          `[${new Date().toISOString()}] User ${userId} has no birthdays today.`
+        const birthdayContacts = birthdayResult.rows;
+
+        if (birthdayContacts.length > 0) {
+          let birthdayBody;
+          if (birthdayContacts.length === 1) {
+            birthdayBody = `It's ${birthdayContacts[0].name}'s birthday today! Don't forget to reach out.`;
+          } else {
+            const names = birthdayContacts.map((c) => c.name).join(", ");
+            birthdayBody = `It's a special day for a few people: ${names}. Don't forget to wish them a happy birthday!`;
+          }
+          const birthdayMessage = {
+            notification: { title: "Birthday Reminder", body: birthdayBody },
+            data: { app_url: "/" },
+            tokens: userDeviceTokens,
+          };
+          const birthdayResponse = await admin.messaging().sendEachForMulticast(birthdayMessage);
+          await cleanupStaleTokens(birthdayResponse, userDeviceTokens, client);
+          console.log(
+            `[${new Date().toISOString()}] User ${userId}: Sent ${
+              birthdayContacts.length
+            } birthday notification(s).`
+          );
+        } else {
+          console.log(
+            `[${new Date().toISOString()}] User ${userId} has no birthdays today.`
+          );
+        }
+      } catch (userError) {
+        console.error(
+          `[${new Date().toISOString()}] ERROR processing user ${userId}:`,
+          userError
         );
       }
     }
