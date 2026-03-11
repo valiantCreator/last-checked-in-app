@@ -8,7 +8,7 @@
 ## Phase A: Reliability & Notification Hardening
 *Fix the silent failures that break trust with users.*
 
-### A1. Stale FCM Token Cleanup
+### [DONE] A1. Stale FCM Token Cleanup
 **Priority:** 🔴 Critical | **Effort:** Small | **Infra:** None
 
 **Problem:** When Firebase returns `messaging/registration-token-not-registered` (user cleared browser data, uninstalled PWA), the cron job silently fails but the dead token stays in the `devices` table forever. This is exactly what caused your notification outage.
@@ -19,7 +19,7 @@
 
 ---
 
-### A2. Cron Job Error Isolation (Per-User)
+### [DONE] A2. Cron Job Error Isolation (Per-User)
 **Priority:** 🔴 Critical | **Effort:** Small | **Infra:** None
 
 **Problem:** If sending a notification to User A throws an unhandled error inside the [for](file:///c:/Users/david/Documents/last-checked-in-app/frontend/src/utils.js#103-109) loop (e.g., a bad token format), the entire loop aborts and Users B, C, D never get their notifications.
@@ -216,9 +216,9 @@ Add a GitHub Actions workflow that runs the F1 and F2 test suites on every push 
 
 | Item | Priority | Effort | Phase |
 |------|----------|--------|-------|
-| A1. Stale FCM Token Cleanup | 🔴 Critical | Small | A |
-| A2. Cron Error Isolation | 🔴 Critical | Small | A |
-| B4. SQL Injection in Batch Snooze | 🔴 Critical | Small | B |
+| [DONE] A1. Stale FCM Token Cleanup | 🔴 Critical | Small | A |
+| [DONE] A2. Cron Error Isolation | 🔴 Critical | Small | A |
+| [DONE] B4. SQL Injection in Batch Snooze | 🔴 Critical | Small | B |
 | A3. Signup Auto-Login | 🟡 Medium | Small | A |
 | B1. Email Case Sensitivity | 🟡 Medium | Small | B |
 | B2. Auth Rate Limiting | 🟡 Medium | Small | B |
