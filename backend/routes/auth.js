@@ -36,7 +36,8 @@ const createAuthRouter = (pool, validate) => {
 
   // POST /api/auth/signup --- Register a new user
   router.post("/signup", validate(authSchema), async (req, res) => {
-    const { email, password } = req.body;
+    const email = req.body.email.toLowerCase().trim();
+    const { password } = req.body;
     try {
       const userCheck = await pool.query(
         "SELECT id FROM users WHERE email = $1",
@@ -71,7 +72,8 @@ const createAuthRouter = (pool, validate) => {
 
   // POST /api/auth/login --- Authenticate a user and return a JWT
   router.post("/login", validate(authSchema), async (req, res) => {
-    const { email, password } = req.body;
+    const email = req.body.email.toLowerCase().trim();
+    const { password } = req.body;
     try {
       const result = await pool.query("SELECT * FROM users WHERE email = $1", [
         email,
@@ -93,7 +95,7 @@ const createAuthRouter = (pool, validate) => {
 
   // POST /api/auth/forgot-password --- Request a password reset link
   router.post("/forgot-password", validate(emailSchema), async (req, res) => {
-    const { email } = req.body;
+    const email = req.body.email.toLowerCase().trim();
     try {
       const result = await pool.query("SELECT id FROM users WHERE email = $1", [
         email,

@@ -5,7 +5,47 @@
 **Author:** Gemini
 
 ## **1\. Project Overview**
-...
+
+### **1.1 Purpose & Vision**
+
+"Last Checked In" is a Personal Relationship Manager (PRM). Its core purpose is to be a private, intentional tool that empowers users to be more consistent and thoughtful in nurturing their personal and professional relationships. It provides each user with a secure, private account to manage their connections, combating the passive nature of social media by providing an active tool for connection.
+
+### **1.2 Core Problem Solved**
+
+In a busy world, it's easy to lose touch with people we care about. This application solves that problem by providing a centralized, private dashboard for each user to:
+
+* Track the last time they connected with a specific person.  
+* Set custom, flexible reminders for when to check in next.  
+* Keep private, timestamped, and editable notes on conversations to remember important details.  
+* Organize contacts with detailed information and a flexible tagging system.  
+* Receive proactive push notifications for their own overdue check-ins.
+
+### **1.3 Target User & Philosophy**
+
+The app is designed for individuals seeking a private tool to manage their social and professional connections. It operates on a philosophy of intentionality over passive engagement.
+
+* It is not a social network. All user data is sandboxed and for their eyes only.  
+* It is proactive, not reactive. The app prompts the user to reach out.  
+* It values quality over quantity, focusing on deepening existing relationships.
+
+## **2\. Feature Breakdown**
+
+### **2.1 User Accounts & Authentication**
+
+The application has been fundamentally re-architected into a full-featured, multi-user platform with a robust and secure account system.
+
+* **Signup:** Users can create a new, private account using an email and password. The signup page UI has been completely refactored with a modern design, a "Confirm Password" field to prevent typos, and a "Show/Hide Password" toggle for improved usability. Passwords are never stored in plain text; they are salted and hashed using bcryptjs. All email addresses are automatically normalized to lowercase and trimmed to prevent accidental duplicate accounts or login failures due to case mismatches.
+* **Login:** Registered users can log in to access their sandboxed data. Emails provided during login are also normalized to lowercase, guaranteeing match consistency.
+* **Session Management:** The system uses JSON Web Tokens (JWTs) stored in the browser's localStorage to maintain user sessions across page loads. Sessions persist for 7 days.
+* **Data Sandboxing:** The core of the multi-user system. A user can only see and interact with the data they have created. All data is scoped to their user ID on the backend.  
+* **Logout:** A logout button in the header allows users to securely terminate their session, clearing their credentials from the application state and localStorage.
+
+### **2.2 Core Features (Now User-Specific)**
+
+* **Contact Management:** Add, edit, and view contacts with their name and a custom check-in frequency.  
+* **Check-in System:** Manually log a "check-in" to reset the reminder timer. Contacts who are past their check-in frequency are visually highlighted as "overdue."  
+* **Notes System:** Add, edit, and view multiple, timestamped notes for each contact.
+
 ### **2.3 Advanced Features (Now User-Specific)**
 
 * **Animated Dark Mode & Persistence:** Replaced the text-based "Toggle Theme" button with a modern, animated sun/moon icon. The user's theme preference is now saved to their browser's localStorage.  

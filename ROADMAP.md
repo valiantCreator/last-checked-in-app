@@ -44,7 +44,7 @@
 ## Phase B: Security Hardening
 *Close gaps before the user base grows.*
 
-### B1. Email Case Sensitivity
+### [DONE] B1. Email Case Sensitivity
 **Priority:** 🟡 Medium | **Effort:** Small | **Infra:** None
 
 **Problem:** If a user signs up as `User@Gmail.com` and later tries to log in as `user@gmail.com`, the `WHERE email = $1` lookup will fail (PostgreSQL `=` is case-sensitive). This also allows two accounts with the same email in different cases.
@@ -220,7 +220,7 @@ Add a GitHub Actions workflow that runs the F1 and F2 test suites on every push 
 | [DONE] A2. Cron Error Isolation | 🔴 Critical | Small | A |
 | [DONE] B4. SQL Injection in Batch Snooze | 🔴 Critical | Small | B |
 | [DONE] A3. Signup Auto-Login | 🟡 Medium | Small | A |
-| B1. Email Case Sensitivity | 🟡 Medium | Small | B |
+| [DONE] B1. Email Case Sensitivity | 🟡 Medium | Small | B |
 | B2. Auth Rate Limiting | 🟡 Medium | Small | B |
 | B3. Error Message Leaking | 🟡 Medium | Small | B |
 | C3. Extract MainApplication | 🟡 Medium | Medium | C |
