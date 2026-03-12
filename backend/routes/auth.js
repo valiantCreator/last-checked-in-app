@@ -53,7 +53,14 @@ const createAuthRouter = (pool, validate) => {
         "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email, created_at",
         [email, passwordHash]
       );
-      res.status(201).json(newUserResult.rows[0]);
+      
+      const user = newUserResult.rows[0];
+      const payload = { userId: user.id };
+      const token = jwt.sign(payload, process.env.JWT_SECRET, {
+        expiresIn: "7d",
+      });
+      
+      res.status(201).json({ user, token });
     } catch (error) {
       console.error("Signup Error:", error);
       res

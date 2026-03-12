@@ -30,7 +30,7 @@
 
 ---
 
-### A3. Signup → Auto-Login Double Request
+### [DONE] A3. Signup → Auto-Login Double Request
 **Priority:** 🟡 Medium | **Effort:** Small | **Infra:** None
 
 **Problem:** `AuthContext.signup()` makes two sequential API calls: `POST /auth/signup` then `POST /auth/login`. This is a wasted round-trip. If the signup succeeds, the server already has the user — it should return a JWT directly.
@@ -219,7 +219,7 @@ Add a GitHub Actions workflow that runs the F1 and F2 test suites on every push 
 | [DONE] A1. Stale FCM Token Cleanup | 🔴 Critical | Small | A |
 | [DONE] A2. Cron Error Isolation | 🔴 Critical | Small | A |
 | [DONE] B4. SQL Injection in Batch Snooze | 🔴 Critical | Small | B |
-| A3. Signup Auto-Login | 🟡 Medium | Small | A |
+| [DONE] A3. Signup Auto-Login | 🟡 Medium | Small | A |
 | B1. Email Case Sensitivity | 🟡 Medium | Small | B |
 | B2. Auth Rate Limiting | 🟡 Medium | Small | B |
 | B3. Error Message Leaking | 🟡 Medium | Small | B |

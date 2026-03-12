@@ -1,51 +1,11 @@
 # **Last Checked In \- Project Documentation**
 
 **Last Updated:** March 11, 2026  
-**Version:** 14.3.0 \-\> 14.4.0  
+**Version:** 14.4.0 \-\> 14.5.0  
 **Author:** Gemini
 
 ## **1\. Project Overview**
-
-### **1.1 Purpose & Vision**
-
-"Last Checked In" is a Personal Relationship Manager (PRM). Its core purpose is to be a private, intentional tool that empowers users to be more consistent and thoughtful in nurturing their personal and professional relationships. It provides each user with a secure, private account to manage their connections, combating the passive nature of social media by providing an active tool for connection.
-
-### **1.2 Core Problem Solved**
-
-In a busy world, it's easy to lose touch with people we care about. This application solves that problem by providing a centralized, private dashboard for each user to:
-
-* Track the last time they connected with a specific person.  
-* Set custom, flexible reminders for when to check in next.  
-* Keep private, timestamped, and editable notes on conversations to remember important details.  
-* Organize contacts with detailed information and a flexible tagging system.  
-* Receive proactive push notifications for their own overdue check-ins.
-
-### **1.3 Target User & Philosophy**
-
-The app is designed for individuals seeking a private tool to manage their social and professional connections. It operates on a philosophy of intentionality over passive engagement.
-
-* It is not a social network. All user data is sandboxed and for their eyes only.  
-* It is proactive, not reactive. The app prompts the user to reach out.  
-* It values quality over quantity, focusing on deepening existing relationships.
-
-## **2\. Feature Breakdown**
-
-### **2.1 User Accounts & Authentication**
-
-The application has been fundamentally re-architected into a full-featured, multi-user platform with a robust and secure account system.
-
-* **Signup:** Users can create a new, private account using an email and password. The signup page UI has been completely refactored with a modern design, a "Confirm Password" field to prevent typos, and a "Show/Hide Password" toggle for improved usability. Passwords are never stored in plain text; they are salted and hashed using bcryptjs (a pure-JavaScript drop-in replacement for the native bcrypt module, adopted to resolve Node.js v22 compatibility issues on the hosting platform).  
-* **Login:** Registered users can log in to access their sandboxed data.  
-* **Session Management:** The system uses JSON Web Tokens (JWTs) stored in the browser's localStorage to maintain user sessions across page loads. Sessions persist for 7 days.  
-* **Data Sandboxing:** The core of the multi-user system. A user can only see and interact with the data they have created. All data is scoped to their user ID on the backend.  
-* **Logout:** A logout button in the header allows users to securely terminate their session, clearing their credentials from the application state and localStorage.
-
-### **2.2 Core Features (Now User-Specific)**
-
-* **Contact Management:** Add, edit, and view contacts with their name and a custom check-in frequency.  
-* **Check-in System:** Manually log a "check-in" to reset the reminder timer. Contacts who are past their check-in frequency are visually highlighted as "overdue."  
-* **Notes System:** Add, edit, and view multiple, timestamped notes for each contact.
-
+...
 ### **2.3 Advanced Features (Now User-Specific)**
 
 * **Animated Dark Mode & Persistence:** Replaced the text-based "Toggle Theme" button with a modern, animated sun/moon icon. The user's theme preference is now saved to their browser's localStorage.  
@@ -55,6 +15,7 @@ The application has been fundamentally re-architected into a full-featured, mult
 * **Global Search:** A search bar that filters contacts by name or note content.  
 * **Archive/Restore System:** Archive contacts instead of permanently deleting them.  
 * **Multi-User Push Notifications:** An hourly scheduled job on the backend (node-cron) is the single source of truth for notifications. It queries users whose preferred notification hour matches the current UTC hour, then performs a fast, indexed lookup on the pre-calculated `next_checkin_date` column to find overdue contacts. It sends a single, dynamic summary push notification. After each send, the job automatically inspects the FCM response and removes any stale or permanently-invalid device tokens from the database, keeping the `devices` table clean and preventing wasted FCM calls on subsequent runs.
+* **Signup Auto-Login Optimization (v14.5, A3):** The `POST /api/auth/signup` endpoint now generates and returns a JWT session token immediately upon successful user creation. Previously, the frontend would make a redundant `POST /api/auth/login` request immediately after signup. This optimization halves the network latency for signups and reduces database load (eliminating a redundant lookup and bcrypt comparison).
 * **Parameterized Batch Snooze Query (v14.4, B4):** The batch-snooze endpoint (`POST /api/contacts/batch-snooze`) previously built its PostgreSQL interval via string interpolation (`'${interval}'::interval`). While the input was Zod-validated, this pattern was a latent SQL injection vector — if the Zod schema ever loosened or was bypassed, a crafted interval string could escape the SQL context and execute arbitrary queries. The fix replaces the interpolated string with a parameterized query placeholder (`$1::interval`), ensuring the database driver always treats the value as data, never as SQL. This matches the pattern already used by the single-contact snooze endpoint. The change has zero functional impact on users — snooze behavior is identical — but eliminates a class of vulnerability entirely. **Testing:** Best tested in the **dev environment** (local database, no production risk) by selecting 2+ contacts, batch-snoozing with a days/hours option (exercises the parameterized branch) and with "Tomorrow Morning" (exercises the hardcoded branch). Production testing is unnecessary since the SQL output is identical; the only difference is *how* the value reaches PostgreSQL.  
 * **Agenda View with Recurring Events:** An Agenda View provides a forward-looking summary of all upcoming check-ins for the next 30 days. The logic has been completely rewritten to correctly project and display all recurring events for each contact within the timeframe.  
 * **In-App Toast Notifications:** Modern, non-blocking "toast" notifications for all user actions, provided by react-hot-toast.  

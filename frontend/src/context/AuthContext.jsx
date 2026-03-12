@@ -36,10 +36,13 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (email, password) => {
     try {
-      // NOTE: The signup endpoint in this app doesn't automatically log the user in.
-      // It just creates the account. We still need to call login() after.
-      await api.post("/auth/signup", { email, password });
-      await login(email, password);
+      const response = await api.post("/auth/signup", { email, password });
+      const newToken = response.data.token;
+      if (newToken) {
+        localStorage.setItem("token", newToken);
+        setToken(newToken);
+        navigate("/");
+      }
     } catch (error) {
       // REVISED: Improved error handling to be more specific.
       // It now checks for the 'details' array that our Zod middleware provides.
