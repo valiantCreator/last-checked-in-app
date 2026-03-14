@@ -4,7 +4,10 @@ import { toast } from "react-hot-toast";
 import api from "../apiConfig";
 import styles from "./AuthForm.module.css";
 
+import useAuthLockout from "../hooks/useAuthLockout";
+
 function ResetPasswordPage() {
+  const lockoutTimeRemaining = useAuthLockout();
   // DEV COMMENT: useParams from react-router-dom extracts the token from the URL.
   const { token } = useParams();
   const navigate = useNavigate();
@@ -36,6 +39,10 @@ function ResetPasswordPage() {
       await api.post("/auth/reset-password", { token, password });
       setSubmitStatus({ submitted: true, error: null });
     } catch (error) {
+      if (error.response?.status === 429) {
+        toast.error(error.response?.data?.error || "Too many authentication attempts. Please try again later.");
+        return;
+      }
       const errorMessage =
         error.response?.data?.error ||
         "An unexpected error occurred. Please try again.";
@@ -144,17 +151,31 @@ function ResetPasswordPage() {
             </button>
           </div>
         </div>
-        <button type="submit" disabled={isLoading} className="button-primary">
-          {isLoading ? "Resetting..." : "Reset Password"}
+        <button type="submit" disabled={isLoading || lockoutTimeRemaining > 0} className="button-primary">
+          {lockoutTimeRemaining > 0 ? `Try again in ${Math.floor(lockoutTimeRemaining / 60)}:${(lockoutTimeRemaining % 60).toString().padStart(2, '0')}` : isLoading ? "Resetting..." : "Reset Password"}
         </button>
       </form>
     );
   };
 
   return (
-    <div className={styles.authContainer}>
-      <h1>Set a New Password</h1>
+    <div className={styles.pageWrapper}>
+      <div className={styles.authBranding}>
+        <img
+          src="/LogoV1.png"
+          alt="Last Checked In Logo"
+          className={styles.authLogo}
+        />
+        <h2 className={styles.authTitle}>Last Checked In</h2>
+        <p className={styles.authTagline}>
+          Nurture your relationships, one check-in at a time.
+        </p>
+      </div>
+
+      <div className={styles.authContainer}>
+        <h1>Set a New Password</h1>
       {renderContent()}
+      </div>
     </div>
   );
 }

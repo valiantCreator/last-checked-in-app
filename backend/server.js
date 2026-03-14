@@ -67,9 +67,24 @@ const apiLimiter = rateLimit({
   max: 200,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.originalUrl.startsWith('/api/auth'),
   message: {
     error:
       "Too many API requests from this IP, please try again after 15 minutes.",
+  },
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res, next, options) => {
+    const retryAfterSeconds = Math.ceil((req.rateLimit.resetTime.getTime() - Date.now()) / 1000);
+    res.status(options.statusCode).json({
+      error: "Too many authentication attempts from this IP, please try again after 15 minutes.",
+      retryAfterSeconds: retryAfterSeconds > 0 ? retryAfterSeconds : 0,
+    });
   },
 });
 
@@ -103,7 +118,7 @@ const validate = (schema) => (req, res, next) => {
 // --- ROUTE REGISTRATION ---
 // =================================================================
 app.use("/api/", apiLimiter);
-app.use("/api/auth", createAuthRouter(pool, validate));
+app.use("/api/auth", authLimiter, createAuthRouter(pool, validate));
 app.use("/api/contacts", createContactsRouter(pool, validate, authMiddleware));
 // Gemini COMMENT: Register the new settings router under /api/settings
 app.use("/api/settings", createSettingsRouter(pool, validate, authMiddleware));

@@ -4,7 +4,10 @@ import AuthContext from "../context/AuthContext";
 import { toast } from "react-hot-toast";
 import styles from "./AuthForm.module.css";
 
+import useAuthLockout from "../hooks/useAuthLockout";
+
 function LoginPage() {
+  const lockoutTimeRemaining = useAuthLockout();
   const { login } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -118,10 +121,10 @@ function LoginPage() {
           </div>
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || lockoutTimeRemaining > 0}
             className={styles.submitButton}
           >
-            {isLoading ? "Logging in..." : "Login"}
+            {lockoutTimeRemaining > 0 ? `Try again in ${Math.floor(lockoutTimeRemaining / 60)}:${(lockoutTimeRemaining % 60).toString().padStart(2, '0')}` : isLoading ? "Logging in..." : "Login"}
           </button>
         </form>
         <p className={styles.authFormFooter}>

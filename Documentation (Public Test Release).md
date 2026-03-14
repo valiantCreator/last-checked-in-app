@@ -66,7 +66,7 @@ The application has been fundamentally re-architected into a full-featured, mult
 * **Calendar Export (.ics):** Allows users to export birthdays and check-in reminders into a universal .ics file, compliant with the iCalendar standard.  
 * **Batch Actions (Active & Archived):** Allows users to select multiple contacts to perform bulk operations.  
 * **Custom Confirmation Modal:** All destructive actions trigger a custom, in-app modal to confirm the user's intent.  
-* **Backend Security:** The backend API is protected with rate limiting (express-rate-limit) and input validation (zod).  
+* **Backend Security:** The backend API is protected with strict input validation (zod). Rate limiting (express-rate-limit) is fully configured, featuring a standard global API limit (200 requests/15 mins) and a strict, dedicated authentication rate limiter (10 requests/15 mins) applied specifically to the `/api/auth` endpoints to prevent credential stuffing and brute-force attacks.  
 * **Branded Authentication Screens:** The Login and Signup pages have been updated with the application's logo, name, and tagline. This provides a professional and orienting experience for new and returning users, addressing feedback that the pages felt generic.  
 * **First-Time User Onboarding:** A one-time, two-page welcome modal now appears for new users upon their first login. It introduces the app's core concepts (adding contacts, setting reminders) as well as its powerful organizational features (tagging, notifications, and calendar exporting). The modal is fully responsive and its content area scrolls on shorter screens to prevent UI overflow.  
 * **Global Error & Session Handling:** The application is now protected against two critical failure states.  
@@ -125,8 +125,9 @@ last-checked-in-app/
 │   ├── migrate\_next\_checkin.js **\<- NEW FILE (v14.1)**  
 │   ├── package.json  
 │   ├── server.js (Refactored)  
-│   └── serviceAccountKey.json (Note: Ignored by git, for Production)  
-│   └── serviceAccountKey.dev.json (Note: Ignored by git, for Development)  
+│   ├── serviceAccountKey.json (Note: Ignored by git, for Production)  
+│   ├── serviceAccountKey.dev.json (Note: Ignored by git, for Development)  
+│   └── test-rate-limit.js
 └── frontend/  
     ├── node\_modules/  
     ├── public/  
@@ -218,6 +219,7 @@ last-checked-in-app/
 *   **(CURRENT - Multi-User Architecture)**  
 *   **Database Schema:** A primary `users` table was added. All other data tables have a `user_id` foreign key.  
 *   **Authentication Endpoints:**  
+    *   **Rate Limiting:** All `/api/auth/*` endpoints are protected by a strict, dedicated rate limiter allowing only 10 requests per 15 minutes per IP to prevent brute-force attacks.
     *   `POST /api/auth/signup` and `POST /api/auth/login` handle user registration and authentication, returning a JWT.  
     *   `POST /api/auth/forgot-password`: A public endpoint that takes a user's email. If the user exists, it generates a unique, single-use, expiring JWT reset token and sends a password reset email to the user.  
     *   `POST /api/auth/reset-password`: A public endpoint that takes the reset token and a new password, validates the token, and updates the user's password in the database.  
@@ -525,6 +527,13 @@ last-checked-in-app/
 * **Dependencies & Side Effects:**  
   * **Dependencies:** `express`, `zod`, `authMiddleware`.  
   * **Side Effects:** Reads from and writes to the `notification_hour_utc` column in the `users` table.
+
+**test-rate-limit.js**
+
+* **Description:** A local test script used to verify that the authentication rate limiter is functioning correctly. It programmatically fires multiple rapid requests to the `/api/auth/login` endpoint to trigger and validate the `429 Too Many Requests` response, while also verifying that global API routes remain unaffected.
+* **Dependencies & Side Effects:**  
+  * **Dependencies:** Node core `http` module.
+  * **Side Effects:** None. It only executes local synthetic requests to validate server configuration.
 
 ### **Root (/ directory)**
 

@@ -44,6 +44,19 @@ api.interceptors.response.use(
       localStorage.removeItem("token");
       window.dispatchEvent(new Event("session_expired"));
     }
+    
+    // Gemini FIX: Explicitly intercept 429s from auth routes to compute unlock time
+    if (
+      error.response &&
+      error.response.status === 429 &&
+      error.config.url.includes("/auth/") &&
+      error.response.data.retryAfterSeconds
+    ) {
+      const unlockTime = Date.now() + (error.response.data.retryAfterSeconds * 1000);
+      localStorage.setItem("authUnlockTime", unlockTime);
+      window.dispatchEvent(new Event("auth_rate_limited"));
+    }
+
     return Promise.reject(error);
   }
 );

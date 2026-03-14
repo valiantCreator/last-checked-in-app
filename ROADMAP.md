@@ -55,12 +55,15 @@
 
 ---
 
-### B2. Rate Limit Auth Endpoints Separately
+### [DONE] B2. Rate Limit Auth Endpoints Separately
 **Priority:** 🟡 Medium | **Effort:** Small | **Infra:** None
 
 **Problem:** The global rate limiter allows 200 requests per 15 minutes across ALL endpoints. Auth endpoints (login, signup, forgot-password) should have a much stricter limit to prevent brute-force attempts.
 
 **Fix:** Add a separate `authLimiter` (e.g., 10 requests per 15 minutes) and apply it specifically to `/api/auth`.
+
+> [!NOTE]  
+> **Review Implementation:** Re-verify the sync between `retryAfterSeconds` on the backend and the frontend `useAuthLockout` hook during the next security audit to ensure no clock-skew issues arise at scale.
 
 **Files:** [server.js](file:///c:/Users/david/Documents/last-checked-in-app/backend/server.js) (L65-L74, L106)
 
@@ -221,7 +224,7 @@ Add a GitHub Actions workflow that runs the F1 and F2 test suites on every push 
 | [DONE] B4. SQL Injection in Batch Snooze | 🔴 Critical | Small | B |
 | [DONE] A3. Signup Auto-Login | 🟡 Medium | Small | A |
 | [DONE] B1. Email Case Sensitivity | 🟡 Medium | Small | B |
-| B2. Auth Rate Limiting | 🟡 Medium | Small | B |
+| [DONE] B2. Auth Rate Limiting | 🟡 Medium | Small | B |
 | B3. Error Message Leaking | 🟡 Medium | Small | B |
 | C3. Extract MainApplication | 🟡 Medium | Medium | C |
 | D1. Local Timezone Settings | 🟡 Medium | Small | D |
